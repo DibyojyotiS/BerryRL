@@ -92,6 +92,7 @@ tstrat = epsilonGreedyAction(value_net, 0.5, 0.01, 50)
 estrat = greedyAction(value_net)
 
 agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
-                skipSteps=50, make_state=make_state, printFreq=1, device=TORCH_DEVICE)
+                skipSteps=50, make_state=make_state, printFreq=1,
+                snapshot_dir='.temp_stuffs/saves', device=TORCH_DEVICE)
 trianHist = agent.trainAgent(render=True)
 evalHist = agent.evaluate(estrat, 10, True)
