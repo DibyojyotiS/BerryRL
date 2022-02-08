@@ -1,0 +1,19 @@
+##########################################################
+#
+# "unordered", "ordered", "buckets" are three defferent observation types that are supported.
+#   
+#   "unordered", "ordered" are a 40x5 matrix with the columns as: "iS_berry", "unitvector_x", "unitvector_y", "distance", "size_of_berry"
+#   
+#   unordered observation type:
+#       - append informtion into the 40x5 matrix in as the berry are detected.
+#
+#   ordered observation type:
+#       - take the unordered observation and sort the berries in clockwise sense.
+#
+#   buckets observation type:
+#       - divides the obsrvtion space into num_buckets number of equi-angular segments.
+#       - output matrix of shape (num_buckets, 2) with the collumns as "average-size-of-berry", "average-distance-to-berry". 
+#       - each row in a matrix represnts the corresponding segment in clockwise order.
+#       - if there is no berry in an angular segment, the corresponding row contains all zeros
+# 
+###########################################################
