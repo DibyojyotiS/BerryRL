@@ -1,11 +1,12 @@
-from berry_field.envs.utils.misc import getTrueAngles
 import numpy as np
-from berry_field.envs.berry_field_mat_input_env import BerryFieldEnv_MatInput
 import torch
-from torch import Tensor, nn
 import torch.nn.functional as F
+from berry_field.envs.berry_field_mat_input_env import BerryFieldEnv_MatInput
+from berry_field.envs.utils.misc import getTrueAngles
+from DRLagents import (DDQN, PrioritizedExperienceRelpayBuffer,
+                       epsilonGreedyAction, greedyAction)
+from torch import Tensor, nn
 from torch.optim.rmsprop import RMSprop
-from DRLagents import DDQN, epsilonGreedyAction, greedyAction, PrioritizedExperienceRelpayBuffer
 
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
