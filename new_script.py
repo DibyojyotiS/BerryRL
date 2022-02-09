@@ -1,4 +1,5 @@
 from berry_field.envs.berry_field_mat_input_env import BerryFieldEnv_MatInput
+import numpy
 import torch
 from torch import Tensor, nn
 import torch.nn.functional as F
@@ -32,10 +33,23 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 
 
 if __name__ == "__main__":
+    import numpy as np
     # making the berry env
     berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6)
 
-    # init modelsS
+    def env_reset(berry_env_reset):
+        def reset(**args):
+            n = 10
+            x = np.reshape(np.random.randint(0,5000, size=2*n), (n,2))
+            s = 10*np.random.randint(1,5, size=(n,1))
+            berry_data = np.column_stack([x,s])
+            print(berry_data)
+            return berry_env_reset(berry_data=berry_data)
+        return reset
+    
+    berry_env.reset = env_reset(berry_env.reset)
+
+    # init models
     valuemodel = make_net(3*8, 1, [16,8])
     policymodel = make_net(3*8, 9, [16,8], output_probs=True)
 

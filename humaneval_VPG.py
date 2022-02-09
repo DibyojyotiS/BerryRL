@@ -20,8 +20,8 @@ voptim = RMSprop(valuemodel.parameters(), lr=0.01)
 poptim = RMSprop(policymodel.parameters(), lr=0.01)
 tstrat = softMaxAction(policymodel, outputs_LogProbs=True)
 
-valuemodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\value_model_weights_episode_7.pth'))
-policymodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\policy_model_weights_episode_7.pth'))
+valuemodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\value_model_weights_episode_30.pth'))
+policymodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\policy_model_weights_episode_30.pth'))
 valuemodel.eval()
 policymodel.eval()
 

@@ -136,8 +136,10 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.current_action = 0
 
 
-    def reset(self, info=False, initial_position='default'):
-        """ info: bool, whether to return the info dict """
+    def reset(self, info=False, initial_position=None, berry_data=None):
+        """ info: bool, whether to return the info dict 
+            initial_position: to change the initial position of agent
+            berry_data: uses this berry data to reinit the env"""
         if self.viewer: self.viewer.close()
         
         self.done = False
@@ -146,15 +148,21 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.cummulative_reward = 0.5
         self.current_action = 0
         self.num_berry_collected = 0
-        self.berry_collision_tree = copy.deepcopy(self.BERRY_COLLISION_TREE)
 
-        if initial_position == 'default':
+        if not initial_position:
             self.position = self.INITIAL_POSITION
         else:
             self.position = initial_position
 
         if self.reward_curiosity:
             self.visited_grids = np.zeros(self.size_visited_grid)
+
+        if not berry_data:
+            self.berry_collision_tree = copy.deepcopy(self.BERRY_COLLISION_TREE)
+        else:
+            bounding_boxes, boxIds = self._create_bounding_boxes_and_Ids(berry_data)
+            self.berry_radii = berry_data[:,0]/2 # [x,y,width,height]
+            self.berry_collision_tree = collision_tree(bounding_boxes, boxIds, self.CIRCULAR_BERRIES, self.berry_radii) 
 
         if info:
             return self.raw_observation(), self.get_info()
