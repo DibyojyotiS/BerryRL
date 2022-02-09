@@ -26,7 +26,7 @@ valuemodel.eval()
 policymodel.eval()
 
 agent = VPG(berry_env, policymodel, valuemodel, tstrat, poptim, voptim, make_state, gamma=0.99,
-                MaxTrainEpisodes=500, MaxStepsPerEpisode=None, beta=0.1, value_steps=100,
+                MaxTrainEpisodes=500, MaxStepsPerEpisode=None, beta=0.1, value_steps=10,
                 trajectory_seg_length=2000, skipSteps=20, printFreq=1, device= TORCH_DEVICE,
                 snapshot_dir='.temp_stuffs/savesVPG')
 evalHist = agent.evaluate(tstrat, 10, True)
