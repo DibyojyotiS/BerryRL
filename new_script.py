@@ -40,12 +40,12 @@ if __name__ == "__main__":
     policymodel = make_net(3*8, 9, [16,8], output_probs=True)
 
     # init optimizers
-    voptim = RMSprop(valuemodel.parameters(), lr=0.01)
-    poptim = RMSprop(policymodel.parameters(), lr=0.01)
+    voptim = RMSprop(valuemodel.parameters(), lr=0.001)
+    poptim = RMSprop(policymodel.parameters(), lr=0.001)
     tstrat = softMaxAction(policymodel, outputs_LogProbs=True)
 
     agent = VPG(berry_env, policymodel, valuemodel, tstrat, poptim, voptim, make_state, gamma=0.99,
-                    MaxTrainEpisodes=500, MaxStepsPerEpisode=None, beta=0.1, value_steps=100,
+                    MaxTrainEpisodes=500, MaxStepsPerEpisode=None, beta=0.1, value_steps=10,
                     trajectory_seg_length=200, skipSteps=20, printFreq=1, device= TORCH_DEVICE,
                     snapshot_dir='.temp_stuffs/savesVPG')
 
