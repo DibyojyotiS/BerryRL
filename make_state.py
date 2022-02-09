@@ -31,7 +31,7 @@ def make_state(list_raw_observation, info, angle = 45, kd=0.4, ks=0.1):
             idx = x//angle
             a1[idx] = 1
             # density of sector
-            density = np.sum(sizes[args]**2)/1920*1080
+            density = np.sum(sizes[args]**2)/(1920*1080)
             a2[idx] = density
             # max worthy
             worthyness = np.max(ks*sizes[args]-kd*dist[args])
@@ -40,7 +40,7 @@ def make_state(list_raw_observation, info, angle = 45, kd=0.4, ks=0.1):
                 maxworth = worthyness
     if maxworth_idx > -1: a3[maxworth_idx]=1 
     
-    a3 = 0.1*a3_ + 0.9*a3
+    a3 = 0.9*a3_ + 0.1*a3
     state = np.concatenate([a1,a2,a3])
     a3_ = a3
     return state
