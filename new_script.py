@@ -45,7 +45,6 @@ if __name__ == "__main__":
             berry_data = np.column_stack([s,x]).astype(float)
             return berry_env_reset(berry_data=berry_data, initial_position=(2500,2500))
         return reset
-    
     berry_env.reset = env_reset(berry_env.reset)
 
     # init models
