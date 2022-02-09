@@ -46,7 +46,7 @@ if __name__ == "__main__":
 
     agent = VPG(berry_env, policymodel, valuemodel, tstrat, poptim, voptim, make_state, gamma=0.99,
                     MaxTrainEpisodes=500, MaxStepsPerEpisode=None, beta=0.1, value_steps=100,
-                    trajectory_seg_length=2000, skipSteps=20, printFreq=1, device= TORCH_DEVICE,
+                    trajectory_seg_length=200, skipSteps=20, printFreq=1, device= TORCH_DEVICE,
                     snapshot_dir='.temp_stuffs/savesVPG')
 
     trianHist = agent.trainAgent(render=False)

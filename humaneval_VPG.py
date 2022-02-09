@@ -19,8 +19,8 @@ voptim = RMSprop(valuemodel.parameters(), lr=0.01)
 poptim = RMSprop(policymodel.parameters(), lr=0.01)
 tstrat = softMaxAction(policymodel, outputs_LogProbs=True)
 
-valuemodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\value_model_weights_episode_119.pth'))
-policymodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\policy_model_weights_episode_119.pth'))
+valuemodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\value_model_weights_episode_3.pth'))
+policymodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\policy_model_weights_episode_3.pth'))
 valuemodel.eval()
 policymodel.eval()
 
@@ -28,6 +28,4 @@ agent = VPG(berry_env, policymodel, valuemodel, tstrat, poptim, voptim, make_sta
                 MaxTrainEpisodes=500, MaxStepsPerEpisode=None, beta=0.1, value_steps=100,
                 trajectory_seg_length=2000, skipSteps=20, printFreq=1, device= TORCH_DEVICE,
                 snapshot_dir='.temp_stuffs/savesVPG')
-
-trianHist = agent.trainAgent(render=False)
 evalHist = agent.evaluate(tstrat, 10, True)
