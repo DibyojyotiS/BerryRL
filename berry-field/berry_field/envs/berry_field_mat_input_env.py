@@ -111,7 +111,7 @@ class BerryFieldEnv_MatInput(gym.Env):
         }
 
         # make the berry collision tree (in other words: populate the field)
-        berry_data = self._read_csv(FILE_PATHS) if not user_berry_data else user_berry_data 
+        berry_data = self._read_csv(FILE_PATHS) if user_berry_data is None else user_berry_data 
         bounding_boxes, boxIds = self._create_bounding_boxes_and_Ids(berry_data)
         self.berry_radii = berry_data[:,0]/2 # [x,y,width,height]
         self.BERRY_COLLISION_TREE = collision_tree(bounding_boxes, boxIds, self.CIRCULAR_BERRIES, self.berry_radii) 
@@ -149,20 +149,20 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.current_action = 0
         self.num_berry_collected = 0
 
-        if not initial_position:
-            self.position = self.INITIAL_POSITION
-        else:
+        if initial_position is not None:
             self.position = initial_position
+        else:
+            self.position = self.INITIAL_POSITION
 
         if self.reward_curiosity:
             self.visited_grids = np.zeros(self.size_visited_grid)
 
-        if not berry_data:
-            self.berry_collision_tree = copy.deepcopy(self.BERRY_COLLISION_TREE)
-        else:
+        if berry_data is not None:
             bounding_boxes, boxIds = self._create_bounding_boxes_and_Ids(berry_data)
             self.berry_radii = berry_data[:,0]/2 # [x,y,width,height]
             self.berry_collision_tree = collision_tree(bounding_boxes, boxIds, self.CIRCULAR_BERRIES, self.berry_radii) 
+        else:
+            self.berry_collision_tree = copy.deepcopy(self.BERRY_COLLISION_TREE)
 
         if info:
             return self.raw_observation(), self.get_info()
