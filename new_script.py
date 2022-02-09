@@ -39,12 +39,11 @@ if __name__ == "__main__":
 
     def env_reset(berry_env_reset):
         def reset(**args):
-            n = 10
-            x = np.reshape(np.random.randint(0,5000, size=2*n), (n,2))
+            n = 100
+            x = np.reshape(np.random.randint(2000,3000, size=2*n), (n,2))
             s = 10*np.random.randint(1,5, size=(n,1))
-            berry_data = np.column_stack([x,s])
-            print(berry_data)
-            return berry_env_reset(berry_data=berry_data)
+            berry_data = np.column_stack([s,x]).astype(float)
+            return berry_env_reset(berry_data=berry_data, initial_position=(2500,2500))
         return reset
     
     berry_env.reset = env_reset(berry_env.reset)

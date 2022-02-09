@@ -33,7 +33,7 @@ class BerryFieldEnv_MatInput(gym.Env):
                 circular_berries=True, circular_agent=True,
 
                 # can specify only your berries
-                user_berry_data = None,
+                user_berry_data = None, # [size, x,y]
 
                 # for curiosity reward
                 reward_curiosity = False, reward_curiosity_beta=0.25,
