@@ -42,8 +42,8 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 
 if __name__ == "__main__":
     # making the berry env
-    berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6)
-    
+    berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, verbose=True)
+
     def env_reset(berry_env_reset):
         def reset(**args):
             n = 100

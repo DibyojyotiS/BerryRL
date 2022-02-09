@@ -2,9 +2,9 @@ from berry_field.envs.utils.misc import getTrueAngles
 import numpy as np
 
 # make custom state using the env.step output
-a3_ = np.zeros(8)
+m3 = np.zeros(8)
 def make_state(list_raw_observation, info, angle = 45, kd=0.4, ks=0.1):
-    global a3_
+    global m3
     # list_raw_observation a list of observations
     # raw_observations [x,y,size]
     raw_observation = list_raw_observation[-1]
@@ -49,8 +49,8 @@ def make_state(list_raw_observation, info, angle = 45, kd=0.4, ks=0.1):
     if maxworth_idx > -1: a3[maxworth_idx]=1 
     if closest_idx > -1: a1[closest_idx] = 1
     
-    a3 = 0.3*a3_ + 0.7*a3
+    a3 = np.clip(0.5*m3 + a3, 0, 1)
     state = np.concatenate([a1,a2,a3])
-    a3_ = a3
+    m3 = a3
     # print(state)
     return state
