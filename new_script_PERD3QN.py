@@ -79,21 +79,21 @@ def make_net(inDim, outDim, hDim, output_probs=False):
     return netw
 
 
+if __name__ == "__main__":
+    # making the berry env
+    berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6)
 
-# making the berry env
-berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6)
+    # init models
+    value_net = make_net(3*8, 9, [16,8])
+    buffer = PrioritizedExperienceRelpayBuffer(int(1E6), 0.9, 0.2, 0.001)
 
-# init models
-value_net = make_net(3*8, 9, [16,8])
-buffer = PrioritizedExperienceRelpayBuffer(int(1E6), 0.9, 0.2, 0.001)
+    # init optimizers
+    optim = RMSprop(value_net.parameters(), lr=0.01)
+    tstrat = epsilonGreedyAction(value_net, 0.25, 0.01, 50)
+    estrat = greedyAction(value_net)
 
-# init optimizers
-optim = RMSprop(value_net.parameters(), lr=0.01)
-tstrat = epsilonGreedyAction(value_net, 0.25, 0.01, 50)
-estrat = greedyAction(value_net)
-
-agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
-                skipSteps=20, make_state=make_state, printFreq=1,
-                snapshot_dir='.temp_stuffs/saves', device=TORCH_DEVICE)
-trianHist = agent.trainAgent(render=False)
-evalHist = agent.evaluate(estrat, 10, True)
+    agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
+                    skipSteps=20, make_state=make_state, printFreq=1,
+                    snapshot_dir='.temp_stuffs/saves', device=TORCH_DEVICE)
+    trianHist = agent.trainAgent(render=False)
+    evalHist = agent.evaluate(estrat, 10, True)

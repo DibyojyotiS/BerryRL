@@ -72,22 +72,22 @@ def make_net(inDim, outDim, hDim, output_probs=False):
     return netw
 
 
+if __name__ == "__main__":
+    # making the berry env
+    berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6)
 
-# making the berry env
-berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6)
+    # init models
+    valuemodel = make_net(3*8, 1, [16,8])
+    policymodel = make_net(3*8, 9, [16,8], output_probs=True)
 
-# init models
-valuemodel = make_net(3*8, 1, [16,8])
-policymodel = make_net(3*8, 9, [16,8], output_probs=True)
+    # init optimizers
+    voptim = RMSprop(valuemodel.parameters(), lr=0.01)
+    poptim = RMSprop(policymodel.parameters(), lr=0.01)
+    tstrat = softMaxAction(policymodel, outputs_LogProbs=True)
 
-# init optimizers
-voptim = RMSprop(valuemodel.parameters(), lr=0.01)
-poptim = RMSprop(policymodel.parameters(), lr=0.01)
-tstrat = softMaxAction(policymodel, outputs_LogProbs=True)
+    agent = VPG(berry_env, policymodel, valuemodel, tstrat, poptim, voptim, make_state, gamma=0.99,
+                    MaxTrainEpisodes=500, MaxStepsPerEpisode=12000, beta=0.1, value_steps=100,
+                    trajectory_seg_length=2000, skipSteps=20, printFreq=1, device= TORCH_DEVICE)
 
-agent = VPG(berry_env, policymodel, valuemodel, tstrat, poptim, voptim, make_state, gamma=0.99,
-                MaxTrainEpisodes=500, MaxStepsPerEpisode=12000, beta=0.1, value_steps=100,
-                trajectory_seg_length=2000, skipSteps=20, printFreq=1, device= TORCH_DEVICE)
-
-trianHist = agent.trainAgent(render=True)
-evalHist = agent.evaluate(tstrat, 10, True)
+    trianHist = agent.trainAgent(render=True)
+    evalHist = agent.evaluate(tstrat, 10, True)
