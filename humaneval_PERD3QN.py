@@ -10,14 +10,14 @@ from torch.optim.rmsprop import RMSprop
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # making the berry env
-# import numpy as np
-# n = 100
-# x = np.reshape(np.random.randint(2000,3000, size=2*n), (n,2))
-# s = 10*np.random.randint(1,5, size=(n,1))
-# berry_data = np.column_stack([s,x]).astype(float)
-# berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, initial_position=(2500,2500), user_berry_data=berry_data)
+import numpy as np
+n = 100
+x = np.reshape(np.random.randint(2000,3000, size=2*n), (n,2))
+s = 10*np.random.randint(1,5, size=(n,1))
+berry_data = np.column_stack([s,x]).astype(float)
+berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, initial_position=(2500,2500), user_berry_data=berry_data)
 
-berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6)
+# berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, verbose=True)
 
 value_net = make_net(3*8, 9, [16,8])
 
@@ -29,7 +29,7 @@ buffer = PrioritizedExperienceRelpayBuffer(int(1E6), 0.9, 0.2, 0.001)
 
 
 # load weights
-value_net.load_state_dict(torch.load('.temp_stuffs\savesPERD3QN\\onlinemodel_weights_episode_1.pth'))
+value_net.load_state_dict(torch.load('.temp_stuffs\savesPERD3QN\\onlinemodel_weights_episode_19.pth'))
 value_net.eval()
 
 agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 

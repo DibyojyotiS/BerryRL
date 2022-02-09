@@ -42,12 +42,17 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 
 if __name__ == "__main__":
     # making the berry env
-    berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6)
+    berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, 
+                                        field_size=(5000,5000),
+                                        end_on_boundary_hit=True)
 
     def env_reset(berry_env_reset):
+        reset_num = 1
         def reset(**args):
-            n = 100
-            x = np.reshape(np.random.randint(2000,3000, size=2*n), (n,2))
+            nonlocal reset_num
+            n = max(500//reset_num, 5)
+            reset_num+=1
+            x = np.reshape(np.random.randint(1000,4000, size=2*n), (n,2))
             s = 10*np.random.randint(1,5, size=(n,1))
             berry_data = np.column_stack([s,x]).astype(float)
             return berry_env_reset(berry_data=berry_data, initial_position=(2500,2500))

@@ -44,6 +44,7 @@ class BerryFieldEnv_MatInput(gym.Env):
 
                 # allow no action above this cumilaive reward
                 no_action_r_threshold = -float('inf'),
+                end_on_boundary_hit = False
                 ):
         '''
         ## Environment\n
@@ -88,6 +89,7 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.OBSERVATION_SPACE_SIZE = observation_space_size
         self.CIRCULAR_BERRIES = circular_berries
         self.CIRCULAR_AGENT = circular_agent
+        self.END_ON_BOUNDARY_HIT = end_on_boundary_hit
 
         # for the step machinary
         self.done = False
@@ -199,7 +201,12 @@ class BerryFieldEnv_MatInput(gym.Env):
 
         info = self.get_info()
 
-        self.done = True if self.num_steps >= self.MAX_STEPS or self.cummulative_reward <= 0 else False
+        # did the episode just end?
+        self.done = True if self.num_steps >= self.MAX_STEPS or \
+                            self.cummulative_reward <= 0 or \
+                            self.END_ON_BOUNDARY_HIT and self._has_hit_boundary() \
+                         else False
+
         if self.done and self.viewer is not None: self.viewer = self.viewer.close()
         return self.raw_observation(), reward, self.done, info
 
@@ -377,3 +384,8 @@ class BerryFieldEnv_MatInput(gym.Env):
 
     def get_numBerriesPicked(self):
         return self.num_berry_collected
+
+    
+    def _has_hit_boundary(self):
+        return (self.position[0] == 0 or self.position[0]==self.FIELD_SIZE[0]) or \
+               (self.position[1] == 0 or self.position[1]==self.FIELD_SIZE[1])
