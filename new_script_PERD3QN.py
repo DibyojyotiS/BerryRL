@@ -8,48 +8,9 @@ from DRLagents import (DDQN, PrioritizedExperienceRelpayBuffer,
 from torch import Tensor, nn
 from torch.optim.rmsprop import RMSprop
 
+from make_state import make_state
+
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-# make custom state using the env.step output
-def make_state(list_raw_observation, info, angle = 45, kd=0.4, ks=0.1):
-    # list_raw_observation a list of observations
-    # raw_observations [x,y,size]
-    raw_observation = list_raw_observation[-1]
-    sizes = raw_observation[:,2]
-    dist = np.linalg.norm(raw_observation[:,:2], axis=1, keepdims=True)
-    directions = raw_observation[:,:2]/dist
-    angles = getTrueAngles(directions)
-
-    a1 = np.zeros(360//angle) # indicates sector with berries
-    a2 = np.zeros_like(a1) # stores densities of each sector
-    a3 = np.zeros_like(a1) # indicates the sector with the max worthy berry
-    
-    maxworth = float('-inf')
-    maxworth_idx = -1
-    for x in range(0,360,angle):
-        sectorL = (x-angle/2)%360
-        sectorR = (x+angle/2)
-        if sectorL < sectorR:
-            args = np.argwhere((angles>=sectorL)&(angles<=sectorR))
-        else:
-            args = np.argwhere((angles>=sectorL)|(angles<=sectorR))
-        
-        if args.shape[0] > 0: 
-            idx = x//angle
-            a1[idx] = 1
-            # density of sector
-            density = np.sum(sizes[args]**2)/1920*1080
-            a2[idx] = density
-            # max worthy
-            worthyness = np.max(ks*sizes[args]-kd*dist[args])
-            if worthyness > maxworth:
-                maxworth_idx = idx
-                maxworth = worthyness
-    if maxworth_idx > -1: a3[maxworth_idx]=1 
-    
-    state = np.concatenate([a1,a2,a3])
-    return state
-
 
 def make_net(inDim, outDim, hDim, output_probs=False):
     class net(nn.Module):
@@ -94,6 +55,6 @@ if __name__ == "__main__":
 
     agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
                     skipSteps=20, make_state=make_state, printFreq=1,
-                    snapshot_dir='.temp_stuffs/saves', device=TORCH_DEVICE)
+                    snapshot_dir='.temp_stuffs/savesPERD3QN', device=TORCH_DEVICE)
     trianHist = agent.trainAgent(render=False)
     evalHist = agent.evaluate(estrat, 10, True)

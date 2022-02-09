@@ -136,18 +136,22 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.current_action = 0
 
 
-    def reset(self, info=False):
+    def reset(self, info=False, initial_position='default'):
         """ info: bool, whether to return the info dict """
         if self.viewer: self.viewer.close()
         
         self.done = False
-        self.position = self.INITIAL_POSITION
         self.num_steps = 0
         self.viewer = None
         self.cummulative_reward = 0.5
         self.current_action = 0
         self.num_berry_collected = 0
         self.berry_collision_tree = copy.deepcopy(self.BERRY_COLLISION_TREE)
+
+        if initial_position == 'default':
+            self.position = self.INITIAL_POSITION
+        else:
+            self.position = initial_position
 
         if self.reward_curiosity:
             self.visited_grids = np.zeros(self.size_visited_grid)
