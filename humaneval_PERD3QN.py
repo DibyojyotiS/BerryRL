@@ -21,7 +21,7 @@ buffer = PrioritizedExperienceRelpayBuffer(int(1E6), 0.9, 0.2, 0.001)
 
 
 # load weights
-value_net.load_state_dict(torch.load('.temp_stuffs\saves\\targetmodel_weights_episode_119.pth'))
+value_net.load_state_dict(torch.load('.temp_stuffs\savesPERD3QN\\targetmodel_weights_episode_119.pth'))
 value_net.eval()
 
 agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
