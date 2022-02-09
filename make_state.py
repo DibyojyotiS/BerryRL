@@ -51,6 +51,7 @@ def make_state(list_raw_observation, info, angle = 45, kd=0.4, ks=0.1):
     
     a3 = np.clip(0.5*m3 + a3, 0, 1)
     state = np.concatenate([a1,a2,a3])
+    state = state + np.random.normal(scale=0.001,size=state.shape)
     m3 = a3
     # print(state)
     return state

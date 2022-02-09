@@ -17,7 +17,7 @@ s = 10*np.random.randint(1,5, size=(n,1))
 berry_data = np.column_stack([s,x]).astype(float)
 berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, initial_position=(2500,2500), user_berry_data=berry_data)
 
-# berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6)
+# berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, verbose=True)
 
 # init modelsS
 valuemodel = make_net(3*8, 1, [16,8])
