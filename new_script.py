@@ -36,24 +36,27 @@ if __name__ == "__main__":
     # making the berry env
     berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, 
                                         field_size=(5000,5000),
-                                        end_on_boundary_hit=True)
+                                        initial_position=(2500,2500),
+                                        penalize_boundary_hit=True)
 
     def env_reset(berry_env_reset):
-        reset_num = 1
+        t=250
+        n = 200
         def reset(**args):
-            nonlocal reset_num
-            n = max(500//reset_num, 5)
-            reset_num+=1
-            x = np.reshape(np.random.randint(1000,4000, size=2*n), (n,2))
+            nonlocal t,n
+            c = np.reshape(np.random.randint(2500-t,2500+t, size=2*n), (n,2))
             s = 10*np.random.randint(1,5, size=(n,1))
-            berry_data = np.column_stack([s,x]).astype(float)
-            return berry_env_reset(berry_data=berry_data, initial_position=(2500,2500))
+            berry_data = np.column_stack([s,c]).astype(float)
+            x = berry_env_reset(berry_data=berry_data, initial_position=(2500,2500))
+            berry_env.step(0)
+            t=min(t+25, 2000)
+            return x
         return reset
     berry_env.reset = env_reset(berry_env.reset)
 
     # init models
-    valuemodel = make_net(3*8, 1, [16,8])
-    policymodel = make_net(3*8, 9, [16,8], output_probs=True)
+    valuemodel = make_net(3*8, 1, [16,8,8])
+    policymodel = make_net(3*8, 9, [16,8,8], output_probs=True)
 
     # init optimizers
     voptim = RMSprop(valuemodel.parameters(), lr=0.001)

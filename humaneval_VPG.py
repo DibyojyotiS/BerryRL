@@ -10,26 +10,19 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 # making the berry env
-# import numpy as np
-# n = 100
-# x = np.reshape(np.random.randint(2000,3000, size=2*n), (n,2))
-# s = 10*np.random.randint(1,5, size=(n,1))
-# berry_data = np.column_stack([s,x]).astype(float)
-# berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, initial_position=(2500,2500), user_berry_data=berry_data)
-
 berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, verbose=True)
 
 # init modelsS
-valuemodel = make_net(3*8, 1, [16,8])
-policymodel = make_net(3*8, 9, [16,8], output_probs=True)
+valuemodel = make_net(3*8, 1, [16,8,8])
+policymodel = make_net(3*8, 9, [16,8,8], output_probs=True)
 
 # init optimizers
 voptim = RMSprop(valuemodel.parameters(), lr=0.01)
 poptim = RMSprop(policymodel.parameters(), lr=0.01)
 tstrat = softMaxAction(policymodel, outputs_LogProbs=True)
 
-valuemodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\value_model_weights_episode_100.pth'))
-policymodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\policy_model_weights_episode_100.pth'))
+valuemodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\value_model_weights_episode_3.pth'))
+policymodel.load_state_dict(torch.load('.temp_stuffs\savesVPG\\policy_model_weights_episode_3.pth'))
 valuemodel.eval()
 policymodel.eval()
 

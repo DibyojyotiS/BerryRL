@@ -44,7 +44,8 @@ class BerryFieldEnv_MatInput(gym.Env):
 
                 # allow no action above this cumilaive reward
                 no_action_r_threshold = -float('inf'),
-                end_on_boundary_hit = False
+                end_on_boundary_hit = False,
+                penalize_boundary_hit = False,
                 ):
         '''
         ## Environment\n
@@ -75,7 +76,9 @@ class BerryFieldEnv_MatInput(gym.Env):
             no_action_r_threshold: doesnot allow action-0 (no-movement) when
                                     cumilative-reward is below this threshold
                     cumilative-reward is not incremented by curiosity-reward
-
+            end_on_boundary_hit: end the episode on hitting the boundary
+            penalize_boundary_hit: reward -1 on hitting the boundary
+            
         '''
         super(BerryFieldEnv_MatInput, self).__init__()
 
@@ -90,6 +93,7 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.CIRCULAR_BERRIES = circular_berries
         self.CIRCULAR_AGENT = circular_agent
         self.END_ON_BOUNDARY_HIT = end_on_boundary_hit
+        self.PENALIZE_BOUNDARY_HIT = penalize_boundary_hit
 
         # for the step machinary
         self.done = False
@@ -206,6 +210,10 @@ class BerryFieldEnv_MatInput(gym.Env):
                             self.cummulative_reward <= 0 or \
                             self.END_ON_BOUNDARY_HIT and self._has_hit_boundary() \
                          else False
+        
+        # -ve reward on hitting boundary with END_ON_BOUNDARY_HIT
+        if self.PENALIZE_BOUNDARY_HIT and self._has_hit_boundary():
+            reward = -1
 
         if self.done and self.viewer is not None: self.viewer = self.viewer.close()
         return self.raw_observation(), reward, self.done, info
