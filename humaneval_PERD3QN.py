@@ -19,11 +19,11 @@ value_net = make_net(input_size, 9, [16,8,8])
 optim = RMSprop(value_net.parameters(), lr=0.001)
 tstrat = epsilonGreedyAction(value_net, 0.5, 0.01, 50)
 estrat = greedyAction(value_net)
-buffer = PrioritizedExperienceRelpayBuffer(int(1E6), 0.9, 0.2, 0.001)
+buffer = PrioritizedExperienceRelpayBuffer(int(1E6), 0.95, 0.2, 0.001)
 
 
 # load weights
-value_net.load_state_dict(torch.load('.temp_stuffs\savesPERD3QN\\onlinemodel_weights_episode_19.pth'))
+value_net.load_state_dict(torch.load('.temp_stuffs\savesPERD3QN\\onlinemodel_weights_episode_12.pth'))
 value_net.eval()
 
 agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 

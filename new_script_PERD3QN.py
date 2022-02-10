@@ -42,7 +42,7 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 
 if __name__ == "__main__":
     # making the berry env
-    berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, 
+    berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=float('inf'), 
                                         reward_rate=0.001,
                                         field_size=(5000,5000),
                                         initial_position=(2500,2500),
@@ -51,7 +51,8 @@ if __name__ == "__main__":
 
     def env_reset(berry_env_reset):
         t=500
-        n = 200
+        n = 625
+        n2 = 100
         def reset(**args):
             nonlocal t,n
             c = np.reshape(np.random.randint(2500-t,2500+t, size=2*n), (n,2))
@@ -59,7 +60,7 @@ if __name__ == "__main__":
             berry_data = np.column_stack([s,c]).astype(float)
             x = berry_env_reset(berry_data=berry_data, initial_position=(2500,2500))
             berry_env.step(0)
-            t=min(t+50, 2000)
+            t= min(t+50, 2000)
             return x
         return reset
 
@@ -74,7 +75,7 @@ if __name__ == "__main__":
 
     # init models
     value_net = make_net(input_size, 9, [16,8,8])
-    buffer = PrioritizedExperienceRelpayBuffer(int(1E3), 0.9, 0.2, 0.001)
+    buffer = PrioritizedExperienceRelpayBuffer(int(1E3), 0.95, 0.1, 0.001)
 
     # init optimizers
     optim = RMSprop(value_net.parameters(), lr=0.01)
@@ -84,6 +85,9 @@ if __name__ == "__main__":
     agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
                     skipSteps=20, make_state=make_state_fn, printFreq=1, update_freq=2,
                     polyak_average=True, polyak_tau=0.2, snapshot_dir='.temp_stuffs/savesPERD3QN',
-                    MaxTrainEpisodes=10, device=TORCH_DEVICE)
+                    MaxTrainEpisodes=500, device=TORCH_DEVICE)
     trianHist = agent.trainAgent(render=False)
-    evalHist = agent.evaluate(estrat, 1, True)
+    # evalHist = agent.evaluate(estrat, 1, True)
+
+    torch.save(optim, '.temp_stuffs/savesPERD3QN/optim.pth')
+    
