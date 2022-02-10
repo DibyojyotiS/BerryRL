@@ -78,7 +78,7 @@ class BerryFieldEnv_MatInput(gym.Env):
                     cumilative-reward is not incremented by curiosity-reward
             end_on_boundary_hit: end the episode on hitting the boundary
             penalize_boundary_hit: reward -1 on hitting the boundary
-            
+
         '''
         super(BerryFieldEnv_MatInput, self).__init__()
 
@@ -231,11 +231,11 @@ class BerryFieldEnv_MatInput(gym.Env):
             'cummulative_reward': self.cummulative_reward,
             'relative_coordinates': [self.position[0] - self.INITIAL_POSITION[0], 
                                      self.position[1] - self.INITIAL_POSITION[1]],
-            'dist_from_edge':[
-                w//2 - max(0, w//2 - x), # distance from left edge; w//2 if not in view
-                w//2 - max(0, x+w//2 - W), # distance from right edge; w//2 if not in view
-                h//2 - max(0, y+h//2 - H), # distance from the top edge; h//2 if not in view
-                h//2 - max(0, h//2 - y) # distance from the bottom edge; h//2 if not in view
+            'scaled_dist_from_edge':[
+                1 - max(0, w//2 - x)/(w//2), # scaled distance from left edge; 1 if not in view
+                1 - max(0, x+w//2 - W)/(w//2), # scaled distance from right edge; 1 if not in view
+                1 - max(0, y+h//2 - H)/(h//2), # scaled distance from the top edge; 1 if not in view
+                1 - max(0, h//2 - y)/(h//2) # scaled distance from the bottom edge; 1 if not in view
             ]
         }
 

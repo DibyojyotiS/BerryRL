@@ -6,9 +6,10 @@ import torch.nn.functional as F
 from torch.optim.rmsprop import RMSprop
 from DRLagents import VPG, softMaxAction
 
-from make_state import make_state
+from make_state import get_make_state
 
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+input_size, make_state_fn = get_make_state()
 
 def make_net(inDim, outDim, hDim, output_probs=False):
     class net(nn.Module):
@@ -35,8 +36,10 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 if __name__ == "__main__":
     # making the berry env
     berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, 
+                                        reward_rate=0.001,
                                         field_size=(5000,5000),
                                         initial_position=(2500,2500),
+                                        end_on_boundary_hit= True,
                                         penalize_boundary_hit=True)
 
     def env_reset(berry_env_reset):
@@ -55,15 +58,15 @@ if __name__ == "__main__":
     berry_env.reset = env_reset(berry_env.reset)
 
     # init models
-    valuemodel = make_net(3*8, 1, [16,8,8])
-    policymodel = make_net(3*8, 9, [16,8,8], output_probs=True)
+    valuemodel = make_net(input_size, 1, [16,8,8])
+    policymodel = make_net(input_size, 9, [16,8,8], output_probs=True)
 
     # init optimizers
     voptim = RMSprop(valuemodel.parameters(), lr=0.001)
     poptim = RMSprop(policymodel.parameters(), lr=0.001)
     tstrat = softMaxAction(policymodel, outputs_LogProbs=True)
 
-    agent = VPG(berry_env, policymodel, valuemodel, tstrat, poptim, voptim, make_state, gamma=0.99,
+    agent = VPG(berry_env, policymodel, valuemodel, tstrat, poptim, voptim, make_state_fn, gamma=0.99,
                     MaxTrainEpisodes=500, MaxStepsPerEpisode=None, beta=0.1, value_steps=10,
                     trajectory_seg_length=200, skipSteps=20, printFreq=1, device= TORCH_DEVICE,
                     snapshot_dir='.temp_stuffs/savesVPG')
