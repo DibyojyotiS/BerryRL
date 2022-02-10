@@ -4,7 +4,7 @@ import numpy as np
 # make custom state using the env.step output
 def get_make_state(angle = 45, kd=0.1, ks=0.5):
     num_sectors = 360//angle
-    avf = 0.3
+    avf = 0.8
 
     # accumulators - for some sort of continuity
     m1 = np.zeros(num_sectors) # indicates sector with closest berry

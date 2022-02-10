@@ -43,31 +43,35 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 if __name__ == "__main__":
     # making the berry env
     berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=float('inf'), 
-                                        reward_rate=0.001,
                                         field_size=(5000,5000),
                                         initial_position=(2500,2500),
+                                        observation_space_size=(1920,1080),
                                         end_on_boundary_hit= True,
                                         penalize_boundary_hit=True)
 
     def env_reset(berry_env_reset):
-        t=500
-        n = 625
-        n2 = 100
+        t=100
+        n = 20
+        p = 10
         def reset(**args):
             nonlocal t,n
-            c = np.reshape(np.random.randint(2500-t,2500+t, size=2*n), (n,2))
-            s = 10*np.random.randint(1,5, size=(n,1))
-            berry_data = np.column_stack([s,c]).astype(float)
-            x = berry_env_reset(berry_data=berry_data, initial_position=(2500,2500))
+            patch_centroids = np.reshape(np.random.randint(500, 4500, size=2*p), (p,2))
+            points = np.reshape(np.random.randint(-t,t, size=2*p*n), (n,p,2))
+            berries = np.reshape(patch_centroids+points, (n*p,2))
+            sizes = 10*np.random.randint(1,5, size=(n*p,1))
+            berry_data = np.column_stack([sizes,berries]).astype(float)
+            initial_pos = patch_centroids[np.random.randint(0,p)]
+            x = berry_env_reset(berry_data=berry_data, initial_position=initial_pos)
             berry_env.step(0)
-            t= min(t+50, 2000)
+            t= min(t+5, 450)
             return x
         return reset
 
     def env_step(berry_env_step):
         def step(action):
             state, reward, done, info = berry_env_step(action)
-            return state, 10*reward, done, info
+            reward = (100*(reward > 0) + 10*(reward<=0))*reward
+            return state, reward, done, info
         return step
 
     berry_env.reset = env_reset(berry_env.reset)
@@ -75,10 +79,10 @@ if __name__ == "__main__":
 
     # init models
     value_net = make_net(input_size, 9, [16,8,8])
-    buffer = PrioritizedExperienceRelpayBuffer(int(1E3), 0.95, 0.1, 0.001)
+    buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.001)
 
     # init optimizers
-    optim = RMSprop(value_net.parameters(), lr=0.01)
+    optim = RMSprop(value_net.parameters(), lr=0.0001)
     tstrat = epsilonGreedyAction(value_net, 0.5, 0.01, 50)
     estrat = greedyAction(value_net)
 
@@ -86,8 +90,7 @@ if __name__ == "__main__":
                     skipSteps=20, make_state=make_state_fn, printFreq=1, update_freq=2,
                     polyak_average=True, polyak_tau=0.2, snapshot_dir='.temp_stuffs/savesPERD3QN',
                     MaxTrainEpisodes=500, device=TORCH_DEVICE)
+    # trianHist = agent.trainAgent(render=True)
     trianHist = agent.trainAgent(render=False)
-    # evalHist = agent.evaluate(estrat, 1, True)
-
     torch.save(optim, '.temp_stuffs/savesPERD3QN/optim.pth')
     
