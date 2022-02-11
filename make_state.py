@@ -2,7 +2,7 @@ from berry_field.envs.utils.misc import getTrueAngles
 import numpy as np
 
 # make custom state using the env.step output
-def get_make_state(angle = 45, kd=0.1, ks=0.5, avf = 0.5, noise_scale=0.01):
+def get_make_state(angle = 45, kd=0.1, ks=0.5, avf = 0.1, noise_scale=0.01):
 
     print('angle:', angle, ', kd:', kd, ', ks:', ks, 
             ', avf:', avf, ', noise_scale:', noise_scale)
@@ -10,13 +10,12 @@ def get_make_state(angle = 45, kd=0.1, ks=0.5, avf = 0.5, noise_scale=0.01):
     num_sectors = 360//angle
 
     # accumulators - for some sort of continuity
-    m1 = np.zeros(num_sectors) # indicates sector with closest berry
     m2 = np.zeros(num_sectors) # stores densities of each sector
     m3 = np.zeros(num_sectors) # indicates the sector with the max worthy berry
-    m4 = np.zeros(num_sectors) # a mesure of distance to closest berry in each sector
+    m4 = np.zeros(num_sectors) # a mesure of distance to max worthy in each sector
 
     def make_state(list_raw_observations, list_infos):
-        nonlocal m3, m2, m1, m4
+        nonlocal m3, m2, m4
         # list_raw_observation a list of observations
         # raw_observations [x,y,size]
 
@@ -33,13 +32,10 @@ def get_make_state(angle = 45, kd=0.1, ks=0.5, avf = 0.5, noise_scale=0.01):
         directions = raw_observation[:,:2]/dist[:,None]
         angles = getTrueAngles(directions)
 
-        a1,a2,a3,a4 = avf*m1,avf*m2,avf*m3,avf*m4
+        a2,a3,a4 = avf*m2,avf*m3,avf*m4
         
         maxworth = float('-inf')
         maxworth_idx = -1
-        maxworth_dist = 1
-        closest_dist = float('inf')
-        closest_idx = -1
         for x in range(0,360,angle):
             sectorL = (x-angle/2)%360
             sectorR = (x+angle/2)
@@ -57,36 +53,27 @@ def get_make_state(angle = 45, kd=0.1, ks=0.5, avf = 0.5, noise_scale=0.01):
                 density = np.sum(_sizes**2)/(1920*1080)
                 a2[idx] = density*100
 
-                # closest dist
-                current_closest = np.min(dist[args])
-                if current_closest < closest_dist:
-                    closest_dist = current_closest
-                    closest_idx = idx
-                a4[idx] = 1 - current_closest
-
                 # max worthy
                 worthinesses= ks*_sizes-kd*_dists
                 maxworthyness_idx = np.argmax(worthinesses)
+                a4[idx] = 1 - _dists[maxworthyness_idx]
                 worthyness = worthinesses[maxworthyness_idx]
                 if worthyness > maxworth:
                     maxworth_idx = idx
-                    maxworth = worthyness
-                    maxworth_dist = 1 - _dists[maxworthyness_idx]
+                    maxworth = worthyness             
         
         if maxworth_idx > -1: a3[maxworth_idx]=1 
-        if closest_idx > -1: a1[closest_idx] = 1
-
         
         # make final state
-        state = np.concatenate([a1,a2,a3,a4,edge_dist,[np.squeeze(maxworth_dist)]])
+        state = np.concatenate([a2,a3,a4,edge_dist])
 
         # update accumulators
-        m1,m2,m3,m4 = a1,a2,a3,a4
+        m2,m3,m4 = a2,a3,a4
 
         # add noise
         state = state + np.random.randn(len(state))*noise_scale
 
-        # print(len(state))
+        # print(state)
         return state
 
-    return 4*num_sectors+4+1, make_state
+    return 3*num_sectors+4, make_state

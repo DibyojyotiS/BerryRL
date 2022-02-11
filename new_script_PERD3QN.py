@@ -4,10 +4,11 @@ import torch.nn.functional as F
 from berry_field.envs.berry_field_mat_input_env import BerryFieldEnv_MatInput
 from DRLagents import (DDQN, PrioritizedExperienceRelpayBuffer,
                        epsilonGreedyAction, greedyAction)
-from torch import Tensor, nn
+from torch import nn
 from torch.optim.rmsprop import RMSprop
 
 from make_state import get_make_state
+import pickle
 
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -49,11 +50,11 @@ if __name__ == "__main__":
                                         penalize_boundary_hit=True)
 
     def env_reset(berry_env_reset):
-        t=100
-        n = 20
-        p = 10
+        t=100; n = 20; p = 15
+        episode_count = -1
         def reset(**args):
-            nonlocal t,n
+            nonlocal t,n, episode_count
+            print(episode_count, 'berries picked', berry_env.get_numBerriesPicked())
             patch_centroids = np.reshape(np.random.randint(500, 4500, size=2*p), (p,2))
             points = np.reshape(np.random.randint(-t,t, size=2*p*n), (n,p,2))
             berries = np.reshape(patch_centroids+points, (n*p,2))
@@ -63,19 +64,20 @@ if __name__ == "__main__":
             x = berry_env_reset(berry_data=berry_data, initial_position=initial_pos)
             berry_env.step(0)
             t= min(t+5, 450)
+            episode_count+=1
             return x
         return reset
 
-    def env_step(berry_env_step):
+    def env_step(berry_env_step, pos_sale=100, neg_scale=10):
         def step(action):
             state, reward, done, info = berry_env_step(action)
-            reward = (100*(reward > 0) + 10*(reward<=0))*reward
+            reward = (pos_sale*(reward > 0) + neg_scale*(reward<=0))*reward
             return state, reward, done, info
         return step
 
     berry_env.reset = env_reset(berry_env.reset)
     berry_env.step = env_step(berry_env.step)
-    input_size, make_state_fn = get_make_state(avf=0.5, noise_scale=0.02)
+    input_size, make_state_fn = get_make_state()
 
     # init models
     value_net = make_net(input_size, 9, [16,8,8])
@@ -86,7 +88,7 @@ if __name__ == "__main__":
     tstrat = epsilonGreedyAction(value_net, 0.5, 0.01, 50)
     estrat = greedyAction(value_net)
 
-    save_dir = '.temp_stuffs/savesPERD3QN-2'
+    save_dir = '.temp_stuffs/savesPERD3QN'
     print(save_dir)
     agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
                     skipSteps=20, make_state=make_state_fn, printFreq=1, update_freq=2,
@@ -94,5 +96,6 @@ if __name__ == "__main__":
                     MaxTrainEpisodes=500, device=TORCH_DEVICE)
     # trianHist = agent.trainAgent(render=True)
     trianHist = agent.trainAgent(render=False)
-    torch.save(optim, save_dir+'/optim.pth')
-    
+
+    with open(save_dir+'/history.pkl','wb') as f:
+        pickle.dump(trianHist, f)
