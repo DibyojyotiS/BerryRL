@@ -43,27 +43,27 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 if __name__ == "__main__":
     # making the berry env
     berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=float('inf'), 
-                                        field_size=(5000,5000),
-                                        initial_position=(2500,2500),
+                                        field_size=(4000,4000),
+                                        initial_position=(2000,2000),
                                         observation_space_size=(1920,1080),
                                         end_on_boundary_hit= True,
                                         penalize_boundary_hit=True)
 
     def env_reset(berry_env_reset):
-        t=100; n = 20; p = 15
+        t=100; n = 20; p = 5
         episode_count = -1
         def reset(**args):
             nonlocal t,n, episode_count
             print(episode_count, 'berries picked', berry_env.get_numBerriesPicked())
-            patch_centroids = np.reshape(np.random.randint(500, 4500, size=2*p), (p,2))
+            patch_centroids = np.reshape(np.random.randint(400, 3600, size=2*p), (p,2))
             points = np.reshape(np.random.randint(-t,t, size=2*p*n), (n,p,2))
             berries = np.reshape(patch_centroids+points, (n*p,2))
             sizes = 10*np.random.randint(1,5, size=(n*p,1))
             berry_data = np.column_stack([sizes,berries]).astype(float)
-            initial_pos = patch_centroids[np.random.randint(0,p)]
+            initial_pos = berries[np.random.randint(0,n*p)]+70
             x = berry_env_reset(berry_data=berry_data, initial_position=initial_pos)
-            berry_env.step(0)
-            t= min(t+5, 450)
+            berry_env.step(0) # if agent spawned on berry (doen't work at berry center)
+            t= min(t+5, 300)
             episode_count+=1
             return x
         return reset

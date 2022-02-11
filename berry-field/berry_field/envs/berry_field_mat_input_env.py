@@ -87,6 +87,7 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.AGENT_SIZE = agent_size
         self.INITIAL_POSITION = initial_position
         self.DRAIN_RATE = 1/(2*120*speed)
+        self.MAXPOSDIST = 0.5*np.linalg.norm(observation_space_size) # 1/2 diagonal
         self.REWARD_RATE = reward_rate
         self.MAX_STEPS = speed*maxtime
         self.OBSERVATION_SPACE_SIZE = observation_space_size
@@ -247,10 +248,9 @@ class BerryFieldEnv_MatInput(gym.Env):
     def raw_observation(self):
         ''' list of berries with center and size '''
         _, boxes = self._get_Ids_and_boxes_in_view((*self.position, *self.OBSERVATION_SPACE_SIZE))
-        # compute distances and scale to 0-1
         boxes[:,:2] = boxes[:,:2] - self.position
-        boxes[:, 0] = boxes[:, 0]/self.OBSERVATION_SPACE_SIZE[0]
-        boxes[:, 1] = boxes[:, 1]/self.OBSERVATION_SPACE_SIZE[1]
+        # scale to 0-1
+        boxes[:, :2] = boxes[:, :2]/self.MAXPOSDIST
         return boxes[:,:3]
 
 

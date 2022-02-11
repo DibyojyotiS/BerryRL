@@ -2,7 +2,9 @@ from berry_field.envs.utils.misc import getTrueAngles
 import numpy as np
 
 # make custom state using the env.step output
-def get_make_state(angle = 45, kd=0.1, ks=0.5, avf = 0.1, noise_scale=0.01):
+# ks = 0.0001 - the reward rate of env
+# kd = 0.011473 - the drain-rate times half diagonal of obs-space
+def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.01):
 
     print('angle:', angle, ', kd:', kd, ', ks:', ks, 
             ', avf:', avf, ', noise_scale:', noise_scale)
