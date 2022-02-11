@@ -12,12 +12,13 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
     num_sectors = 360//angle
 
     # accumulators - for some sort of continuity
+    m1 = np.zeros(num_sectors) # max-worth of each sector
     m2 = np.zeros(num_sectors) # stores densities of each sector
     m3 = np.zeros(num_sectors) # indicates the sector with the max worthy berry
     m4 = np.zeros(num_sectors) # a mesure of distance to max worthy in each sector
 
     def make_state(list_raw_observations, list_infos):
-        nonlocal m3, m2, m4
+        nonlocal m1 ,m2, m3, m4
         # list_raw_observation a list of observations
         # raw_observations [x,y,size]
 
@@ -34,7 +35,7 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
         directions = raw_observation[:,:2]/dist[:,None]
         angles = getTrueAngles(directions)
 
-        a2,a3,a4 = avf*m2,avf*m3,avf*m4
+        a1,a2,a3,a4 = avf*m1,avf*m2,avf*m3,avf*m4
         
         maxworth = float('-inf')
         maxworth_idx = -1
@@ -60,6 +61,7 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
                 maxworthyness_idx = np.argmax(worthinesses)
                 a4[idx] = 1 - _dists[maxworthyness_idx]
                 worthyness = worthinesses[maxworthyness_idx]
+                a1[idx] = worthyness
                 if worthyness > maxworth:
                     maxworth_idx = idx
                     maxworth = worthyness             
@@ -67,10 +69,10 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
         if maxworth_idx > -1: a3[maxworth_idx]=1 
         
         # make final state
-        state = np.concatenate([a2,a3,a4,edge_dist])
+        state = np.concatenate([a1,a2,a3,a4,edge_dist])
 
         # update accumulators
-        m2,m3,m4 = a2,a3,a4
+        m1,m2,m3,m4 = a1,a2,a3,a4
 
         # add noise
         state = state + np.random.randn(len(state))*noise_scale
@@ -78,4 +80,4 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
         # print(state)
         return state
 
-    return 3*num_sectors+4, make_state
+    return 4*num_sectors+4, make_state
