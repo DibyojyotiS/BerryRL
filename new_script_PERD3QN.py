@@ -10,7 +10,6 @@ from torch.optim.rmsprop import RMSprop
 from make_state import get_make_state
 
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-input_size, make_state_fn = get_make_state()
 
 def make_net(inDim, outDim, hDim, output_probs=False):
     class net(nn.Module):
@@ -76,6 +75,7 @@ if __name__ == "__main__":
 
     berry_env.reset = env_reset(berry_env.reset)
     berry_env.step = env_step(berry_env.step)
+    input_size, make_state_fn = get_make_state(avf=0.5, noise_scale=0.02)
 
     # init models
     value_net = make_net(input_size, 9, [16,8,8])
@@ -86,11 +86,13 @@ if __name__ == "__main__":
     tstrat = epsilonGreedyAction(value_net, 0.5, 0.01, 50)
     estrat = greedyAction(value_net)
 
+    save_dir = '.temp_stuffs/savesPERD3QN-2'
+    print(save_dir)
     agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
                     skipSteps=20, make_state=make_state_fn, printFreq=1, update_freq=2,
-                    polyak_average=True, polyak_tau=0.2, snapshot_dir='.temp_stuffs/savesPERD3QN',
+                    polyak_average=True, polyak_tau=0.2, snapshot_dir=save_dir,
                     MaxTrainEpisodes=500, device=TORCH_DEVICE)
     # trianHist = agent.trainAgent(render=True)
     trianHist = agent.trainAgent(render=False)
-    torch.save(optim, '.temp_stuffs/savesPERD3QN/optim.pth')
+    torch.save(optim, save_dir+'/optim.pth')
     

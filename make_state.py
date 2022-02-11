@@ -2,9 +2,12 @@ from berry_field.envs.utils.misc import getTrueAngles
 import numpy as np
 
 # make custom state using the env.step output
-def get_make_state(angle = 45, kd=0.1, ks=0.5):
+def get_make_state(angle = 45, kd=0.1, ks=0.5, avf = 0.5, noise_scale=0.01):
+
+    print('angle:', angle, ', kd:', kd, ', ks:', ks, 
+            ', avf:', avf, ', noise_scale:', noise_scale)
+
     num_sectors = 360//angle
-    avf = 0.8
 
     # accumulators - for some sort of continuity
     m1 = np.zeros(num_sectors) # indicates sector with closest berry
@@ -80,7 +83,10 @@ def get_make_state(angle = 45, kd=0.1, ks=0.5):
         # update accumulators
         m1,m2,m3,m4 = a1,a2,a3,a4
 
-        # print(state)
+        # add noise
+        state = state + np.random.randn(len(state))*noise_scale
+
+        # print(len(state))
         return state
 
     return 4*num_sectors+4+1, make_state
