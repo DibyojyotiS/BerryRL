@@ -55,7 +55,7 @@ if __name__ == "__main__":
     berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=float('inf'), 
                                         field_size=(4000,4000),
                                         initial_position=(2000,2000),
-                                        observation_space_size=(6*1920,6*1080),
+                                        observation_space_size=(1920,1080),
                                         end_on_boundary_hit= True,
                                         penalize_boundary_hit=True)
 
