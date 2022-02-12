@@ -25,49 +25,59 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
         raw_observation = list_raw_observations[-1]
         info = list_infos[-1]
 
+        a1,a2,a3,a4 = avf*m1,avf*m2,avf*m3,avf*m4
+
         if info is None: 
             edge_dist = np.ones(4)
         else:
             edge_dist = info['scaled_dist_from_edge']
 
-        sizes = raw_observation[:,2]
-        dist = np.linalg.norm(raw_observation[:,:2], axis=1)
-        directions = raw_observation[:,:2]/dist[:,None]
-        angles = getTrueAngles(directions)
+        if len(raw_observation) > 0:
+            sizes = raw_observation[:,2]
+            dist = np.linalg.norm(raw_observation[:,:2], axis=1)
 
-        a1,a2,a3,a4 = avf*m1,avf*m2,avf*m3,avf*m4
-        
-        maxworth = float('-inf')
-        maxworth_idx = -1
-        for x in range(0,360,angle):
-            sectorL = (x-angle/2)%360
-            sectorR = (x+angle/2)
-            if sectorL < sectorR:
-                args = np.argwhere((angles>=sectorL)&(angles<=sectorR))
-            else:
-                args = np.argwhere((angles>=sectorL)|(angles<=sectorR))
+            try:
+                assert all(dist>0)
+            except:
+                print('osngoseinapinpawn')
+                print(raw_observation)
+                print(list_raw_observations)
+                assert 0 > 1
+
+            directions = raw_observation[:,:2]/dist[:,None]
+            angles = getTrueAngles(directions)
             
-            if args.shape[0] > 0: 
-                idx = x//angle
-                _sizes = sizes[args]
-                _dists = dist[args]
+            maxworth = float('-inf')
+            maxworth_idx = -1
+            for x in range(0,360,angle):
+                sectorL = (x-angle/2)%360
+                sectorR = (x+angle/2)
+                if sectorL < sectorR:
+                    args = np.argwhere((angles>=sectorL)&(angles<=sectorR))
+                else:
+                    args = np.argwhere((angles>=sectorL)|(angles<=sectorR))
+                
+                if args.shape[0] > 0: 
+                    idx = x//angle
+                    _sizes = sizes[args]
+                    _dists = dist[args]
 
-                # density of sector
-                density = np.sum(_sizes**2)/(1920*1080)
-                a2[idx] = density*100
+                    # density of sector
+                    density = np.sum(_sizes**2)/(1920*1080)
+                    a2[idx] = density*100
 
-                # max worthy
-                worthinesses= ks*_sizes-kd*_dists
-                maxworthyness_idx = np.argmax(worthinesses)
-                a4[idx] = 1 - _dists[maxworthyness_idx]
-                worthyness = worthinesses[maxworthyness_idx]
-                a1[idx] = worthyness
-                if worthyness > maxworth:
-                    maxworth_idx = idx
-                    maxworth = worthyness             
-        
-        if maxworth_idx > -1: a3[maxworth_idx]=1 
-        
+                    # max worthy
+                    worthinesses= ks*_sizes-kd*_dists
+                    maxworthyness_idx = np.argmax(worthinesses)
+                    a4[idx] = 1 - _dists[maxworthyness_idx]
+                    worthyness = worthinesses[maxworthyness_idx]
+                    a1[idx] = worthyness
+                    if worthyness > maxworth:
+                        maxworth_idx = idx
+                        maxworth = worthyness             
+            
+            if maxworth_idx > -1: a3[maxworth_idx]=1 
+            
         # make final state
         state = np.concatenate([a1,a2,a3,a4,edge_dist])
 

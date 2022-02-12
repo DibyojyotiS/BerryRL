@@ -50,21 +50,32 @@ if __name__ == "__main__":
                                         penalize_boundary_hit=True)
 
     def env_reset(berry_env_reset):
-        t=100; n = 20; p = 5
+        t=200; n = 1; p = 5; r = 75
         episode_count = -1
         def reset(**args):
-            nonlocal t,n, episode_count
-            print(episode_count, 'berries picked', berry_env.get_numBerriesPicked())
+            nonlocal t, n, p, r, episode_count
+            print(episode_count, 
+                'berries picked', berry_env.get_numBerriesPicked(),
+                'of', n*p, 'patches', p)
+
+            # random berries
             patch_centroids = np.reshape(np.random.randint(400, 3600, size=2*p), (p,2))
             points = np.reshape(np.random.randint(-t,t, size=2*p*n), (n,p,2))
             berries = np.reshape(patch_centroids+points, (n*p,2))
             sizes = 10*np.random.randint(1,5, size=(n*p,1))
             berry_data = np.column_stack([sizes,berries]).astype(float)
-            initial_pos = berries[np.random.randint(0,n*p)]+70
+
+            # compute an initial position
+            initial_pos = berries[np.random.randint(0,n*p)]
+            rnd_angle = np.random.uniform(0,2*np.pi)
+            initial_pos += (np.random.randint(70,r)*np.array([np.cos(rnd_angle),np.sin(rnd_angle)])).astype(int)
             x = berry_env_reset(berry_data=berry_data, initial_position=initial_pos)
-            berry_env.step(0) # if agent spawned on berry (doen't work at berry center)
-            t= min(t+5, 300)
+
             episode_count+=1
+            t= min(t+5, 300)
+            n= min(10, 1+2*(episode_count//150))
+            r= min(t, r+5)
+            p= 5 + 2*(episode_count//150)
             return x
         return reset
 
@@ -72,6 +83,11 @@ if __name__ == "__main__":
         def step(action):
             state, reward, done, info = berry_env_step(action)
             reward = (pos_sale*(reward > 0) + neg_scale*(reward<=0))*reward
+            try:
+                assert all(np.linalg.norm(state[:,:2], axis=1)>0)
+            except:
+                print(state)
+                assert 1>2
             return state, reward, done, info
         return step
 
@@ -94,8 +110,8 @@ if __name__ == "__main__":
                     skipSteps=20, make_state=make_state_fn, printFreq=1, update_freq=2,
                     polyak_average=True, polyak_tau=0.2, snapshot_dir=save_dir,
                     MaxTrainEpisodes=500, device=TORCH_DEVICE)
-    # trianHist = agent.trainAgent(render=True)
-    trianHist = agent.trainAgent(render=False)
+    trianHist = agent.trainAgent(render=True)
+    # trianHist = agent.trainAgent(render=False)
 
     with open(save_dir+'/history.pkl','wb') as f:
         pickle.dump(trianHist, f)

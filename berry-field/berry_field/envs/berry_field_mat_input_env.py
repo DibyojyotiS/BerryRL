@@ -157,6 +157,7 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.num_berry_collected = 0
 
         if initial_position is not None:
+            self.INITIAL_POSITION = initial_position
             self.position = initial_position
         else:
             self.position = self.INITIAL_POSITION
