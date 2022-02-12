@@ -8,7 +8,7 @@ from DRLagents import (DDQN, PrioritizedExperienceRelpayBuffer,
 from torch.optim.rmsprop import RMSprop
 
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-input_size, make_state_fn = get_make_state(noise_scale=0.1)
+input_size, make_state_fn = get_make_state(avf=0,noise_scale=0.0)
 
 # making the berry env
 berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=0.6, verbose=True)
@@ -23,7 +23,7 @@ buffer = PrioritizedExperienceRelpayBuffer(int(1E6), 0.95, 0.2, 0.001)
 
 
 # load weights
-value_net.load_state_dict(torch.load('.temp_stuffs\savesPERD3QN\\onlinemodel_weights_episode_58.pth'))
+value_net.load_state_dict(torch.load('.temp_stuffs\savesPERD3QN_tmp\\onlinemodel_weights_episode_54.pth'))
 value_net.eval()
 
 agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
