@@ -1,3 +1,5 @@
+import pickle
+
 import numpy as np
 import torch
 import torch.nn.functional as F
@@ -8,7 +10,8 @@ from torch import nn
 from torch.optim.rmsprop import RMSprop
 
 from make_state import get_make_state
-import pickle
+from mylogger import MyLogger
+
 
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -41,6 +44,13 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 
 
 if __name__ == "__main__":
+
+    save_dir = '.temp_stuffs/savesPERD3QN_tmp'
+    print(save_dir)
+
+    # setting up log file
+    logger = MyLogger(save_dir+'/logout.txt',buff=1)
+
     # making the berry env
     berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=float('inf'), 
                                         field_size=(4000,4000),
@@ -104,8 +114,6 @@ if __name__ == "__main__":
     tstrat = epsilonGreedyAction(value_net, 0.5, 0.01, 50)
     estrat = greedyAction(value_net)
 
-    save_dir = '.temp_stuffs/savesPERD3QN'
-    print(save_dir)
     agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
                     skipSteps=20, make_state=make_state_fn, printFreq=1, update_freq=2,
                     polyak_average=True, polyak_tau=0.2, snapshot_dir=save_dir,
