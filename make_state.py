@@ -1,6 +1,10 @@
 from berry_field.envs.utils.misc import getTrueAngles
 import numpy as np
 
+# traits like selecting big or small berries, closest or 
+# somewhere in between can be modeled by a preference 
+# score 'worthiness' as ks*berry_size - kd*distance
+
 # make custom state using the env.step output
 # ks = 0.0001 - the reward rate of env
 # kd = 0.011473 - the drain-rate times half diagonal of obs-space
@@ -35,15 +39,6 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
         if len(raw_observation) > 0:
             sizes = raw_observation[:,2]
             dist = np.linalg.norm(raw_observation[:,:2], axis=1)
-
-            try:
-                assert all(dist>0)
-            except:
-                print('osngoseinapinpawn')
-                print(raw_observation)
-                print(list_raw_observations)
-                assert 0 > 1
-
             directions = raw_observation[:,:2]/dist[:,None]
             angles = getTrueAngles(directions)
             
@@ -84,7 +79,7 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
         # update accumulators
         m1,m2,m3,m4 = a1,a2,a3,a4
 
-        # add noise
+        # add noise - sometimes jolts out a stuck agent
         state = state + np.random.randn(len(state))*noise_scale
 
         # print(state)
