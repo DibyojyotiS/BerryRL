@@ -29,13 +29,12 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
         vec += tmp 
         return vec
 
-    def make_state(list_raw_observations, list_infos):
+    def make_state(trajectory):
         nonlocal m1 ,m2, m3, m4
-        # list_raw_observation a list of observations
+        # trajectory is a list of [observation, info, reward, done]
         # raw_observations [x,y,size]
 
-        raw_observation = list_raw_observations[-1]
-        info = list_infos[-1]
+        raw_observation, info, reward, done = trajectory[-1]
 
         a1,a2,a3,a4 = avf*m1,avf*m2,avf*m3,avf*m4
  
@@ -98,3 +97,32 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
         return state
 
     return 4*num_sectors+4, make_state
+
+
+
+def get_make_transitions(make_state_fn, look_back=100):
+    # lookback set to a high value to practically give s(s-1) transitions
+
+    def make_transitions(trajectory, state, action, nextState):
+        # trajectory is a list of [observation, info, reward, done]
+        # returns transitions as [[state, action, reward, next-state, done],...]
+
+        rewards = np.cumsum([r for o,i,r,d in trajectory])
+        transitions = []
+        for i in range(len(trajectory)):
+            if trajectory[i][2] <= 0: continue
+            berry_hit_state = make_state_fn([trajectory[i]])
+            for j in range(max(0,i-look_back),i):
+                transitions.append([
+                    make_state_fn([trajectory[j]]), # state
+                    action,
+                    rewards[i]-rewards[j],
+                    berry_hit_state,
+                    False
+                ])
+
+        done = trajectory[-1][3]
+        transitions.append([state, action, rewards[-1], nextState, done])
+        return transitions
+
+    return make_transitions

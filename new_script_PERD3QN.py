@@ -9,7 +9,7 @@ from DRLagents import (DDQN, PrioritizedExperienceRelpayBuffer,
 from torch import nn
 from torch.optim.rmsprop import RMSprop
 
-from make_state import get_make_state
+from make_state import get_make_state, get_make_transitions
 from mylogger import MyLogger
 
 
@@ -45,7 +45,7 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 
 if __name__ == "__main__":
 
-    save_dir = '.temp_stuffs/savesPERD3QN_tmp'
+    save_dir = '.temp_stuffs/savesPERD3QN'
     print(save_dir)
 
     # setting up log file
@@ -60,7 +60,7 @@ if __name__ == "__main__":
                                         penalize_boundary_hit=True)
 
     def env_reset(berry_env_reset):
-        t=100; n = 10; p = 5; r = 67
+        t=200; n = 10; p = 5; r = 67
         episode_count = -1
         def reset(**args):
             nonlocal t, n, p, r, episode_count
@@ -87,10 +87,10 @@ if __name__ == "__main__":
             x = berry_env_reset(berry_data=berry_data, initial_position=initial_pos)
 
             episode_count+=1
-            t= min(t+5, 300)
-            n= max(3, 10-2*(episode_count//100))
-            r= min(t, r+1)
-            p= max(3, 5 - 2*(episode_count//200))
+            t= min(t+2, 300)
+            # n= max(3, 10-2*(episode_count//100))
+            # r= min(t, r+1)
+            # p= max(3, 5 - 2*(episode_count//200))
             return x
         return reset
 
@@ -104,22 +104,24 @@ if __name__ == "__main__":
     berry_env.reset = env_reset(berry_env.reset)
     berry_env.step = env_step(berry_env.step)
     input_size, make_state_fn = get_make_state()
+    make_transitions_fn = get_make_transitions(make_state_fn, look_back=100)
 
     # init models
     value_net = make_net(input_size, 9, [16,8,8])
-    buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.001)
+    print(value_net)
 
-    # init optimizers
-    optim = RMSprop(value_net.parameters(), lr=0.0001)
+    # init buffer and optimizers
+    buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.001)
+    optim = RMSprop(value_net.parameters(), lr=0.001)
     tstrat = epsilonGreedyAction(value_net, 0.5, 0.01, 50)
     estrat = greedyAction(value_net)
 
     agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
-                    skipSteps=20, make_state=make_state_fn, printFreq=1, update_freq=2,
-                    polyak_average=True, polyak_tau=0.2, snapshot_dir=save_dir,
-                    MaxTrainEpisodes=500, device=TORCH_DEVICE)
-    # trianHist = agent.trainAgent(render=True)
-    trianHist = agent.trainAgent(render=False)
+                    skipSteps=20, make_state=make_state_fn, make_transitions=make_transitions_fn, 
+                    printFreq=1, update_freq=2, polyak_average=True, polyak_tau=0.2, 
+                    snapshot_dir=save_dir, MaxTrainEpisodes=5, device=TORCH_DEVICE)
+    trianHist = agent.trainAgent(render=True)
+    # trianHist = agent.trainAgent(render=False)
 
     with open(save_dir+'/history.pkl','wb') as f:
         pickle.dump(trianHist, f)

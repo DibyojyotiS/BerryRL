@@ -2,7 +2,7 @@
 from berry_field.envs.berry_field_mat_input_env import BerryFieldEnv_MatInput
 import torch
 from make_state import get_make_state
-from new_script import make_net
+from snippets.new_script import make_net
 from DRLagents import (VPG, softMaxAction)
 from torch.optim.rmsprop import RMSprop
 
