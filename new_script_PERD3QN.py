@@ -65,11 +65,12 @@ if __name__ == "__main__":
         episode_count = -1
         def reset(**args):
             nonlocal t, n, p, r, episode_count
-            
+
             print('episode:',episode_count, 
                 'berries picked:', berry_env.get_numBerriesPicked(),
-                'of', n*p, 'patches:', p)
+                'of', n*p, 'patches:', p, end='')
             if episode_count>=0:print('positive-in-buffer:',sum(buffer.buffer['reward'].cpu()>0).item())
+            else: print()
 
             # random berries
             patch_centroids = np.reshape(np.random.randint(400, 3600, size=2*p), (p,2))
