@@ -20,7 +20,7 @@ def get_make_state(angle = 45, avf = 0.8, noise_scale=0.01, kd=0.011473, ks=0.00
 
     num_sectors = 360//angle
 
-    # accumulators - for some sort of continuity
+    # traces - for some sort of continuity
     m1 = np.zeros(num_sectors) # max-worth of each sector
     m2 = np.zeros(num_sectors) # stores densities of each sector
     m3 = np.zeros(num_sectors) # indicates the sector with the max worthy berry
