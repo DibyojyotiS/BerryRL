@@ -52,6 +52,7 @@ if __name__ == "__main__":
     logger = MyLogger(save_dir+'/logout.txt',buff=1)
 
     # making the berry env
+    buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.001)
     berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=float('inf'), 
                                         field_size=(4000,4000),
                                         initial_position=(2000,2000),
@@ -64,9 +65,11 @@ if __name__ == "__main__":
         episode_count = -1
         def reset(**args):
             nonlocal t, n, p, r, episode_count
-            print(episode_count, 
-                'berries picked', berry_env.get_numBerriesPicked(),
-                'of', n*p, 'patches', p)
+            
+            print('episode:',episode_count, 
+                'berries picked:', berry_env.get_numBerriesPicked(),
+                'of', n*p, 'patches:', p)
+            if episode_count>=0:print('positive-in-buffer:',sum(buffer.buffer['reward'].cpu()>0).item())
 
             # random berries
             patch_centroids = np.reshape(np.random.randint(400, 3600, size=2*p), (p,2))
@@ -95,11 +98,11 @@ if __name__ == "__main__":
         return reset
 
     def env_step(berry_env_step):
-        print('no living cost: reward = (reward>0 or reward<=-1)*reward')
+        print('no living cost: reward=(100*(reward>0)+(reward<=-1))*reward')
         def step(action):
             state, reward, done, info = berry_env_step(action)
             # reward = (10*(reward > 0) + (reward<=0))*reward
-            reward = (reward>0 or reward<=-1)*reward # no living cost
+            reward = (100*(reward>0) + (reward<=-1))*reward # no living cost
             return state, reward, done, info
         return step
 
@@ -113,7 +116,7 @@ if __name__ == "__main__":
     print(value_net)
 
     # init buffer and optimizers
-    buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.001)
+    # buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.001)
     optim = RMSprop(value_net.parameters(), lr=0.0001)
     tstrat = epsilonGreedyAction(value_net, 0.5, 0.01, 50)
     estrat = greedyAction(value_net)
