@@ -6,18 +6,21 @@ import numpy as np
 # score 'worthiness' as ks*berry_size - kd*distance
 
 # make custom state using the env.step output
-# ks = 0.0001 - the reward rate of env
-# kd = 0.011473 - the drain-rate times half diagonal of obs-space
-def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.01):
+# 0.0001 - the reward rate of env
+# 0.011473 - the drain-rate times half diagonal of obs-space
+def get_make_state(angle = 45, avf = 0.1, noise_scale=0.01, kd=0.011473, ks=0.0001, maxBerrySize=50):
 
     print('angle:', angle, ', kd:', kd, ', ks:', ks, 
             ', avf:', avf, ', noise_scale:', noise_scale)
+        
+    kd = kd/(ks*maxBerrySize)
+    ks = 1/maxBerrySize
 
     num_sectors = 360//angle
 
     # accumulators - for some sort of continuity
-    m1 = np.zeros(num_sectors) # max-worth of each sector (transformed to 0-1 range, independently for each state)
-    m2 = np.zeros(num_sectors) # stores densities of each sector (transformed to 0-1 range, independently for each state)
+    m1 = np.zeros(num_sectors) # max-worth of each sector
+    m2 = np.zeros(num_sectors) # stores densities of each sector
     m3 = np.zeros(num_sectors) # indicates the sector with the max worthy berry
     m4 = np.zeros(num_sectors) # a mesure of distance to max worthy in each sector
 
@@ -41,7 +44,7 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
         edge_dist=np.ones(4) if info is None else info['scaled_dist_from_edge']
 
         if len(raw_observation) > 0:
-            hasberry = np.zeros(num_sectors)
+            # hasberry = np.zeros(num_sectors)
             sizes = raw_observation[:,2]
             dist = np.linalg.norm(raw_observation[:,:2], axis=1)
             directions = raw_observation[:,:2]/dist[:,None]
@@ -61,7 +64,7 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
                     idx = x//angle
                     _sizes = sizes[args]
                     _dists = dist[args]
-                    hasberry[idx] = 1
+                    # hasberry[idx] = 1
 
                     # density of sector
                     density = np.sum(_sizes**2)/(1920*1080)
@@ -74,15 +77,9 @@ def get_make_state(angle = 45, kd=0.011473, ks=0.0001, avf = 0.1, noise_scale=0.
                     a1[idx] = worthyness = worthinesses[maxworthyness_idx]
                     if worthyness > maxworth:
                         maxworth_idx = idx
-                        maxworth = worthyness             
-            
+                        maxworth = worthyness    
+
             if maxworth_idx > -1: a3[maxworth_idx]=1 
-
-            # 0-1 normalize max-worths(a1) for sectors with berries
-            a1 = scale_01(a1, hasberry)
-
-            # 0-1 normalize densities(a2) for sectors with berries
-            a2 = scale_01(a2, hasberry)
             
         # make final state
         state = np.concatenate([a1,a2,a3,a4,edge_dist])
