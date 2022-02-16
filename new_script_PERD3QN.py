@@ -114,7 +114,7 @@ if __name__ == "__main__":
 
     # init buffer and optimizers
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.001)
-    optim = RMSprop(value_net.parameters(), lr=0.001)
+    optim = RMSprop(value_net.parameters(), lr=0.0001)
     tstrat = epsilonGreedyAction(value_net, 0.5, 0.01, 50)
     estrat = greedyAction(value_net)
 

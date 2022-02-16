@@ -8,13 +8,15 @@ import numpy as np
 # make custom state using the env.step output
 # 0.0001 - the reward rate of env
 # 0.011473 - the drain-rate times half diagonal of obs-space
-def get_make_state(angle = 45, avf = 0.1, noise_scale=0.01, kd=0.011473, ks=0.0001, maxBerrySize=50):
+def get_make_state(angle = 45, avf = 0.1, noise_scale=0.01, kd=0.011473, ks=0.0001, BerrySizeRange=[10,50]):
 
     print('angle:', angle, ', kd:', kd, ', ks:', ks, 
             ', avf:', avf, ', noise_scale:', noise_scale)
         
-    kd = kd/(ks*maxBerrySize)
-    ks = 1/maxBerrySize
+    minBerrySize, maxBerrySize = BerrySizeRange
+    denom = ks*maxBerrySize + kd
+    ks = ks/denom
+    kd = kd/denom
 
     num_sectors = 360//angle
 
@@ -32,6 +34,7 @@ def get_make_state(angle = 45, avf = 0.1, noise_scale=0.01, kd=0.011473, ks=0.00
         vec += tmp 
         return vec
 
+    ROOT_2_INV = 0.5**(0.5)
     def make_state(trajectory):
         nonlocal m1 ,m2, m3, m4
         # trajectory is a list of [observation, info, reward, done]
@@ -50,6 +53,7 @@ def get_make_state(angle = 45, avf = 0.1, noise_scale=0.01, kd=0.011473, ks=0.00
             directions = raw_observation[:,:2]/dist[:,None]
             angles = getTrueAngles(directions)
             
+            dist = ROOT_2_INV*dist # range in 0 to 1
             maxworth = float('-inf')
             maxworth_idx = -1
             for x in range(0,360,angle):
@@ -71,7 +75,7 @@ def get_make_state(angle = 45, avf = 0.1, noise_scale=0.01, kd=0.011473, ks=0.00
                     a2[idx] = density*100
 
                     # max worthy
-                    worthinesses= ks*_sizes-kd*_dists
+                    worthinesses= ks*_sizes-kd*_dists + kd
                     maxworthyness_idx = np.argmax(worthinesses)
                     a4[idx] = 1 - _dists[maxworthyness_idx]
                     a1[idx] = worthyness = worthinesses[maxworthyness_idx]
@@ -115,7 +119,7 @@ def get_make_transitions(make_state_fn, look_back=100):
                     action,
                     rewards[i]-rewards[j],
                     berry_hit_state,
-                    False
+                    True
                 ])
 
         done = trajectory[-1][3]
