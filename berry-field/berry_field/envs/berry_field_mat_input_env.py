@@ -102,7 +102,7 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.num_steps = 0
         self.action_space = gym.spaces.Discrete(9)
         self.num_berry_collected = 0
-        self.cummulative_reward = 0.5
+        self.total_juice = 0.5
         self.no_action_r_threshold = no_action_r_threshold
 
         self.action_switcher = {
@@ -152,7 +152,7 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.done = False
         self.num_steps = 0
         self.viewer = None
-        self.cummulative_reward = 0.5
+        self.total_juice = 0.5
         self.current_action = 0
         self.num_berry_collected = 0
 
@@ -180,7 +180,7 @@ class BerryFieldEnv_MatInput(gym.Env):
 
     def step(self, action):
 
-        if self.no_action_r_threshold > self.cummulative_reward and action == 0:
+        if self.no_action_r_threshold > self.total_juice and action == 0:
             action = np.random.randint(0, 9)
 
         self.num_steps+=1
@@ -197,7 +197,7 @@ class BerryFieldEnv_MatInput(gym.Env):
         juice_reward = self._pick_collided_berries()
         living_cost = - self.DRAIN_RATE*(action != 0)
         reward = juice_reward + living_cost
-        self.cummulative_reward += reward
+        self.total_juice += reward
 
         # for curisity reward (don't add to self.cummulative_reward)
         if self.reward_curiosity:
@@ -209,7 +209,7 @@ class BerryFieldEnv_MatInput(gym.Env):
 
         # did the episode just end?
         self.done = True if self.num_steps >= self.MAX_STEPS or \
-                            self.cummulative_reward <= 0 or \
+                            self.total_juice <= 0 or \
                             self.END_ON_BOUNDARY_HIT and self._has_hit_boundary() \
                          else False
         
@@ -230,7 +230,7 @@ class BerryFieldEnv_MatInput(gym.Env):
         info = {
             # 'raw_observation': self.raw_observation(),
             'position':self.position,
-            'cummulative_reward': self.cummulative_reward,
+            'total_juice': self.total_juice,
             'relative_coordinates': [self.position[0] - self.INITIAL_POSITION[0], 
                                      self.position[1] - self.INITIAL_POSITION[1]],
             'scaled_dist_from_edge':[
@@ -384,7 +384,7 @@ class BerryFieldEnv_MatInput(gym.Env):
             self.viewer.add_onetime(line)
 
         # draw position and total reward
-        label = pyglet.text.Label(f'x:{self.position[0]} y:{self.position[1]} a:{self.current_action} \t total-reward:{self.cummulative_reward:.4f} Step: {self.num_steps}', 
+        label = pyglet.text.Label(f'x:{self.position[0]} y:{self.position[1]} a:{self.current_action} \t total-reward:{self.total_juice:.4f} Step: {self.num_steps}', 
                                     x=screenw*0.1, y=screenh*0.9, color=(0, 0, 0, 255))
         self.viewer.add_onetimeText(label)
 

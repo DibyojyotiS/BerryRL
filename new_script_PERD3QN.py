@@ -94,10 +94,12 @@ if __name__ == "__main__":
             return x
         return reset
 
-    def env_step(berry_env_step, pos_sale=100, neg_scale=10):
+    def env_step(berry_env_step):
+        print('no living cost: reward = (reward>0 or reward<=-1)*reward')
         def step(action):
             state, reward, done, info = berry_env_step(action)
-            reward = (pos_sale*(reward > 0) + neg_scale*(reward<=0))*reward
+            # reward = (10*(reward > 0) + (reward<=0))*reward
+            reward = (reward>0 or reward<=-1)*reward # no living cost
             return state, reward, done, info
         return step
 
