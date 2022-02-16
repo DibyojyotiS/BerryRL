@@ -119,7 +119,7 @@ def get_make_transitions(make_state_fn, look_back=100):
                     action,
                     rewards[i]-rewards[j],
                     berry_hit_state,
-                    True
+                    False
                 ])
 
         done = trajectory[-1][3]

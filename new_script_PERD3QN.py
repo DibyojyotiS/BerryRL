@@ -45,7 +45,7 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 
 if __name__ == "__main__":
 
-    save_dir = '.temp_stuffs/savesPERD3QN'
+    save_dir = '.temp_stuffs/savesPERD3QN-false'
     print(save_dir)
 
     # setting up log file
@@ -67,7 +67,7 @@ if __name__ == "__main__":
             nonlocal t, n, p, r, episode_count
 
             if episode_count>=0:
-                print('episode:',episode_count, 
+                print('-> episode:',episode_count, 
                     'berries picked:', berry_env.get_numBerriesPicked(),
                     'of', n*p, 'patches:', p, 'positive-in-buffer:',
                     sum(buffer.buffer['reward'].cpu()>0).item())
