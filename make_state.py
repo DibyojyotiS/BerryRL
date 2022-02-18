@@ -8,31 +8,25 @@ import numpy as np
 # make custom state using the env.step output
 # 0.0001 - the reward rate of env
 # 0.011473 - the drain-rate times half diagonal of obs-space
-def get_make_state(angle = 45, avf = 0.8, noise_scale=0.01, kd=0.011473, ks=0.0001, BerrySizeRange=[10,50]):
+def get_make_state(angle = 45, avf = 0.8, noise_scale=0.01, kd=0.011473, ks=0.0001, offset=0.01, BerrySizeRange=[10,50]):
 
-    print('angle:', angle, ', kd:', kd, ', ks:', ks, 
-            ', avf:', avf, ', noise_scale:', noise_scale)
+    print('angle:', angle, ', kd:', kd, ', ks:', ks, ', avf:', avf, 
+            ', offset:',offset, ', noise_scale:', noise_scale)
         
+    # for computation of berry worth, can help to change 
+    # the agent's preference of different sizes of berries. 
     minBerrySize, maxBerrySize = BerrySizeRange
-    denom = ks*maxBerrySize + kd
-    ks = ks/denom
-    kd = kd/denom
+    min_val = ks*minBerrySize - kd
+    max_val = (ks*maxBerrySize - min_val)/(1-offset)
+    ks/=max_val; kd/=max_val; min_val/=max_val
+    worth_function = lambda size,dist: ks*size-kd*dist-min_val+offset
 
     num_sectors = 360//angle
-
     # traces - for some sort of continuity
     m1 = np.zeros(num_sectors) # max-worth of each sector
     m2 = np.zeros(num_sectors) # stores densities of each sector
     m3 = np.zeros(num_sectors) # indicates the sector with the max worthy berry
     m4 = np.zeros(num_sectors) # a mesure of distance to max worthy in each sector
-
-    def scale_01(vec,mask):
-        tmp = vec*mask
-        vec = vec - tmp
-        tmp -= tmp.min()
-        tmp /= (tmp.max()+1e-8)
-        vec += tmp 
-        return vec
 
     ROOT_2_INV = 0.5**(0.5)
     def make_state(trajectory):
@@ -40,14 +34,13 @@ def get_make_state(angle = 45, avf = 0.8, noise_scale=0.01, kd=0.011473, ks=0.00
         # trajectory is a list of [observation, info, reward, done]
         # raw_observations [x,y,size]
 
-        raw_observation, info, reward, done = trajectory[-1]
-
+        # trace of previous state
         a1,a2,a3,a4 = avf*m1,avf*m2,avf*m3,avf*m4
- 
-        edge_dist=np.ones(4) if info is None else info['scaled_dist_from_edge']
 
+        raw_observation, info, reward, done = trajectory[-1]
+        edge_dist=np.ones(4) if info is None else info['scaled_dist_from_edge']
+        
         if len(raw_observation) > 0:
-            # hasberry = np.zeros(num_sectors)
             sizes = raw_observation[:,2]
             dist = np.linalg.norm(raw_observation[:,:2], axis=1)
             directions = raw_observation[:,:2]/dist[:,None]
@@ -57,8 +50,7 @@ def get_make_state(angle = 45, avf = 0.8, noise_scale=0.01, kd=0.011473, ks=0.00
             maxworth = float('-inf')
             maxworth_idx = -1
             for x in range(0,360,angle):
-                sectorL = (x-angle/2)%360
-                sectorR = (x+angle/2)
+                sectorL, sectorR = (x-angle/2)%360, (x+angle/2)
                 if sectorL < sectorR:
                     args = np.argwhere((angles>=sectorL)&(angles<=sectorR))
                 else:
@@ -68,14 +60,11 @@ def get_make_state(angle = 45, avf = 0.8, noise_scale=0.01, kd=0.011473, ks=0.00
                     idx = x//angle
                     _sizes = sizes[args]
                     _dists = dist[args]
-                    # hasberry[idx] = 1
-
                     # density of sector
                     density = np.sum(_sizes**2)/(1920*1080)
                     a2[idx] = density*100
-
                     # max worthy
-                    worthinesses= ks*_sizes-kd*_dists + kd
+                    worthinesses= worth_function(_sizes,_dists)
                     maxworthyness_idx = np.argmax(worthinesses)
                     a4[idx] = 1 - _dists[maxworthyness_idx]
                     a1[idx] = worthyness = worthinesses[maxworthyness_idx]
@@ -85,14 +74,14 @@ def get_make_state(angle = 45, avf = 0.8, noise_scale=0.01, kd=0.011473, ks=0.00
 
             if maxworth_idx > -1: a3[maxworth_idx]=1 
             
-        # make final state
+        # make final state & add noise - sometimes jolts out a stuck agent
         state = np.concatenate([a1,a2,a3,a4,edge_dist])
+        state += np.random.randn(len(state))*noise_scale
 
-        # update accumulators
-        m1,m2,m3,m4 = a1,a2,a3,a4
-
-        # add noise - sometimes jolts out a stuck agent
-        state = state + np.random.randn(len(state))*noise_scale
+        if done: 
+            m1[:]=m2[:]=m3[:]=m4[:]=0 # reset memory when done
+        else:
+            m1,m2,m3,m4 = a1,a2,a3,a4 # update memories
 
         # print(state)
         return state
@@ -101,21 +90,24 @@ def get_make_state(angle = 45, avf = 0.8, noise_scale=0.01, kd=0.011473, ks=0.00
 
 
 
-def get_make_transitions(make_state_fn, look_back=100):
+def get_make_transitions(make_state, look_back=100, min_jump=5):
     # lookback set to a high value to practically give s(s-1) transitions
 
+    # my bad, this requires its own make-state function since the above 
+    # make-state is state-full
     def make_transitions(trajectory, state, action, nextState):
         # trajectory is a list of [observation, info, reward, done]
         # returns transitions as [[state, action, reward, next-state, done],...]
+        # need to recover mk from state
 
         rewards = np.cumsum([r for o,i,r,d in trajectory])
         transitions = []
         for i in range(len(trajectory)):
             if trajectory[i][2] <= 0: continue
-            berry_hit_state = make_state_fn([trajectory[i]])
+            berry_hit_state = make_state([trajectory[i]])
             for j in range(max(0,i-look_back),i):
                 transitions.append([
-                    make_state_fn([trajectory[j]]), # state
+                    make_state([trajectory[j]]), # state
                     action,
                     rewards[i]-rewards[j],
                     berry_hit_state,

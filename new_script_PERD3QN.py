@@ -45,7 +45,7 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 
 if __name__ == "__main__":
 
-    save_dir = '.temp_stuffs/savesPERD3QN'
+    save_dir = '.temp_stuffs/savesPERD3QN-1'
     print(save_dir)
 
     # setting up log file
