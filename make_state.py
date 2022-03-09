@@ -18,6 +18,7 @@ def get_make_state(angle = 45, avf = 0.9, noise_scale=0.01, kd=0.011473, ks=0.00
 
     num_sectors = 360//angle
     ROOT_2_INV = 0.5**(0.5)
+    EPSILON = 1E-8
 
     # for computation of berry worth, can help to change 
     # the agent's preference of different sizes of berries. 
@@ -65,7 +66,7 @@ def get_make_state(angle = 45, avf = 0.9, noise_scale=0.01, kd=0.011473, ks=0.00
 
         if len(raw_observation) > 0:
             sizes = raw_observation[:,2]
-            dist = np.linalg.norm(raw_observation[:,:2], axis=1)
+            dist = np.linalg.norm(raw_observation[:,:2], axis=1) + EPSILON
             directions = raw_observation[:,:2]/dist[:,None]
             angles = getTrueAngles(directions)
             

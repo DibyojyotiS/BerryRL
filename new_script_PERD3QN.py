@@ -46,7 +46,7 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 
 if __name__ == "__main__":
 
-    save_dir = '.temp_stuffs/PERD3QN-state-with-action'
+    save_dir = '.temp_stuffs/with-negative-rewards/PERD3QN-state-with-action'
     print(save_dir)
 
     # setting up log file
@@ -104,12 +104,12 @@ if __name__ == "__main__":
         return reset
 
     def env_step(berry_env_step):
-        print('no living cost: reward=(100*(reward>0)+(reward<=-1))*reward')
-        # print('all rewards scaled by 100')
+        # print('no living cost: reward=(100*(reward>0)+(reward<=-1))*reward')
+        print('all rewards scaled by 100 (except boundary hit)')
         def step(action):
             state, reward, done, info = berry_env_step(action)
-            # reward = 100*reward
-            reward = (100*(reward>0) + (reward<=-1))*reward # no living cost
+            if reward != -1: reward = 100*reward
+            # reward = (100*(reward>0) + (reward<=-1))*reward # no living cost
             return state, reward, done, info
         return step
 
@@ -122,6 +122,9 @@ if __name__ == "__main__":
     # init models
     value_net = make_net(input_size, 9, [16,8,8])
     print(value_net)
+
+    # load model trained without negative rewards
+    value_net.load_state_dict(torch.load('.temp_stuffs/w.o-negative-rewards/PERD3QN-state-with-action/onlinemodel_weights_episode_42.pth'))
 
     # init buffer and optimizers
     optim = RMSprop(value_net.parameters(), lr=0.0001)
