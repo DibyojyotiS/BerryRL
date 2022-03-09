@@ -46,7 +46,7 @@ def make_net(inDim, outDim, hDim, output_probs=False):
 
 if __name__ == "__main__":
 
-    save_dir = '.temp_stuffs/savesPERD3QN-01'
+    save_dir = '.temp_stuffs/PERD3QN-state-with-action'
     print(save_dir)
 
     # setting up log file
@@ -54,6 +54,7 @@ if __name__ == "__main__":
 
     # copy make_state.py in save_dir
     shutil.copy2('make_state.py', save_dir)
+    shutil.copy2('new_script_PERD3QN.py', save_dir)
 
     # making the berry env
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)
