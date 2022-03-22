@@ -109,7 +109,8 @@ def get_make_state(angle = 45, avf = 0.9, noise_scale=0.01, kd=0.011473, ks=0.00
         # need to recover mk from state
         nonlocal _state_, _prev_state_
 
-        temp = _state_
+        state_copy = _state_
+        prev_state_copy = _prev_state_
 
         rewards = np.cumsum([r for o,i,r,d in trajectory])
         transitions = []
@@ -118,11 +119,12 @@ def get_make_state(angle = 45, avf = 0.9, noise_scale=0.01, kd=0.011473, ks=0.00
 
             # set the state to one before calling 
             # make_state for this trajectory
-            _state_ = np.copy(_prev_state_)
+            _state_ = np.copy(prev_state_copy)
             berry_hit_state = make_state([trajectory[i]], action)
 
             for j in range(max(0,i-look_back),i):
-                _state_ = np.copy(_prev_state_)
+                if rewards[i]-rewards[j] < 0: continue
+                _state_ = np.copy(prev_state_copy)
                 transitions.append([
                     make_state([trajectory[j]], action), # state
                     action,
@@ -134,7 +136,7 @@ def get_make_state(angle = 45, avf = 0.9, noise_scale=0.01, kd=0.011473, ks=0.00
         done = trajectory[-1][3]
         transitions.append([state, action, rewards[-1], nextState, done])
 
-        _state_ = temp
+        _state_ = state_copy
         return transitions
 
     return _state_.shape[0], make_state, make_transitions

@@ -1,13 +1,16 @@
+# TRAIN AN AGENT IN A BABY ENVIRONMENT WITHOUT THE LIVING COST
+
 import pickle
 import shutil
 import numpy as np
 import torch
-import torch.nn.functional as F
+
 from berry_field.envs.berry_field_mat_input_env import BerryFieldEnv_MatInput
 from DRLagents import (DDQN, PrioritizedExperienceRelpayBuffer,
                        epsilonGreedyAction, greedyAction)
-from torch import nn
+
 from torch.optim.rmsprop import RMSprop
+from make_net import make_net
 
 from make_state import get_make_state
 # from make_state import get_make_transitions
@@ -16,37 +19,10 @@ from mylogger import MyLogger
 
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-def make_net(inDim, outDim, hDim, output_probs=False):
-    class net(nn.Module):
-        def __init__(self, inDim, outDim, hDim, activation = F.relu):
-            super(net, self).__init__()
-            self.outDim = outDim
-            self.inputlayer = nn.Linear(inDim, hDim[0])
-            self.hiddenlayers = nn.ModuleList([nn.Linear(hDim[i], hDim[i+1]) for i in range(len(hDim)-1)])
-            self.outputlayer = nn.Linear(hDim[-1], outDim)
-            self.activation = activation
-            if outDim > 1 and not output_probs:
-                self.actadvs = nn.Linear(hDim[-1], outDim)
-
-        def forward(self, x: torch.Tensor) -> torch.Tensor:
-            t = self.activation(self.inputlayer(x))
-            for layer in self.hiddenlayers:
-                t = self.activation(layer(t))
-            o = self.outputlayer(t) # value or probs
-            if output_probs: o = F.log_softmax(o, -1)
-            elif self.outDim > 1:
-                advs = self.actadvs(t)
-                o = o + (advs - advs.mean())
-            return o
-    
-    netw = net(inDim, outDim, hDim)
-    netw.to(TORCH_DEVICE)
-    return netw
-
 
 if __name__ == "__main__":
 
-    save_dir = '.temp_stuffs/with-negative-rewards/PERD3QN-state-with-action'
+    save_dir = '.temp_stuffs/w.o-negative-rewards/PERD3QN-state-with-action'
     print(save_dir)
 
     # setting up log file
@@ -54,7 +30,8 @@ if __name__ == "__main__":
 
     # copy make_state.py in save_dir
     shutil.copy2('make_state.py', save_dir)
-    shutil.copy2('new_script_PERD3QN.py', save_dir)
+    shutil.copy2('make_net.py', save_dir)
+    shutil.copy2('train_wo_living_cost_PERD3QN.py', save_dir)
 
     # making the berry env
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)
@@ -71,7 +48,7 @@ if __name__ == "__main__":
         def reset(**args):
             nonlocal t, n, p, r, episode_count
 
-            if episode_count>=0:
+            if episode_count>=0 and buffer.buffer is not None:
                 print('-> episode:',episode_count, 
                     'berries picked:', berry_env.get_numBerriesPicked(),
                     'of', n*p, 'patches:', p, 'positive-in-buffer:',
@@ -101,15 +78,16 @@ if __name__ == "__main__":
             # r= min(t, r+1)
             # p= max(3, 5 - 2*(episode_count//200))
             return x
+            
         return reset
 
     def env_step(berry_env_step):
-        # print('no living cost: reward=(100*(reward>0)+(reward<=-1))*reward')
-        print('all rewards scaled by 100 (except boundary hit)')
+        print('no living cost: reward=(100*(reward>0)+(reward<=-1))*reward')
+        # print('all rewards scaled by 100 (except boundary hit)')
         def step(action):
             state, reward, done, info = berry_env_step(action)
-            if reward != -1: reward = 100*reward
-            # reward = (100*(reward>0) + (reward<=-1))*reward # no living cost
+            # if reward != -1: reward = 100*reward
+            reward = (100*(reward>0) + (reward<=-1))*reward # no living cost
             return state, reward, done, info
         return step
 
@@ -122,9 +100,6 @@ if __name__ == "__main__":
     # init models
     value_net = make_net(input_size, 9, [16,8,8])
     print(value_net)
-
-    # load model trained without negative rewards
-    value_net.load_state_dict(torch.load('.temp_stuffs/w.o-negative-rewards/PERD3QN-state-with-action/onlinemodel_weights_episode_42.pth'))
 
     # init buffer and optimizers
     optim = RMSprop(value_net.parameters(), lr=0.0001)
