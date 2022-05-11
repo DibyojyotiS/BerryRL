@@ -1,4 +1,6 @@
 import os
+import pickle
+import time
 from typing import Tuple
 from berry_field.envs.utils.misc import argsort_clockwise, getTrueAngles
 
@@ -21,7 +23,7 @@ MAX_DISPLAY_SIZE = (8*80, 4.5*80) # as (width, height)
 FILE_PATHS = list(map(lambda x: os.path.join(ABS_PATH, x), DATA_PATHS))
 
 
-class BerryFieldEnv_MatInput(gym.Env):
+class BerryFieldEnv(gym.Env):
     def __init__(self,
 
                 # environment defaults, all sizes are as (width, height)
@@ -33,7 +35,7 @@ class BerryFieldEnv_MatInput(gym.Env):
                 circular_berries=True, circular_agent=True,
 
                 # can specify only your berries
-                user_berry_data = None, # [size, x,y]
+                user_berry_data = None, # [patch-no, size, x,y]
 
                 # for curiosity reward
                 reward_curiosity = False, reward_curiosity_beta=0.25,
@@ -46,6 +48,10 @@ class BerryFieldEnv_MatInput(gym.Env):
                 no_action_r_threshold = -float('inf'),
                 end_on_boundary_hit = False,
                 penalize_boundary_hit = False,
+
+                # for analytics
+                enable_analytics = True,
+                analytics_folder = 'analytics-berry-field'
                 ):
         '''
         ## Environment\n
@@ -80,7 +86,7 @@ class BerryFieldEnv_MatInput(gym.Env):
             penalize_boundary_hit: reward -1 on hitting the boundary
 
         '''
-        super(BerryFieldEnv_MatInput, self).__init__()
+        super(BerryFieldEnv, self).__init__()
 
         # Initializing variables
         self.FIELD_SIZE = field_size
@@ -104,7 +110,6 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.num_berry_collected = 0
         self.total_juice = 0.5
         self.no_action_r_threshold = no_action_r_threshold
-
         self.action_switcher = {
             0: (0, 0),
             1: (0, 1),
@@ -117,15 +122,16 @@ class BerryFieldEnv_MatInput(gym.Env):
             8: (-1, 1)
         }
 
-        # make the berry collision tree (in other words: populate the field)
-        berry_data = self._read_csv(FILE_PATHS) if user_berry_data is None else user_berry_data 
-        bounding_boxes, boxIds = self._create_bounding_boxes_and_Ids(berry_data)
-        self.berry_radii = berry_data[:,0]/2 # [x,y,width,height]
-        self.BERRY_COLLISION_TREE = collision_tree(bounding_boxes, boxIds, self.CIRCULAR_BERRIES, self.berry_radii) 
-        self.berry_collision_tree = copy.deepcopy(self.BERRY_COLLISION_TREE) # only this copy will be modified during the runtime
+
+        # for the rendering
+        self.viewer = None
+        self.current_action = 0
 
         # announce picked berries with verbose
         self.verbose = verbose
+
+        # init the structures (mainly collision trees)
+        self.init_berryfield(user_berry_data)
 
         # for curiosity reward
         self.reward_curiosity = reward_curiosity
@@ -138,9 +144,51 @@ class BerryFieldEnv_MatInput(gym.Env):
             self.size_visited_grid = (numx, numy)
             self.visited_grids = np.zeros((numx, numy))
 
-        # for the rendering
-        self.viewer = None
-        self.current_action = 0
+        # for analytics
+        self.analysis_enabled = enable_analytics
+        self.analytics_folder = os.path.join(analytics_folder, '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
+        self.num_resets = 0 # used to index the analysis saves
+        if enable_analytics: self.init_analysis(self.analytics_folder)
+
+    
+    def init_berryfield(self, user_berry_data):
+        """ Inits the collision trees and other structures to make the field """
+        # load and process the data
+        berry_data = self._read_csv(FILE_PATHS) if user_berry_data is None else user_berry_data # [patch-no, size, x, y]
+        berry_radii = berry_data[:,1]
+        bounding_boxes = self._create_bounding_boxes(berry_data) # [x,y,width,height]
+        patch_boxes = self._get_patch_boxes(berry_data) # compute patch boundaries using berry data assuming berries are already alloted to patches
+
+        # make the berry collision tree (in other words: populate the field)
+        self.ORIGINAL_BERRY_COLLISION_TREE = collision_tree(bounding_boxes, self.CIRCULAR_BERRIES, berry_radii) 
+
+        # collision tree to detect the patch the agent is in
+        self.ORIGINAL_PATCH_TREE = collision_tree(patch_boxes)
+
+        # a look-up to get the patch for any berry
+        self.BERRY_TO_PATCH_LOOKUP = berry_data[:,0].astype(int)
+
+        # copies
+        self.patch_tree = copy.deepcopy(self.ORIGINAL_PATCH_TREE)
+        self.berry_collision_tree = copy.deepcopy(self.ORIGINAL_BERRY_COLLISION_TREE) # only this copy will be modified during the runtime
+        self.patch_visited = {i:0 for i in range(len(self.patch_tree.boxes))}
+
+
+    def reset_berryfield(self):
+        """ resets the structures of berry-field to the original states """
+        self.berry_collision_tree = copy.deepcopy(self.ORIGINAL_BERRY_COLLISION_TREE)
+        self.patch_visited = {i:0 for i in range(len(self.patch_tree.boxes))}
+
+
+    def init_analysis(self, save_folder):
+        # create the save-folder to save analytics
+        save_Folder = os.path.join(save_folder, f'{self.num_resets}')
+        if not os.path.exists(save_Folder): os.makedirs(save_Folder)
+
+        # save the data neccessary to rebuild the same berry-field
+        with open(os.path.join(save_Folder, 'berryenv.obj'), 'wb') as f:
+            pickle.dump(self, f,pickle.HIGHEST_PROTOCOL)
+
 
 
     def reset(self, info=False, initial_position=None, berry_data=None):
@@ -155,30 +203,26 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.total_juice = 0.5
         self.current_action = 0
         self.num_berry_collected = 0
+        
+        # increment resets
+        self.num_resets += 1
 
-        if initial_position is not None:
-            self.INITIAL_POSITION = initial_position
-            self.position = initial_position
-        else:
-            self.position = self.INITIAL_POSITION
+        self.position = initial_position if initial_position is not None else self.INITIAL_POSITION
 
-        if self.reward_curiosity:
-            self.visited_grids = np.zeros(self.size_visited_grid)
+        if self.reward_curiosity: self.visited_grids = np.zeros(self.size_visited_grid)
 
-        if berry_data is not None:
-            bounding_boxes, boxIds = self._create_bounding_boxes_and_Ids(berry_data)
-            self.berry_radii = berry_data[:,0]/2 # [x,y,width,height]
-            self.berry_collision_tree = collision_tree(bounding_boxes, boxIds, self.CIRCULAR_BERRIES, self.berry_radii) 
-        else:
-            self.berry_collision_tree = copy.deepcopy(self.BERRY_COLLISION_TREE)
+        if berry_data is not None: self.init_berryfield(berry_data)
+        else: self.reset_berryfield()
 
-        if info:
-            return self.raw_observation(), self.get_info()
-        else:
-            return self.raw_observation()
+        if self.analysis_enabled: self.init_analysis(self.analytics_folder)
+
+        if info: return self.raw_observation(), self.get_info()
+        else: return self.raw_observation()
 
 
     def step(self, action):
+
+        assert not self.done
 
         if self.no_action_r_threshold > self.total_juice and action == 0:
             action = np.random.randint(0, 9)
@@ -227,12 +271,16 @@ class BerryFieldEnv_MatInput(gym.Env):
         w,h = self.OBSERVATION_SPACE_SIZE
         W,H = self.FIELD_SIZE
         
+        # scaled distance (x,y) relative to center of the patch the agent is in
+        # if the agent is in no patch, then the all 1.0 is returned
+
+
         info = {
-            # 'raw_observation': self.raw_observation(),
+            'patch-relative':'',
             'position':self.position,
             'total_juice': self.total_juice,
-            'relative_coordinates': [self.position[0] - self.INITIAL_POSITION[0], 
-                                     self.position[1] - self.INITIAL_POSITION[1]],
+            'relative_coordinates': [x - self.INITIAL_POSITION[0], 
+                                     y - self.INITIAL_POSITION[1]],
             'scaled_dist_from_edge':[
                 1 - max(0, w//2 - x)/(w//2), # scaled distance from left edge; 1 if not in view
                 1 - max(0, x+w//2 - W)/(w//2), # scaled distance from right edge; 1 if not in view
@@ -243,21 +291,23 @@ class BerryFieldEnv_MatInput(gym.Env):
 
         return info
 
-
-    # returns visible berries as a list represented by their their center and sizes
-    # make sure that self.position is correct/updated before calling this
     def raw_observation(self):
-        ''' list of berries with center and size '''
-        _, boxes = self._get_Ids_and_boxes_in_view((*self.position, *self.OBSERVATION_SPACE_SIZE))
-        boxes[:,:2] = boxes[:,:2] - self.position
+        ''' returns visible berries as a list represented by their their center and sizes 
+        make sure that self.position is correct/updated before calling this '''
+        berry_boxes = self._get_berries_in_view((*self.position, *self.OBSERVATION_SPACE_SIZE))
+        berry_boxes[:,:2] = berry_boxes[:,:2] - self.position
         # scale to 0-1
-        boxes[:, :2] = boxes[:, :2]/self.MAXPOSDIST
-        return boxes[:,:3]
+        berry_boxes[:, :2] = berry_boxes[:, :2]/self.MAXPOSDIST
+        return berry_boxes[:,:3]
 
 
-    # the agent is rewarded by curiosity_reward when it enters a section for the first time 
-    # make sure that self.position is correct/updated before calling this
+    def get_numBerriesPicked(self):
+        return self.num_berry_collected
+
+
     def curiosity_reward(self):
+        """ the agent is rewarded by curiosity_reward when it enters a section for the first time 
+        make sure that self.position is correct/updated before calling this """
         x,y = self.position
         current_gridx = x//self.reward_grid_size[0]
         current_gridy = y//self.reward_grid_size[1]
@@ -270,44 +320,8 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.visited_grids[current_gridx, current_gridy] = 1
         return curiosity_reward
 
-    
-    # pick the berries the agent collided with and return a reward
-    # make sure that self.position is correct/updated before calling this
-    def _pick_collided_berries(self):
-        agent_bbox = (*self.position, self.AGENT_SIZE, self.AGENT_SIZE)
-        boxIds, boxes = self.berry_collision_tree.find_collisions(agent_bbox, 
-                                            self.CIRCULAR_AGENT, self.AGENT_SIZE/2, return_boxes=True)
 
-        self.num_berry_collected += len(boxIds)
-        if self.verbose and len(boxIds) > 0: print("picked ", len(boxIds), "berries")
-
-        sizes = boxes[:,2] # boxes are an array with rows as [x,y, size, size]
-        reward = self.REWARD_RATE * np.sum(sizes)
-        self.berry_collision_tree.delete_boxes(list(boxIds))
-        return reward
-
-
-    def _get_Ids_and_boxes_in_view(self, bounding_box) -> Tuple[list, np.ndarray]:
-        boxIds, boxes = self.berry_collision_tree.boxes_within_bound(bounding_box, return_boxes=True)
-        return list(boxIds), boxes
-
-
-    def _create_bounding_boxes_and_Ids(self, berry_data):
-        """ bounding boxes from berry-coordinates and size """
-        bounding_boxes = np.column_stack([
-            berry_data[:,1:], berry_data[:,0], berry_data[:,0]
-        ])
-        boxIds = np.arange(bounding_boxes.shape[0])
-        return bounding_boxes, boxIds
-
-
-    def _read_csv(self, file_paths):
-        # Constructing numpy arrays to store the coordinates of berries and patches
-        berry_data = np.loadtxt(file_paths[0], delimiter=',') #[patch#, size, x,y]
-        return berry_data[:, 1:] # [size,x,y]
-    
-
-    def render(self, mode="human"):
+    def render(self, mode="human", circle_res=10):
 
         assert mode in ["human", "rgb_array"]
 
@@ -320,8 +334,8 @@ class BerryFieldEnv_MatInput(gym.Env):
         screenw, screenh = self.OBSERVATION_SPACE_SIZE
         observation_bounding_box = (*self.position, screenw, screenh)
         agent_bbox = (screenw/2, screenh/2, self.AGENT_SIZE, self.AGENT_SIZE)
-        boxIds, boxes = self._get_Ids_and_boxes_in_view(observation_bounding_box)
-        boxes[:,0] -= self.position[0]-screenw/2; boxes[:,1] -= self.position[1]-screenh/2 
+        berry_boxes, berry_ids = self._get_berries_in_view(observation_bounding_box, return_ids=True)
+        berry_boxes[:,0] -= self.position[0]-screenw/2; berry_boxes[:,1] -= self.position[1]-screenh/2 
             
         # adjust for my screen size
         scale = min(1, min(MAX_DISPLAY_SIZE[0]/screenw, MAX_DISPLAY_SIZE[1]/screenh))
@@ -330,26 +344,21 @@ class BerryFieldEnv_MatInput(gym.Env):
         self.viewer.transform.scale = (scale, scale)
 
         # draw berries
-        if self.CIRCULAR_BERRIES:
-            for center, radius in zip(boxes[:,:2], self.berry_radii[boxIds]):
-                circle = rendering.make_circle(radius)
-                circletrans = rendering.Transform(translation=center)
-                circle.set_color(255,0,0)
-                circle.add_attr(circletrans)
-                self.viewer.add_onetime(circle)
-        else:
-            for x,y,width,height in boxes:
+        for berryId, (x,y,width,height) in zip(berry_ids, berry_boxes):
+            if self.CIRCULAR_BERRIES:
+                berry = rendering.make_circle(width/2, res=circle_res)
+            else:
                 l,r,b,t = -width/2, width/2, -height/2, height/2
                 vertices = ((l,b), (l,t), (r,t), (r,b)) 
-                box = rendering.FilledPolygon(vertices)
-                boxtrans = rendering.Transform(translation=(x,y))
-                box.set_color(255,0,0)
-                box.add_attr(boxtrans)
-                self.viewer.add_onetime(box)
+                berry = rendering.FilledPolygon(vertices)
+            translation = rendering.Transform(translation=(x,y))   
+            berry.set_color(255,0,0)
+            berry.add_attr(translation)
+            self.viewer.add_onetime(berry)  
         
         # draw agent
         if self.CIRCULAR_AGENT:
-            agent = rendering.make_circle(self.AGENT_SIZE/2)
+            agent = rendering.make_circle(self.AGENT_SIZE/2, res=circle_res)
         else:
             p = self.AGENT_SIZE/2
             agentvertices =((-p,-p),(-p,p),(p,p),(p,-p))
@@ -390,9 +399,66 @@ class BerryFieldEnv_MatInput(gym.Env):
 
         return self.viewer.render(return_rgb_array=mode=="rgb_array")
 
+    
+    def _pick_collided_berries(self):
+        """pick the berries the agent collided with and return a reward
+        make sure that self.position is correct/updated before calling this"""
+        agent_bbox = (*self.position, self.AGENT_SIZE, self.AGENT_SIZE)
+        boxIds, boxes = self.berry_collision_tree.find_collisions(agent_bbox, 
+                                            self.CIRCULAR_AGENT, self.AGENT_SIZE/2, return_boxes=True)
 
-    def get_numBerriesPicked(self):
-        return self.num_berry_collected
+        self.num_berry_collected += len(boxIds)
+        if self.verbose and len(boxIds) > 0: print("picked ", len(boxIds), "berries")
+
+        sizes = boxes[:,2] # boxes are an array with rows as [x,y, size, size]
+        reward = self.REWARD_RATE * np.sum(sizes)
+        self.berry_collision_tree.delete_boxes(list(boxIds))
+        return reward
+
+
+    def _get_patch_boxes(self, berry_data):
+        """ generate the bounding boxes for the patches by taking the extreme berries
+        it is assumed that berry data is of form [[patch-no., size, x, y],...] """
+
+        # get the rectangular enclosure for all the patches
+        num_patches = len(np.unique(berry_data[:,0]))
+        patch_rects = [[np.inf,0.0,np.inf,0.0] for patch_no in range(num_patches)] #[left, right, bot, top]
+        for berry in berry_data: # [patch-no, size, x, y]
+            patch_id = int(berry[0])
+            patch_rects[patch_id][0] = min(patch_rects[patch_id][0], berry[2]) # top x limit
+            patch_rects[patch_id][1] = max(patch_rects[patch_id][1], berry[2]) # bot x limit
+            patch_rects[patch_id][2] = min(patch_rects[patch_id][2], berry[3]) # top y limit
+            patch_rects[patch_id][3] = max(patch_rects[patch_id][3], berry[3]) # bot y limit
+
+        # convert rects to bounding boxes
+        for i in range(num_patches):
+            left, right, bot, top = patch_rects[i]
+            centerx, centery = (left + right)/2, (bot + top)/2
+            width = right - left
+            height = top - bot
+            patch_rects[i] = [centerx, centery, width, height]
+
+        return np.array(patch_rects)
+
+
+    def _get_berries_in_view(self, bounding_box, return_ids=False) -> Tuple[list, np.ndarray]:
+        """ returns the bounding boxes of all the berries in the given bounding box """
+        boxIds, boxes = self.berry_collision_tree.boxes_within_overlap(bounding_box, return_boxes=True)
+        if return_ids: return boxes, boxIds
+        return boxes
+
+
+    def _create_bounding_boxes(self, berry_data):
+        """ bounding boxes from berry-coordinates and size """
+        bounding_boxes = np.column_stack([berry_data[:,2:], berry_data[:,1], berry_data[:,1]])
+        return bounding_boxes
+
+
+    def _read_csv(self, file_paths):
+        """ Constructing numpy arrays to store the coordinates of berries and patches """
+        berry_data = np.loadtxt(file_paths[0], delimiter=',') #[patch#, size, x,y]
+        berry_data[:,0] -= min(berry_data[:,0]) # reindex patches from 0
+        return berry_data # [patch-no,size,x,y]
 
     
     def _has_hit_boundary(self):

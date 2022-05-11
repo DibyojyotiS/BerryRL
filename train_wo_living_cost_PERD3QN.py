@@ -5,7 +5,7 @@ import shutil
 import numpy as np
 import torch
 
-from berry_field.envs.berry_field_mat_input_env import BerryFieldEnv_MatInput
+from berry_field.envs.berry_field_env import BerryFieldEnv
 from DRLagents import (DDQN, PrioritizedExperienceRelpayBuffer,
                        epsilonGreedyAction, greedyAction)
 
@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     # making the berry env
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)
-    berry_env = BerryFieldEnv_MatInput(no_action_r_threshold=float('inf'), 
+    berry_env = BerryFieldEnv(no_action_r_threshold=float('inf'), 
                                         field_size=(4000,4000),
                                         initial_position=(2000,2000),
                                         observation_space_size=(1920,1080),

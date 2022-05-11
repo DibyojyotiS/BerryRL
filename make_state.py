@@ -31,6 +31,8 @@ def get_make_state(angle = 45, avf = 0.9, noise_scale=0.01, kd=0.011473, ks=0.00
 
     def initial_state():
         # traces - for some sort of continuity
+        # need to add indicators for relation to current patch
+        # add sence of exploration distance
         s1 = np.zeros(num_sectors) # max-worth of each sector
         s2 = np.zeros(num_sectors) # stores worth-densities of each sector
         s3 = np.zeros(num_sectors) # indicates the sector with the max worthy berry

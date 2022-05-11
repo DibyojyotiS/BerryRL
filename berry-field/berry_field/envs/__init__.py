@@ -1,2 +1,2 @@
-from berry_field.envs.berry_field_mat_input_env import BerryFieldEnv_MatInput
+from berry_field.envs.berry_field_mat_input_env import BerryFieldEnv
 
