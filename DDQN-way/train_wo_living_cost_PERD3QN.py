@@ -1,32 +1,37 @@
 # TRAIN AN AGENT IN A BABY ENVIRONMENT WITHOUT THE LIVING COST
 
+import os
 import pickle
 import shutil
-import numpy as np
+import time
 import torch
 
 from berry_field.envs.berry_field_env import BerryFieldEnv
 from DRLagents import (DDQN, PrioritizedExperienceRelpayBuffer,
                        epsilonGreedyAction, greedyAction)
+from DRLagents.utils.stdoutLogger import StdoutLogger
 
 from torch.optim.rmsprop import RMSprop
 from make_net import make_net
 
 from make_state import get_make_state
+from random_baby_env import random_baby_berryfield
 # from make_state import get_make_transitions
-from mylogger import MyLogger
 
-
+BABY_FIELD_SIZE = (4000,4000)
+PATCH_SIZE = (1000,1000)
+NUM_PATCHES = 5
+BERRIES_PER_PATCH = 10
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 
 if __name__ == "__main__":
-
-    save_dir = '.temp_stuffs/with-negative-rewards/PERD3QN-state-with-action'
+    save_dir = os.path.join('.temp_stuffs/w.o-negative-rewards/PERD3QN-state-with-action', 
+                            '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
     print(save_dir)
 
     # setting up log file
-    logger = MyLogger(save_dir+'/logout.txt',buff=1)
+    logger = StdoutLogger(save_dir+'/logout.txt',buff=1)
 
     # copy make_state.py in save_dirs
     shutil.copy2('make_state.py', save_dir)
@@ -34,66 +39,44 @@ if __name__ == "__main__":
     shutil.copy2('train_with_living_cost_PERD3QN.py', save_dir)
 
     # making the berry env
-    buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)
-    berry_env = BerryFieldEnv(no_action_r_threshold=float('inf'), 
-                                        field_size=(4000,4000),
-                                        initial_position=(2000,2000),
-                                        observation_space_size=(1920,1080),
+    random_berry_data, random_init_pos = random_baby_berryfield(BABY_FIELD_SIZE, PATCH_SIZE, 
+                                                                NUM_PATCHES, BERRIES_PER_PATCH)
+    berry_env = BerryFieldEnv(no_action_r_threshold=float('inf'),
+                                        field_size=BABY_FIELD_SIZE,
+                                        initial_position=random_init_pos,
+                                        user_berry_data= random_berry_data,
                                         end_on_boundary_hit= True,
                                         penalize_boundary_hit=True)
 
+    # redefine the reset function to generate random berry-envs
+    buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)
     def env_reset(berry_env_reset):
-        t=200; n = 10; p = 5; r = 67
         episode_count = -1
         def reset(**args):
-            nonlocal t, n, p, r, episode_count
-
+            nonlocal episode_count
             if episode_count>=0 and buffer.buffer is not None:
-                print('-> episode:',episode_count, 
-                    'berries picked:', berry_env.get_numBerriesPicked(),
-                    'of', n*p, 'patches:', p, 'positive-in-buffer:',
+                print('-> episode:',episode_count, 'berries picked:', berry_env.get_numBerriesPicked(),
+                    'of', NUM_PATCHES*BERRIES_PER_PATCH, 'patches:', NUM_PATCHES, 'positive-in-buffer:',
                     sum(buffer.buffer['reward'].cpu()>0).item())
-
-            # random berries
-            patch_centroids = np.reshape(np.random.randint(400, 3600, size=2*p), (p,2))
-            points = np.reshape(np.random.randint(-t,t, size=2*p*n), (n,p,2))
-            berries = np.reshape(patch_centroids+points, (n*p,2))
-            sizes = 10*np.random.randint(1,5, size=(n*p,1))
-            berry_data = np.column_stack([sizes,berries]).astype(float)
-
-            # compute an initial position
-            rnd_idx = np.random.randint(0,n*p)
-            rnd_angle = np.random.uniform(0,2*np.pi)
-            initial_pos = [-1,-1]
-            while any([(initial_pos[i]<20 or initial_pos[i]>=3980) for i in [0,1]]):
-                initial_pos = berries[rnd_idx] + (np.random.randint(sizes[rnd_idx]+11,r)*\
-                                np.array([np.cos(rnd_angle),np.sin(rnd_angle)])).astype(int)
-
-            # reset the env  
+            berry_data, initial_pos = random_baby_berryfield(BABY_FIELD_SIZE, PATCH_SIZE, 
+                                                            NUM_PATCHES, BERRIES_PER_PATCH) # reset the env  
             x = berry_env_reset(berry_data=berry_data, initial_position=initial_pos)
-
             episode_count+=1
-            t= min(t+2, 300)
-            # n= max(3, 10-2*(episode_count//100))
-            # r= min(t, r+1)
-            # p= max(3, 5 - 2*(episode_count//200))
             return x
-        
         return reset
 
     def env_step(berry_env_step):
-        # print('no living cost: reward=(100*(reward>0)+(reward<=-1))*reward')
-        print('all rewards scaled by 100')
+        print('no living cost: reward=(100*(reward>0)+(reward<=-1))*reward')
+        # print('all rewards scaled by 100 (except boundary hit)')
         def step(action):
             state, reward, done, info = berry_env_step(action)
-            # reward = (100*(reward>0) + (reward<=-1))*reward # no living cost
-            return state, 100*reward, done, info
+            # if reward != -1: reward = 100*reward
+            reward = (100*(reward>0) + (reward<=-1))*reward # no living cost
+            return state, reward, done, info
         return step
 
     berry_env.reset = env_reset(berry_env.reset)
     berry_env.step = env_step(berry_env.step)
-    # input_size, make_state_fn = get_make_state()
-    # make_transitions_fn = get_make_transitions(make_state_fn, look_back=100)
     input_size, make_state_fn, make_transitions_fn = get_make_state()
 
     # init models
@@ -109,7 +92,6 @@ if __name__ == "__main__":
                     skipSteps=20, make_state=make_state_fn, make_transitions=make_transitions_fn, 
                     printFreq=1, update_freq=2, polyak_average=True, polyak_tau=0.2, 
                     snapshot_dir=save_dir, MaxTrainEpisodes=500, device=TORCH_DEVICE)
-    # trianHist = agent.trainAgent(render=True)
     trianHist = agent.trainAgent(render=False)
 
     with open(save_dir+'/history.pkl','wb') as f:

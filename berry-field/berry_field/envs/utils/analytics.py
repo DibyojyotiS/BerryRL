@@ -13,7 +13,7 @@ from berry_field.envs.berry_field_env import BerryFieldEnv
 
 
 class BerryFieldAnalytics():
-    def __init__(self, berryField:BerryFieldEnv, saveFolder:str) -> None:
+    def __init__(self, berryField:BerryFieldEnv, saveFolder:str, verbose:bool=False) -> None:
         """ saves the following to disk
             1. time spent in peripheri and center of each patch
             2. time spent exploring between patches
@@ -23,6 +23,7 @@ class BerryFieldAnalytics():
             NOTE: construct only after initializing berryField
         """
         self.berryField = berryField
+        self.verbose = verbose
         # create files to log the data
         self.agent_path = open(os.path.join(saveFolder,'agent_path.txt'), 'w', encoding='utf-8') # path in (x,y) coordinates
         self.agent_actions = open(os.path.join(saveFolder,'agent_actions.txt'), 'w', encoding='utf-8') # sequence of actions (ints)
@@ -48,7 +49,7 @@ class BerryFieldAnalytics():
 
         # to compute the preference of the berries
         self.previous_patch_id = -1 # to detect patch-changes
-        self.current_patch_steps = 0
+        self.current_patch_steps = 1
         self.berries_along_patch_path = [] # the distance,size of berry collected
         self.total_preference = {x:0 for x in self.unique_berry_sizes}
 
@@ -81,7 +82,7 @@ class BerryFieldAnalytics():
                     self.total_preference[size] += berry_weight[size]/berry_count[size]
 
             # reset variables
-            self.current_patch_steps = 0
+            self.current_patch_steps = 1
             self.previous_patch_id = patch_id
             self.berries_along_patch_path = []
 
@@ -113,11 +114,22 @@ class BerryFieldAnalytics():
         total_central_patch_time = sum([self.central_patch_times[i] for i in range(self.num_patches)])
 
         # print stats
-        print("preference: ", self.total_preference)
-        print("total peripheral_patch_time: ", total_peripheral_patch_time)
-        print("total total_central_patch_time: ", total_central_patch_time)
-        print("peripheral_patch_times", self.peripheral_patch_times)
-        print("central_patch_times", self.central_patch_times)
+        if self.verbose:
+            print("preference: ", self.total_preference)
+            print("total peripheral_patch_time: ", total_peripheral_patch_time)
+            print("total total_central_patch_time: ", total_central_patch_time)
+            print("peripheral_patch_times", self.peripheral_patch_times)
+            print("central_patch_times", self.central_patch_times)
+
+        # save the results
+        with open('results.txt', 'w') as f:
+            f.writelines([
+                f"preference: {self.total_preference}",
+                f"total peripheral_patch_time: {total_peripheral_patch_time}",
+                f"total total_central_patch_time: {total_central_patch_time}",
+                f"peripheral_patch_times: {self.peripheral_patch_times}",
+                f"central_patch_times: {self.central_patch_times}"
+            ])
 
         
     def compute_stats(self):

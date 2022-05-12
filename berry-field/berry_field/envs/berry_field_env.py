@@ -64,7 +64,7 @@ class BerryFieldEnv(gym.Env):
             reward_rate: berry size is scaled with this for reward \n
             circular_berries: wether berries are circular or square \n
             circular_agent: wether agetn is circular or square \n
-            user_berry_data: can specify berries as list of [size, x,y]
+            user_berry_data: can specify berries as list of [patch-no, size, x,y]
                                 overrides the original berry data
 
 
@@ -148,6 +148,8 @@ class BerryFieldEnv(gym.Env):
         self.analytics_folder = os.path.join(analytics_folder, '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
         self.num_resets = 0 # used to index the analysis saves
         self.recently_picked_berries = [] # sizes of the recently picked berries
+        # for saving the pickle properly
+        self.ORIGINAL_FUNCTIONS = {func:getattr(self, func) for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")}
         if enable_analytics: 
             self._init_analysis(self.analytics_folder)
 
@@ -393,7 +395,14 @@ class BerryFieldEnv(gym.Env):
         # save the data neccessary to rebuild the same berry-field
         self.analysis = None # because i.o wrapper cannot be pickled
         with open(os.path.join(save_Folder, 'berryenv.obj'), 'wb') as f:
+            # save all the possibly user-modified functions
+            user_modified = {func:getattr(self, func) for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")}
+            # revert all user-modified functions and default defn
+            for func in user_modified.keys(): self.__setattr__(func, self.ORIGINAL_FUNCTIONS[func])
+            # save the berry-field
             pickle.dump(self, f,pickle.HIGHEST_PROTOCOL)
+            # load back user-modified functions
+            for func in user_modified.keys(): self.__setattr__(func, user_modified[func])
 
         # init the analysis with the save folder
         self.analysis = BerryFieldAnalytics(self, save_Folder)
