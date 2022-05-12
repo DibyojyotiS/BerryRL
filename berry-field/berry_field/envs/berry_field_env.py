@@ -145,12 +145,12 @@ class BerryFieldEnv(gym.Env):
 
         # for analytics
         self.analysis_enabled = enable_analytics
-        self.analytics_folder = os.path.join(analytics_folder, '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
         self.num_resets = 0 # used to index the analysis saves
         self.recently_picked_berries = [] # sizes of the recently picked berries
         # for saving the pickle properly
         self.ORIGINAL_FUNCTIONS = {func:getattr(self, func) for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")}
         if enable_analytics: 
+            self.analytics_folder = os.path.join(analytics_folder, '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
             self._init_analysis(self.analytics_folder)
 
 
