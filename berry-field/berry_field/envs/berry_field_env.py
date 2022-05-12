@@ -2,7 +2,6 @@ import os
 import pickle
 import time
 from typing import Tuple
-from berry_field.envs.utils.misc import argsort_clockwise, getTrueAngles
 
 import gym
 import numpy as np
@@ -131,7 +130,7 @@ class BerryFieldEnv(gym.Env):
         self.verbose = verbose
 
         # init the structures (mainly collision trees)
-        self.init_berryfield(user_berry_data)
+        self._init_berryfield(user_berry_data)
 
         # for curiosity reward
         self.reward_curiosity = reward_curiosity
@@ -148,47 +147,9 @@ class BerryFieldEnv(gym.Env):
         self.analysis_enabled = enable_analytics
         self.analytics_folder = os.path.join(analytics_folder, '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
         self.num_resets = 0 # used to index the analysis saves
-        if enable_analytics: self.init_analysis(self.analytics_folder)
-
-    
-    def init_berryfield(self, user_berry_data):
-        """ Inits the collision trees and other structures to make the field """
-        # load and process the data
-        berry_data = self._read_csv(FILE_PATHS) if user_berry_data is None else user_berry_data # [patch-no, size, x, y]
-        berry_radii = berry_data[:,1]
-        bounding_boxes = self._create_bounding_boxes(berry_data) # [x,y,width,height]
-        patch_boxes = self._get_patch_boxes(berry_data) # compute patch boundaries using berry data assuming berries are already alloted to patches
-
-        # make the berry collision tree (in other words: populate the field)
-        self.ORIGINAL_BERRY_COLLISION_TREE = collision_tree(bounding_boxes, self.CIRCULAR_BERRIES, berry_radii) 
-
-        # collision tree to detect the patch the agent is in
-        self.ORIGINAL_PATCH_TREE = collision_tree(patch_boxes)
-
-        # a look-up to get the patch for any berry
-        self.BERRY_TO_PATCH_LOOKUP = berry_data[:,0].astype(int)
-
-        # copies
-        self.patch_tree = copy.deepcopy(self.ORIGINAL_PATCH_TREE)
-        self.berry_collision_tree = copy.deepcopy(self.ORIGINAL_BERRY_COLLISION_TREE) # only this copy will be modified during the runtime
-        self.patch_visited = {i:0 for i in range(len(self.patch_tree.boxes))}
-
-
-    def reset_berryfield(self):
-        """ resets the structures of berry-field to the original states """
-        self.berry_collision_tree = copy.deepcopy(self.ORIGINAL_BERRY_COLLISION_TREE)
-        self.patch_visited = {i:0 for i in range(len(self.patch_tree.boxes))}
-
-
-    def init_analysis(self, save_folder):
-        # create the save-folder to save analytics
-        save_Folder = os.path.join(save_folder, f'{self.num_resets}')
-        if not os.path.exists(save_Folder): os.makedirs(save_Folder)
-
-        # save the data neccessary to rebuild the same berry-field
-        with open(os.path.join(save_Folder, 'berryenv.obj'), 'wb') as f:
-            pickle.dump(self, f,pickle.HIGHEST_PROTOCOL)
-
+        self.recently_picked_berries = [] # sizes of the recently picked berries
+        if enable_analytics: 
+            self._init_analysis(self.analytics_folder)
 
 
     def reset(self, info=False, initial_position=None, berry_data=None):
@@ -211,13 +172,17 @@ class BerryFieldEnv(gym.Env):
 
         if self.reward_curiosity: self.visited_grids = np.zeros(self.size_visited_grid)
 
-        if berry_data is not None: self.init_berryfield(berry_data)
-        else: self.reset_berryfield()
+        if berry_data is not None: self._init_berryfield(berry_data)
+        else: self._reset_berryfield()
 
-        if self.analysis_enabled: self.init_analysis(self.analytics_folder)
+        first_observation, first_info = self.raw_observation(), self.get_info()
 
-        if info: return self.raw_observation(), self.get_info()
-        else: return self.raw_observation()
+        if self.analysis_enabled: 
+            self.analysis.close()
+            self._init_analysis(self.analytics_folder)
+
+        if info: return first_observation, first_info
+        else: return first_observation
 
 
     def step(self, action):
@@ -228,7 +193,7 @@ class BerryFieldEnv(gym.Env):
             action = np.random.randint(0, 9)
 
         self.num_steps+=1
-        self.current_action = action 
+        self.current_action = action # required for render and analitics
 
         # update the position
         movement = self.action_switcher[action]
@@ -237,32 +202,20 @@ class BerryFieldEnv(gym.Env):
         self.position = (  min(max(0, x), self.FIELD_SIZE[0]), 
                         min(max(0, y), self.FIELD_SIZE[1]) )
 
-        # compute the reward
-        juice_reward = self._pick_collided_berries()
-        living_cost = - self.DRAIN_RATE*(action != 0)
-        reward = juice_reward + living_cost
-        self.total_juice += reward
+        # get the patch the agent is in (also required for info)
+        self.current_patch_id, self.current_patch_box = self._get_current_patch()
 
-        # for curisity reward (don't add to self.cummulative_reward)
-        if self.reward_curiosity:
-            curiosity_reward = self.curiosity_reward()
-            reward = reward * self.reward_curiosity_beta + \
-                 curiosity_reward * (1 - self.reward_curiosity_beta)
+        # compute the reward and done
+        reward,done = self._get_reward()
 
+        # generate the info and observation
         info = self.get_info()
+        observation = self.raw_observation()
 
-        # did the episode just end?
-        self.done = True if self.num_steps >= self.MAX_STEPS or \
-                            self.total_juice <= 0 or \
-                            self.END_ON_BOUNDARY_HIT and self._has_hit_boundary() \
-                         else False
-        
-        # -ve reward on hitting boundary with END_ON_BOUNDARY_HIT
-        if self.PENALIZE_BOUNDARY_HIT and self._has_hit_boundary():
-            reward = -1
+        # update the analytice
+        if self.analysis_enabled: self.analysis.update()
 
-        if self.done and self.viewer is not None: self.viewer = self.viewer.close()
-        return self.raw_observation(), reward, self.done, info
+        return observation, reward, done, info
 
 
     def get_info(self):
@@ -400,6 +353,52 @@ class BerryFieldEnv(gym.Env):
         return self.viewer.render(return_rgb_array=mode=="rgb_array")
 
     
+    def _init_berryfield(self, user_berry_data):
+        """ Inits the collision trees and other structures to make the field """
+        # load and process the data
+        berry_data = self._read_csv(FILE_PATHS) if user_berry_data is None else user_berry_data # [patch-no, size, x, y]
+        berry_radii = berry_data[:,1]
+        bounding_boxes = self._create_bounding_boxes(berry_data) # [x,y,width,height]
+        patch_boxes = self._get_patch_boxes(berry_data) # compute patch boundaries using berry data assuming berries are already alloted to patches
+
+        # make the berry collision tree (in other words: populate the field)
+        self.ORIGINAL_BERRY_COLLISION_TREE = collision_tree(bounding_boxes, self.CIRCULAR_BERRIES, berry_radii) 
+
+        # collision tree to detect the patch the agent is in
+        self.ORIGINAL_PATCH_TREE = collision_tree(patch_boxes)
+
+        # a look-up to get the patch for any berry
+        self.BERRY_TO_PATCH_LOOKUP = berry_data[:,0].astype(int)
+
+        # copies
+        self.patch_tree = copy.deepcopy(self.ORIGINAL_PATCH_TREE)
+        self.berry_collision_tree = copy.deepcopy(self.ORIGINAL_BERRY_COLLISION_TREE) # only this copy will be modified during the runtime
+        self.patch_visited = {i:0 for i in range(len(self.patch_tree.boxes))}
+
+
+    def _reset_berryfield(self):
+        """ resets the structures of berry-field to the original states """
+        self.berry_collision_tree = copy.deepcopy(self.ORIGINAL_BERRY_COLLISION_TREE)
+        self.patch_visited = {i:0 for i in range(len(self.patch_tree.boxes))}
+
+    def _init_analysis(self, save_folder):
+        """ always call after environment init """
+        # imported here to avoid circular import
+        from berry_field.envs.utils.analytics import BerryFieldAnalytics
+
+        # create the save-folder to save analytics
+        save_Folder = os.path.join(save_folder, f'{self.num_resets}')
+        if not os.path.exists(save_Folder): os.makedirs(save_Folder)
+
+        # save the data neccessary to rebuild the same berry-field
+        self.analysis = None # because i.o wrapper cannot be pickled
+        with open(os.path.join(save_Folder, 'berryenv.obj'), 'wb') as f:
+            pickle.dump(self, f,pickle.HIGHEST_PROTOCOL)
+
+        # init the analysis with the save folder
+        self.analysis = BerryFieldAnalytics(self, save_Folder)
+    
+
     def _pick_collided_berries(self):
         """pick the berries the agent collided with and return a reward
         make sure that self.position is correct/updated before calling this"""
@@ -413,7 +412,34 @@ class BerryFieldEnv(gym.Env):
         sizes = boxes[:,2] # boxes are an array with rows as [x,y, size, size]
         reward = self.REWARD_RATE * np.sum(sizes)
         self.berry_collision_tree.delete_boxes(list(boxIds))
+        self.recently_picked_berries = sizes # update the recently picked for analysis
         return reward
+
+
+    def _get_reward(self):
+        """ private because this modifies the enviroment state 
+        and is accessed in step(.) """
+        juice_reward = self._pick_collided_berries()
+        living_cost = - self.DRAIN_RATE*(self.current_action != 0)
+        reward = juice_reward + living_cost
+        self.total_juice += reward
+
+        # for cuirosity reward (don't add to self.total_juice)
+        if self.reward_curiosity:
+            curiosity_reward = self.curiosity_reward()
+            reward = reward * self.reward_curiosity_beta + \
+                 curiosity_reward * (1 - self.reward_curiosity_beta)
+
+        # did the episode just end?
+        self.done = True if self.num_steps >= self.MAX_STEPS or \
+                            self.total_juice <= 0 or \
+                            self.END_ON_BOUNDARY_HIT and self._has_hit_boundary() \
+                         else False
+        
+        # -ve reward on hitting boundary with END_ON_BOUNDARY_HIT
+        if self.PENALIZE_BOUNDARY_HIT and self._has_hit_boundary(): reward = -1
+        if self.done and self.viewer is not None: self.viewer = self.viewer.close()
+        return reward, self.done
 
 
     def _get_patch_boxes(self, berry_data):
@@ -437,8 +463,26 @@ class BerryFieldEnv(gym.Env):
             width = right - left
             height = top - bot
             patch_rects[i] = [centerx, centery, width, height]
+        patch_bboxes = np.array(patch_rects)
 
-        return np.array(patch_rects)
+        # padding to account for berry radius
+        max_berry_size = max(berry_data[:,1])
+        patch_bboxes[:,2] += max_berry_size + self.AGENT_SIZE
+        patch_bboxes[:,3] += max_berry_size + self.AGENT_SIZE
+
+        return patch_bboxes
+
+
+    def _get_current_patch(self):
+        """ get the patch-id and bounding-box of the patch where the agent is 
+        currently in and if the agent is in no patch, then it returns None, None
+        make sure that the postion is as indented before calling this"""
+        agent_bbox = (*self.position, self.AGENT_SIZE, self.AGENT_SIZE)
+        overlaping_patches, boxes = self.patch_tree.boxes_within_overlap(agent_bbox, return_boxes=True)
+        if len(overlaping_patches) > 0: 
+            self.patch_visited[overlaping_patches[0]] += 1
+            return overlaping_patches[0], boxes[0]
+        return None, None
 
 
     def _get_berries_in_view(self, bounding_box, return_ids=False) -> Tuple[list, np.ndarray]:

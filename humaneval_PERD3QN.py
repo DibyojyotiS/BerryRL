@@ -10,7 +10,7 @@ from make_state import get_make_state
 
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # input_size, make_state_fn = get_make_state(avf=0.8,noise_scale=0.01)
-input_size, make_state_fn, _ = get_make_state(avf=0.9, ks=0.0001, kd=0.011473, noise_scale=0.01, offset=0.01)
+input_size, make_state_fn, _ = get_make_state(avf=0.9, ks=0.0001, kd=0.011473, noise_scale=0.1, offset=0.01)
 
 
 # making the berry env
