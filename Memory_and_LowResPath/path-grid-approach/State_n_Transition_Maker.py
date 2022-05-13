@@ -117,7 +117,10 @@ class State_n_Transition_Maker():
                         maxworth = worthyness    
             if maxworth_idx > -1: a3[maxworth_idx]=1 
         
-        return [a1,a2,a3,a4], total_worth/len(raw_observation)
+        
+        avg_worth = total_worth/len(raw_observation) if len(raw_observation) > 0 else 0
+
+        return [a1,a2,a3,a4], avg_worth
 
 
     def _update_memories(self, info, avg_worth):
