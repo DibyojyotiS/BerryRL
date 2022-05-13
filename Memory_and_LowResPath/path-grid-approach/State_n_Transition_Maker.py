@@ -49,9 +49,10 @@ class State_n_Transition_Maker():
         self.debugDir = debugDir
         self.debug = debug
         if debug:
+            self.debugDir = os.path.join(debugDir, 'stMakerdebug')
             if not os.path.exists(debugDir): os.makedirs(debugDir)
-            self.state_debugfile = open(os.path.join(debugDir, 'stMakerdebugstate.txt'), 'w', 1)
-            self.env_recordfile = open(os.path.join(debugDir, 'stMakerrecordenv.txt'), 'w', 1)
+            self.state_debugfile = open(os.path.join(self.debugDir, 'stMakerdebugstate.txt'), 'w', 1)
+            self.env_recordfile = open(os.path.join(self.debugDir, 'stMakerrecordenv.txt'), 'w', 1)
 
 
     def _init_memories(self):

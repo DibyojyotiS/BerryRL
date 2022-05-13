@@ -28,7 +28,7 @@ if __name__ == '__main__':
         hDim = [256,256,128,64,64]
     )
 
-    buffer = PrioritizedExperienceRelpayBuffer(int(2E4), alpha=0.2, beta=0.1, beta_rate=0.01)
+    buffer = PrioritizedExperienceRelpayBuffer(int(2E4), alpha=0.8, beta=0.1, beta_rate=0.01)
     optim = RMSprop(nnet.parameters(), lr=0.0001)
     tstrat = epsilonGreedyAction(nnet, 0.5, 0.01, 50)
     estrat = greedyAction(nnet)
