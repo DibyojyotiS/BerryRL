@@ -62,7 +62,7 @@ def random_baby_berryfield(field_size=(4000,4000), patch_size = (1000,1000),
     return berry_data, initial_position
 
 
-def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nberries=10):
+def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nberries=10, logDir='.temp'):
     # making the berry env
     random_berry_data, random_init_pos = random_baby_berryfield(field_size, patch_size, 
                                                                 num_patches, nberries)
@@ -71,7 +71,9 @@ def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nb
                                 initial_position=random_init_pos,
                                 user_berry_data= random_berry_data,
                                 end_on_boundary_hit= True,
-                                penalize_boundary_hit=True)
+                                penalize_boundary_hit=True,
+                                analytics_folder=logDir,
+                                enable_analytics = logDir is not None)
 
     # redefine the reset function to generate random berry-envs
     def env_reset(berry_env_reset):
