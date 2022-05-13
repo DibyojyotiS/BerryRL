@@ -25,7 +25,7 @@ if __name__ == '__main__':
         outDim = berry_env.action_space.n,
         hDim = [64,64,64,64,64]
     )
-    nnet.load_state_dict(torch.load('D:\Machine_Learning\RL\Foraging-in-a-field\Memory_and_LowResPath\path-grid-approach\.temp\\2022-5-13 18-23-55\onlinemodel_weights_episode_40.pth'))
+    nnet.load_state_dict(torch.load('.temp\\2022-5-13 19-39-23\onlinemodel_weights_episode_9.pth'))
     nnet.eval()
 
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)

@@ -41,7 +41,7 @@ if __name__ == '__main__':
                 'of', berry_env.get_totalBerries(), '| patches-visited:', visited_patches, 
                 '| positive-in-buffer:', sum(buffer.buffer['reward'].cpu()>0).item())
 
-    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=256, skipSteps=10,
+    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=128, skipSteps=10,
                         make_state=stMaker.makeState, make_transitions=stMaker.makeTransitions,
                         gamma=0.9, MaxTrainEpisodes=500, user_printFn=print_fn,
                         printFreq=1, update_freq=5, polyak_tau=0.8, polyak_average= True,

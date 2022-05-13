@@ -16,12 +16,12 @@ class State_n_Transition_Maker():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(25,25), 
-                    angle = 45, worth_scale=50.0, noise=0.05, positive_emphasis=True,
+                    angle = 45, worth_offset=0.0, noise=0.05, positive_emphasis=True,
                     memory_alpha=0.99, debug=False, debugDir='.temp/stMakerdebug') -> None:
         """ mode is required to assert whether it is required to make transitions """
         self.istraining = mode == 'train'
         self.angle = angle
-        self.worth_scale = worth_scale
+        self.worth_offset = worth_offset
         self.berryField = berryField
         self.field_grid_size = field_grid_size
         self.positive_emphasis = positive_emphasis
@@ -62,11 +62,20 @@ class State_n_Transition_Maker():
     # for computation of berry worth, can help to change 
     # the agent's preference of different sizes of berries. 
     def berry_worth_function(self, sizes, distances):
-        """ the reward that can be gained by pursuing a berry of given size and distance"""
+        """ the reward that can be gained by pursuing a berry of given size and distance
+        we note that the distances are scaled to be in range 0 to 1 by dividing by half-diag
+        of observation space """
         rr, dr = self.berryField.REWARD_RATE, self.berryField.DRAIN_RATE
-        worth = rr * sizes - dr * distances
-        worth = np.clip(worth, -1, 1)
-        return worth * self.worth_scale
+        worth = rr * sizes - dr * distances * self.berryField.HALFDIAGOBS
+        
+        # scale worth to 0 - 1 range
+        min_worth, max_worth = rr * 10 - dr * self.berryField.HALFDIAGOBS, rr * 50
+        worth = (worth - min_worth)/(max_worth - min_worth)
+
+        # incorporate offset
+        worth = (worth + self.worth_offset)/(1 + self.worth_offset)
+
+        return worth
 
     def _compute_sectorized(self, raw_observation, info):
         """  """
@@ -108,10 +117,10 @@ class State_n_Transition_Maker():
                         maxworth = worthyness    
             if maxworth_idx > -1: a3[maxworth_idx]=1 
         
-        return [a1,a2,a3,a4], total_worth
+        return [a1,a2,a3,a4], total_worth/len(raw_observation)
 
 
-    def _update_memories(self, info, total_worth):
+    def _update_memories(self, info, avg_worth):
         """ update the path-memory and berry memory """
         x,y = info['position']
 
@@ -131,7 +140,7 @@ class State_n_Transition_Maker():
         self.path_memory[index] = 1
         
         # update berry memory
-        self.berry_memory[index] = 0.2*total_worth + 0.8*self.berry_memory[index]
+        self.berry_memory[index] = 0.2*avg_worth + 0.8*self.berry_memory[index]
 
 
     def computeState(self, raw_observation, info, reward, done) -> np.ndarray:
@@ -143,10 +152,10 @@ class State_n_Transition_Maker():
             info = self.berryField.get_info()
 
         # the total-worth is also representative of the percived goodness of observation
-        sectorized_states, total_worth = self._compute_sectorized(raw_observation, info)
+        sectorized_states, avg_worth = self._compute_sectorized(raw_observation, info)
 
         # update memories
-        self._update_memories(info, total_worth)
+        self._update_memories(info, avg_worth)
 
         # other extra information
         edge_dist = info['scaled_dist_from_edge']
@@ -252,7 +261,7 @@ class State_n_Transition_Maker():
             W, H = self.berryField.FIELD_SIZE
 
             ax[0][0].imshow(sectorized_states)
-            ax[0][1].bar([*range(2)],patch_relative)
+            ax[0][1].bar([1,2],[1,patch_relative], [0,1])
             ax[0][2].bar([*range(4)],edge_dist)
             ax[1][0].imshow(berry_memory)
             ax[1][1].imshow(path_memory)
