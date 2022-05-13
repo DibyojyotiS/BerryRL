@@ -2,7 +2,7 @@ from torch import nn
 import torch.nn.functional as F
 import torch
 
-def make_net(inDim, outDim, hDim, output_probs=False, TORCH_DEVICE=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
+def make_net(inDim, outDim, hDim, output_probs=False, TORCH_DEVICE=torch.device('cuda' if torch.cuda.is_available() else 'cpu')) -> nn.Module:
     class net(nn.Module):
         def __init__(self, inDim, outDim, hDim, activation = F.relu):
             super(net, self).__init__()

@@ -137,7 +137,7 @@ class State_n_Transition_Maker():
         return current_state
         
     
-    def get_transitions(self, skip_trajectory, state, action, nextState):
+    def makeTransitions(self, skip_trajectory, state, action, nextState):
         """ get the state-transitions """
         return self.state_transitions
         

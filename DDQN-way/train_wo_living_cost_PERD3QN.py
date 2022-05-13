@@ -91,7 +91,7 @@ if __name__ == "__main__":
     agent = DDQN(berry_env, value_net, tstrat, optim, buffer, 512, gamma=0.99, 
                     skipSteps=20, make_state=make_state_fn, make_transitions=make_transitions_fn, 
                     printFreq=1, update_freq=2, polyak_average=True, polyak_tau=0.2, 
-                    snapshot_dir=save_dir, MaxTrainEpisodes=500, device=TORCH_DEVICE)
+                    log_dir=save_dir, MaxTrainEpisodes=500, device=TORCH_DEVICE)
     trianHist = agent.trainAgent(render=False)
 
     with open(save_dir+'/history.pkl','wb') as f:

@@ -50,7 +50,7 @@ class BerryFieldEnv(gym.Env):
 
                 # for analytics
                 enable_analytics = True,
-                analytics_folder = 'analytics-berry-field'
+                analytics_folder = '.temp/analytics-berry-field'
                 ):
         '''
         ## Environment\n
