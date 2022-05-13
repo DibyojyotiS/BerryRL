@@ -23,7 +23,9 @@ class BerryFieldAnalytics():
             NOTE: construct only after initializing berryField
         """
         self.berryField = berryField
+        self.saveFolder = saveFolder
         self.verbose = verbose
+
         # create files to log the data
         self.agent_path = open(os.path.join(saveFolder,'agent_path.txt'), 'w', encoding='utf-8') # path in (x,y) coordinates
         self.agent_actions = open(os.path.join(saveFolder,'agent_actions.txt'), 'w', encoding='utf-8') # sequence of actions (ints)
@@ -122,7 +124,7 @@ class BerryFieldAnalytics():
             print("central_patch_times", self.central_patch_times)
 
         # save the results
-        with open('results.txt', 'w') as f:
+        with open(os.path.join(self.saveFolder,'results.txt'), 'w') as f:
             f.writelines([
                 f"preference: {self.total_preference}",
                 f"total peripheral_patch_time: {total_peripheral_patch_time}",
