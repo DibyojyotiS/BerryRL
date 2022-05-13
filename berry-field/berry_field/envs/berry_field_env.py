@@ -239,7 +239,7 @@ class BerryFieldEnv(gym.Env):
         # if the agent is in no patch, then the all 0.0 is returned (blends from patch to none)
         if self.current_patch_box is not None:
             px,py,pw,ph = self.current_patch_box
-            patch_relative = [1 - 2*(x-px)/pw, 1 - 2*(y-py)/ph]
+            patch_relative = [1 - 2*abs(x-px)/pw, 1 - 2*abs(y-py)/ph]
         else:
             patch_relative = [0.0, 0.0]
 
