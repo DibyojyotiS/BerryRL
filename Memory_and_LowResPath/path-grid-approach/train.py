@@ -25,11 +25,11 @@ if __name__ == '__main__':
     nnet = make_net(
         inDim = stMaker.get_output_shape()[0],
         outDim = berry_env.action_space.n,
-        hDim = [64,64,64,64,64]
+        hDim = [256,256,128,64,64]
     )
 
-    buffer = PrioritizedExperienceRelpayBuffer(int(5E4), alpha=0.2, beta=0.1, beta_rate=0.01)
-    optim = RMSprop(nnet.parameters(), lr=0.001)
+    buffer = PrioritizedExperienceRelpayBuffer(int(2E4), alpha=0.2, beta=0.1, beta_rate=0.01)
+    optim = RMSprop(nnet.parameters(), lr=0.0001)
     tstrat = epsilonGreedyAction(nnet, 0.5, 0.01, 50)
     estrat = greedyAction(nnet)
 
@@ -39,7 +39,8 @@ if __name__ == '__main__':
             visited_patches = [p for p in berry_env.patch_visited.keys() if berry_env.patch_visited[p] > 0]
             print('-> berries picked:', berry_env.get_numBerriesPicked(),
                 'of', berry_env.get_totalBerries(), '| patches-visited:', visited_patches, 
-                '| positive-in-buffer:', sum(buffer.buffer['reward'].cpu()>0).item())
+                '| positive-in-buffer:', sum(buffer.buffer['reward'].cpu()>0).item(),
+                f'| amount-filled: {100*len(buffer)/buffer.bufferSize:.2f}')
 
     ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=256, skipSteps=10,
                         make_state=stMaker.makeState, make_transitions=stMaker.makeTransitions,
