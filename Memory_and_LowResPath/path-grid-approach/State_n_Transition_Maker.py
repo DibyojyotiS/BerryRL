@@ -1,6 +1,5 @@
-# remember the unpicked berries
+# remember the approx loc of unpicked berries
 # remember a low-res path
-# the relative vector from origin
 
 from berry_field.envs.berry_field_env import BerryFieldEnv
 from berry_field.envs.utils.misc import getTrueAngles
@@ -12,8 +11,8 @@ EPSILON = 1E-8
 class State_n_Transition_Maker():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
-    def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(100,100), angle = 45,
-                    noise_scale=0.01, worth_offset=0.01) -> None:
+    def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(25,25), 
+                    angle = 45, worth_offset=0.0) -> None:
         """ mode is required to assert whether it is required to make transitions """
         self.istraining = mode == 'train'
         self.angle = angle
@@ -26,6 +25,9 @@ class State_n_Transition_Maker():
         self._init_memories()
         self.state_transitions = []
         self.output_shape = None
+
+        self.divLenX = berryField.FIELD_SIZE[0]//field_grid_size[0]
+        self.divLenY = berryField.FIELD_SIZE[1]//field_grid_size[1]
 
     def _init_memories(self):
         memory_grid_size = self.field_grid_size[0]*self.field_grid_size[1]
@@ -88,6 +90,25 @@ class State_n_Transition_Maker():
 
     def _update_memories(self, info, total_worth):
         """ update the path-memory and berry memory """
+        x,y = info['position']
+
+        # if agent touches the top/left edge of field, this will cause
+        # an Index error. Subtract a small amount to avoid this
+        if x == self.berryField.FIELD_SIZE[0]: x -= EPSILON
+        if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
+
+        # find the corresponding index in memory
+        x //= self.divLenX
+        y //= self.divLenY
+        index = x + y*self.field_grid_size[0]
+        index = int(index)
+
+        # decay the path memory and updaate
+        self.path_memory *= 0.99
+        self.path_memory[index] = 1
+        
+        # update berry memory
+        self.berry_memory[index] = 0.5*total_worth + 0.5*self.berry_memory[index]
 
 
     def computeState(self, raw_observation, info, reward, done) -> np.ndarray:
@@ -127,13 +148,17 @@ class State_n_Transition_Maker():
         """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
         if not self.istraining: return self.computeState(*skip_trajectory[-1])
 
-        # if mode = 'train' we make the state-transitions (s,a,r,ns) for replay-buffer
+        # if mode = 'train' we make the state-transitions (s,a,r,ns,d) for replay-buffer
         self.state_transitions = []
         prev_state = self.computeState(*skip_trajectory[0])
+        if len(skip_trajectory) == 1: return prev_state
+
         for i in range(1, len(skip_trajectory)):
-            reward = skip_trajectory[i][2]
+            reward, done = skip_trajectory[i][2:]
             current_state = self.computeState(*skip_trajectory[i])
-            self.state_transitions.append([prev_state, action_taken, reward, current_state])
+            self.state_transitions.append([prev_state, action_taken, reward, current_state, done])
+            prev_state = current_state
+            
         return current_state
         
     

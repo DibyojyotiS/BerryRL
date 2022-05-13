@@ -23,9 +23,9 @@ if __name__ == '__main__':
     stMaker = State_n_Transition_Maker(berry_env)
 
     nnet = make_net(
-        intDim = stMaker.get_output_shape(),
+        inDim = stMaker.get_output_shape()[0],
         outDim = berry_env.action_space.n,
-        hDim = [64,64,64,64]
+        hDim = [64,64,64]
     )
 
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)
@@ -41,7 +41,7 @@ if __name__ == '__main__':
                 'of', berry_env.get_totalBerries(), 'patches-visited:', visited_patches, 
                 'positive-in-buffer:', sum(buffer.buffer['reward'].cpu()>0).item())
 
-    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=128, 
+    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=128, skipSteps=10,
                         make_state=stMaker.makeState, make_transitions=stMaker.makeTransitions,
                         gamma=0.99, MaxTrainEpisodes=50, user_printFn=print_fn,
                         printFreq=1, update_freq=2, polyak_tau=0.2, polyak_average= True,
