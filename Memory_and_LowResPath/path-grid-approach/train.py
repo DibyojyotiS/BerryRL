@@ -11,7 +11,7 @@ PATCH_SIZE = (1000,1000)
 N_PATCHES = 5
 N_BERRIES = 10
 
-LOG_DIR = os.path.join('./temp' , '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
+LOG_DIR = os.path.join('.temp' , '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if __name__ == '__main__':
@@ -19,7 +19,7 @@ if __name__ == '__main__':
     # setup logging
     logger = StdoutLogger(filename=os.path.join(LOG_DIR, 'log.txt'))
 
-    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES)
+    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR)
     stMaker = State_n_Transition_Maker(berry_env)
 
     nnet = make_net(
@@ -44,6 +44,7 @@ if __name__ == '__main__':
     ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=128, 
                         make_state=stMaker.makeState, make_transitions=stMaker.makeTransitions,
                         gamma=0.99, MaxTrainEpisodes=50, user_printFn=print_fn,
-                        log_dir=LOG_DIR, device=TORCH_DEVICE)
-
+                        printFreq=1, update_freq=2, polyak_tau=0.2, polyak_average= True,
+                        log_dir=LOG_DIR, save_snapshots=True, device=TORCH_DEVICE)
+    trianHist = ddqn_trainer.trainAgent(render=True)
     logger.close()
