@@ -12,7 +12,7 @@ class State_n_Transition_Maker():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(25,25), 
-                    angle = 45, worth_offset=0.0) -> None:
+                    angle = 45, worth_offset=0.0, positive_emphasis=True) -> None:
         """ mode is required to assert whether it is required to make transitions """
         self.istraining = mode == 'train'
         self.angle = angle
@@ -20,6 +20,7 @@ class State_n_Transition_Maker():
         self.worth_offset = worth_offset
         self.berryField = berryField
         self.field_grid_size = field_grid_size
+        self.positive_emphasis = positive_emphasis
 
         # init memories and other stuff
         self._init_memories()
@@ -28,6 +29,14 @@ class State_n_Transition_Maker():
 
         self.divLenX = berryField.FIELD_SIZE[0]//field_grid_size[0]
         self.divLenY = berryField.FIELD_SIZE[1]//field_grid_size[1]
+
+        if self.positive_emphasis:
+            print('''positive rewards are now emphasised in the state-transitions
+            Once a berry is encountered (say at index i), new transitions of the following
+            description will also be appended: all the transitions k < i
+            such that the sum of reward from k to i is positive will have the 
+            next-state replaced by the state at transition at index i. And the rewards
+            will also be replaced by the summation from k to i.\n''')
 
     def _init_memories(self):
         memory_grid_size = self.field_grid_size[0]*self.field_grid_size[1]
@@ -104,7 +113,7 @@ class State_n_Transition_Maker():
         index = int(index)
 
         # decay the path memory and updaate
-        self.path_memory *= 0.99
+        self.path_memory *= 0.999
         self.path_memory[index] = 1
         
         # update berry memory
@@ -147,18 +156,33 @@ class State_n_Transition_Maker():
     def makeState(self, skip_trajectory, action_taken):
         """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
         if not self.istraining: return self.computeState(*skip_trajectory[-1])
-
+        
         # if mode = 'train' we make the state-transitions (s,a,r,ns,d) for replay-buffer
         self.state_transitions = []
-        prev_state = self.computeState(*skip_trajectory[0])
-        if len(skip_trajectory) == 1: return prev_state
-
+        current_state = self.computeState(*skip_trajectory[0])
         for i in range(1, len(skip_trajectory)):
             reward, done = skip_trajectory[i][2:]
-            current_state = self.computeState(*skip_trajectory[i])
-            self.state_transitions.append([prev_state, action_taken, reward, current_state, done])
-            prev_state = current_state
-            
+            next_state = self.computeState(*skip_trajectory[i])
+            self.state_transitions.append([current_state, action_taken, reward, next_state, done])
+            current_state = next_state
+        
+        if self.positive_emphasis:# more emphasis on positive rewards
+            # find where berries were encountered
+            berry_indices = [0] + [i for i,x in enumerate(self.state_transitions) if x[2] > 0]
+            # for each k: a < k < b for consequitive a,b in berry indices
+            # append transitions with start-state at k and next-state at b (goal)
+            # if the summed reward from k to b is positive
+            for i in range(1, len(berry_indices)):
+                a, b = berry_indices[i-1:i+1]
+                if a+1 >= b: continue
+                reward_b = self.state_transitions[b][2]
+                good_state = self.state_transitions[b][3]
+                for k in range(b-1, a, -1):
+                    s, a, r, ns, d = self.state_transitions[k]
+                    reward_b += r
+                    self.state_transitions.append([s,a,reward_b,good_state,d])
+                    if reward_b <= 0: break
+                    
         return current_state
         
     
@@ -166,3 +190,24 @@ class State_n_Transition_Maker():
         """ get the state-transitions """
         return self.state_transitions
         
+
+# CODE SNIPPETS
+
+# if self.positive_emphasis:# more emphasis on positive rewards
+#     for i in range(len(self.state_transitions)):
+#         # if a berry was encountered
+#         if self.state_transitions[i][2] > 0 and i > 0:
+#             good_state = self.state_transitions[i][3]
+#             reward_budget = self.state_transitions[i][2]
+
+#             # go back till the reward becomes 0 (due to living expense)
+#             sum_rewards = []
+#             for j in range(i-1, -1, -1):
+#                 reward_budget += self.state_transitions[j][2]
+#                 sum_rewards.append(reward_budget)
+#                 if reward_budget <= 0: break
+
+#             # make the next_state as good_state (goal) for all k: j <= k < i
+#             for k in range(j,i): 
+#                 self.state_transitions[k][3] = good_state
+#                 self.state_transitions[k][2] = sum_rewards[j-k]
