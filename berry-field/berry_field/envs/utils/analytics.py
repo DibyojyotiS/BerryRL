@@ -126,11 +126,11 @@ class BerryFieldAnalytics():
         # save the results
         with open(os.path.join(self.saveFolder,'results.txt'), 'w') as f:
             f.writelines([
-                f"preference: {self.total_preference}",
-                f"total peripheral_patch_time: {total_peripheral_patch_time}",
-                f"total total_central_patch_time: {total_central_patch_time}",
-                f"peripheral_patch_times: {self.peripheral_patch_times}",
-                f"central_patch_times: {self.central_patch_times}"
+                f"preference: {self.total_preference}\n",
+                f"total peripheral_patch_time: {total_peripheral_patch_time}\n",
+                f"total total_central_patch_time: {total_central_patch_time}\n",
+                f"peripheral_patch_times: {self.peripheral_patch_times}\n",
+                f"central_patch_times: {self.central_patch_times}\n"
             ])
 
         
