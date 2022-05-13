@@ -17,7 +17,7 @@ class State_n_Transition_Maker():
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(25,25), 
                     angle = 45, worth_offset=0.0, noise=0.05, positive_emphasis=True,
-                    memory_alpha=0.99, debug=False, debugDir='.temp/stMakerdebug') -> None:
+                    memory_alpha=0.99, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
         self.istraining = mode == 'train'
         self.angle = angle
@@ -50,7 +50,7 @@ class State_n_Transition_Maker():
         self.debug = debug
         if debug:
             self.debugDir = os.path.join(debugDir, 'stMakerdebug')
-            if not os.path.exists(debugDir): os.makedirs(debugDir)
+            if not os.path.exists(self.debugDir): os.makedirs(self.debugDir)
             self.state_debugfile = open(os.path.join(self.debugDir, 'stMakerdebugstate.txt'), 'w', 1)
             self.env_recordfile = open(os.path.join(self.debugDir, 'stMakerrecordenv.txt'), 'w', 1)
 
