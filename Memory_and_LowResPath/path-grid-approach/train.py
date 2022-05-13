@@ -19,13 +19,13 @@ if __name__ == '__main__':
     # setup logging
     logger = StdoutLogger(filename=os.path.join(LOG_DIR, 'log.txt'))
 
-    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, show=True)
+    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR)
     stMaker = State_n_Transition_Maker(berry_env)
 
     nnet = make_net(
         inDim = stMaker.get_output_shape()[0],
         outDim = berry_env.action_space.n,
-        hDim = [64,64,64,64]
+        hDim = [64,64,64,64,64]
     )
 
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), alpha=0.95, beta=0.1, beta_rate=0.01)

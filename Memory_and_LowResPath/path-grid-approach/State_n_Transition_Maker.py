@@ -12,7 +12,7 @@ class State_n_Transition_Maker():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(25,25), 
-                    angle = 45, worth_offset=0.0, positive_emphasis=True) -> None:
+                    angle = 45, worth_offset=0.0, noise=0.05, positive_emphasis=True) -> None:
         """ mode is required to assert whether it is required to make transitions """
         self.istraining = mode == 'train'
         self.angle = angle
@@ -21,6 +21,7 @@ class State_n_Transition_Maker():
         self.berryField = berryField
         self.field_grid_size = field_grid_size
         self.positive_emphasis = positive_emphasis
+        self.noise = noise
 
         # init memories and other stuff
         self._init_memories()
@@ -144,7 +145,7 @@ class State_n_Transition_Maker():
             self.berry_memory, self.path_memory
         ])
 
-        return state
+        return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
 
     def get_output_shape(self):
@@ -182,7 +183,7 @@ class State_n_Transition_Maker():
                     reward_b += r
                     self.state_transitions.append([s,a,reward_b,good_state,d])
                     if reward_b <= 0: break
-                    
+
         return current_state
         
     

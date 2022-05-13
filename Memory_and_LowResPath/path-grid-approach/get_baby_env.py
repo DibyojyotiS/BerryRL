@@ -80,7 +80,7 @@ def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nb
     def env_reset(berry_env_reset):
         def reset(**args):
             berry_data, initial_pos = random_baby_berryfield(field_size, patch_size, 
-                                                            num_patches, nberries) # reset the env  
+                                                            num_patches, nberries, show) # reset the env  
             x = berry_env_reset(berry_data=berry_data, initial_position=initial_pos)
             return x
         return reset

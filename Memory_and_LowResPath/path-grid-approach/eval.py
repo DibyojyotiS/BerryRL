@@ -23,15 +23,15 @@ if __name__ == '__main__':
     nnet = make_net(
         inDim = stMaker.get_output_shape()[0],
         outDim = berry_env.action_space.n,
-        hDim = [64,64,64]
+        hDim = [64,64,64,64,64]
     )
-    nnet.load_state_dict(torch.load('Memory_and_LowResPath\path-grid-approach\.temp\\2022-5-13 10-38-36\\2022-5-13 10-38-38\\targetmodel_weights_episode_6.pth'))
+    nnet.load_state_dict(torch.load('Memory_and_LowResPath\path-grid-approach\.temp\\2022-5-13 10-56-57\\2022-5-13 10-57-6\onlinemodel_weights_episode_1.pth'))
     nnet.eval()
 
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)
     optim = RMSprop(nnet.parameters(), lr=0.0001)
     tstrat = epsilonGreedyAction(nnet, 0.5, 0.01, 50)
-    estrat = softMaxAction(nnet,temperature=2)
+    estrat = softMaxAction(nnet,temperature=1)
 
     # an user-print-function to print extra stats
     def print_fn():
