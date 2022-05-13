@@ -1,3 +1,4 @@
+from berry_field.envs.berry_field_env import BerryFieldEnv
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
@@ -8,12 +9,12 @@ def random_baby_berryfield(field_size=(4000,4000), patch_size = (1000,1000),
     berry_sizes = [10,20,30,40]
     agent_size=10
     max_berry_size = max(berry_sizes)
+    pw,ph = patch_size
 
     # make random patches that don't overlap
-    offset_x, offset_y = patch_size[0]/2+max_berry_size, patch_size[1]/2+max_berry_size
+    offset_x, offset_y = pw/2+max_berry_size, ph/2+max_berry_size
     low_x, high_x = offset_x, field_size[0]-offset_x
     low_y, high_y = offset_y, field_size[1]-offset_y
-    w,h = patch_size
     while True:
         patch_centers_x = np.random.randint(low_x, high_x, num_patches)
         patch_centers_y = np.random.randint(low_y, high_y, num_patches)
@@ -22,7 +23,7 @@ def random_baby_berryfield(field_size=(4000,4000), patch_size = (1000,1000),
             for j in range(i+1, num_patches):
                 x1,y1 = patch_centers_x[i],patch_centers_y[i]
                 x2,y2 = patch_centers_x[j],patch_centers_y[j]
-                if abs(x1-x2) < w and abs(y1-y2) < h: 
+                if abs(x1-x2) < pw and abs(y1-y2) < ph: 
                     collision_found = True
                     break
         if not collision_found: break
@@ -32,8 +33,8 @@ def random_baby_berryfield(field_size=(4000,4000), patch_size = (1000,1000),
     for i,(px,py) in enumerate(zip(patch_centers_x, patch_centers_y)):
         berry_data[i*n_berries:(i+1)*n_berries, 0] = i
         berry_data[i*n_berries:(i+1)*n_berries, 1] = np.random.choice(berry_sizes, n_berries)
-        low_x = low_y = 2*max_berry_size
-        high_x, high_y = patch_size[0]-2*max_berry_size, patch_size[1]-2*max_berry_size
+        low_x, low_y = 2*max_berry_size - pw/2, 2*max_berry_size - ph/2,
+        high_x, high_y = pw/2-2*max_berry_size, ph/2-2*max_berry_size
         berry_data[i*n_berries:(i+1)*n_berries, 2] = np.random.randint(low_x, high_x, n_berries) + px
         berry_data[i*n_berries:(i+1)*n_berries, 3] = np.random.randint(low_y, high_y, n_berries) + py
 
@@ -41,8 +42,8 @@ def random_baby_berryfield(field_size=(4000,4000), patch_size = (1000,1000),
     dist_to_keep = berry_data[:,1] + agent_size
     while True:
         i = np.random.randint(0, num_patches)
-        init_x = np.random.randint(0, patch_size[0]) + patch_centers_x[i]
-        init_y = np.random.randint(0, patch_size[1]) + patch_centers_y[i]
+        init_x = np.random.randint(0, pw) - pw/2 + patch_centers_x[i]
+        init_y = np.random.randint(0, ph) - ph/2 + patch_centers_y[i]
         dists = np.abs(berry_data[:,2:] - [init_x,init_y])
         no_collisions = True
         for (dx, dy), dk in zip(dists, dist_to_keep):
@@ -53,7 +54,8 @@ def random_baby_berryfield(field_size=(4000,4000), patch_size = (1000,1000),
 
     if show:
         fig, ax = plt.subplots()
-        for x,y in zip(patch_centers_x, patch_centers_y): ax.add_patch(Rectangle((x,y), *patch_size, fill=False))
+        for x,y in zip(patch_centers_x, patch_centers_y): ax.add_patch(Rectangle((x-pw/2,y-ph/2), *patch_size, fill=False))
+        ax.add_patch(Rectangle((0,0), *field_size, fill=False))
         ax.scatter(x = berry_data[:,2], y=berry_data[:,3], s=berry_data[:,1], c='r', zorder=num_patches+1)
         ax.scatter(x=init_x, y=init_y, c='black', s=10)
         plt.show()
