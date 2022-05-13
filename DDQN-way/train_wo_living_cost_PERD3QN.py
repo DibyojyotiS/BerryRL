@@ -4,24 +4,24 @@ import os
 import pickle
 import shutil
 import time
-import torch
 
+import torch
 from berry_field.envs.berry_field_env import BerryFieldEnv
 from DRLagents import (DDQN, PrioritizedExperienceRelpayBuffer,
                        epsilonGreedyAction, greedyAction)
 from DRLagents.utils.stdoutLogger import StdoutLogger
-
 from torch.optim.rmsprop import RMSprop
-from make_net import make_net
 
+from make_net import make_net
 from make_state import get_make_state
 from random_baby_env import random_baby_berryfield
+
 # from make_state import get_make_transitions
 
 BABY_FIELD_SIZE = (4000,4000)
 PATCH_SIZE = (1000,1000)
 NUM_PATCHES = 5
-BERRIES_PER_PATCH = 10
+BERRIES_PER_PATCH = 20
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 

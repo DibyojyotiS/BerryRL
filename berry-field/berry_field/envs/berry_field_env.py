@@ -92,7 +92,7 @@ class BerryFieldEnv(gym.Env):
         self.AGENT_SIZE = agent_size
         self.INITIAL_POSITION = initial_position
         self.DRAIN_RATE = 1/(2*120*speed)
-        self.MAXPOSDIST = 0.5*np.linalg.norm(observation_space_size) # 1/2 diagonal
+        self.HALFDIAGOBS = 0.5*np.linalg.norm(observation_space_size) # 1/2 diagonal
         self.REWARD_RATE = reward_rate
         self.MAX_STEPS = speed*maxtime
         self.OBSERVATION_SPACE_SIZE = observation_space_size
@@ -147,6 +147,8 @@ class BerryFieldEnv(gym.Env):
         self.analysis_enabled = enable_analytics
         self.num_resets = 0 # used to index the analysis saves
         self.recently_picked_berries = [] # sizes of the recently picked berries
+        self.current_patch_id, self.current_patch_box = self._get_current_patch() # (also required for info)
+
         # for saving the pickle properly
         self.ORIGINAL_FUNCTIONS = {func:getattr(self, func) for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")}
         if enable_analytics: 
@@ -177,6 +179,8 @@ class BerryFieldEnv(gym.Env):
         if berry_data is not None: self._init_berryfield(berry_data)
         else: self._reset_berryfield()
 
+        # get the patch the agent is in (also required for info)
+        self.current_patch_id, self.current_patch_box = self._get_current_patch()
         first_observation, first_info = self.raw_observation(), self.get_info()
 
         if self.analysis_enabled: 
@@ -188,6 +192,10 @@ class BerryFieldEnv(gym.Env):
 
 
     def step(self, action):
+        """ observation returns a list of visible berries represented by their their center and sizes 
+        make sure that self.position is correct/updated before calling this 
+        The centers are reported with origin at agent's positon, and scaled by dividing by 
+        the length of half-diagonal of the observation-space (self.HALFDIAGOBS) """
 
         assert not self.done
 
@@ -221,17 +229,21 @@ class BerryFieldEnv(gym.Env):
 
 
     def get_info(self):
-
+        """ make sure self.current_patch_id, self.current_patch_box are as intended """
         x,y = self.position
         w,h = self.OBSERVATION_SPACE_SIZE
         W,H = self.FIELD_SIZE
         
         # scaled distance (x,y) relative to center of the patch the agent is in
-        # if the agent is in no patch, then the all 1.0 is returned
-
+        # if the agent is in no patch, then the all 0.0 is returned (blends from patch to none)
+        if self.current_patch_box is not None:
+            px,py,pw,ph = self.current_patch_box
+            patch_relative = [1 - 2*(x-px)/pw, 1 - 2*(y-py)/ph]
+        else:
+            patch_relative = [0.0, 0.0]
 
         info = {
-            'patch-relative':'',
+            'patch-relative':patch_relative,
             'position':self.position,
             'total_juice': self.total_juice,
             'relative_coordinates': [x - self.INITIAL_POSITION[0], 
@@ -248,17 +260,20 @@ class BerryFieldEnv(gym.Env):
 
     def raw_observation(self):
         ''' returns visible berries as a list represented by their their center and sizes 
-        make sure that self.position is correct/updated before calling this '''
+        make sure that self.position is correct/updated before calling this 
+        The centers are reported with origin at agent's positon, and scaled by dividing by 
+        the length of half-diagonal of the observation-space (self.HALFDIAGOBS)'''
         berry_boxes = self._get_berries_in_view((*self.position, *self.OBSERVATION_SPACE_SIZE))
         berry_boxes[:,:2] = berry_boxes[:,:2] - self.position
-        # scale to 0-1
-        berry_boxes[:, :2] = berry_boxes[:, :2]/self.MAXPOSDIST
+        berry_boxes[:,:2] = berry_boxes[:,:2]/self.HALFDIAGOBS # scale to 0-1 
         return berry_boxes[:,:3]
 
 
     def get_numBerriesPicked(self):
         return self.num_berry_collected
 
+    def get_totalBerries(self):
+        return len(self.berry_collision_tree.boxIds)
 
     def curiosity_reward(self):
         """ the agent is rewarded by curiosity_reward when it enters a section for the first time 
@@ -489,7 +504,7 @@ class BerryFieldEnv(gym.Env):
         agent_bbox = (*self.position, self.AGENT_SIZE, self.AGENT_SIZE)
         overlaping_patches, boxes = self.patch_tree.boxes_within_overlap(agent_bbox, return_boxes=True)
         if len(overlaping_patches) > 0: 
-            self.patch_visited[overlaping_patches[0]] += 1
+            self.patch_visited[overlaping_patches[0]] = 1
             return overlaping_patches[0], boxes[0]
         return None, None
 
