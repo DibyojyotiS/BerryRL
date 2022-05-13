@@ -1,8 +1,12 @@
 # remember the approx loc of unpicked berries
 # remember a low-res path
 
+import os
 from berry_field.envs.berry_field_env import BerryFieldEnv
 from berry_field.envs.utils.misc import getTrueAngles
+from matplotlib import pyplot as plt
+from matplotlib.lines import Line2D
+from matplotlib.patches import Rectangle
 import numpy as np
 
 ROOT_2_INV = 0.5**(0.5)
@@ -12,19 +16,21 @@ class State_n_Transition_Maker():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(25,25), 
-                    angle = 45, worth_offset=0.0, noise=0.05, positive_emphasis=True) -> None:
+                    angle = 45, worth_scale=50.0, noise=0.05, positive_emphasis=True,
+                    memory_alpha=0.99, debug=False, debugDir='.temp/stMakerdebug') -> None:
         """ mode is required to assert whether it is required to make transitions """
         self.istraining = mode == 'train'
         self.angle = angle
-        self.num_sectors = 360//angle        
-        self.worth_offset = worth_offset
+        self.worth_scale = worth_scale
         self.berryField = berryField
         self.field_grid_size = field_grid_size
         self.positive_emphasis = positive_emphasis
         self.noise = noise
+        self.memory_alpha = memory_alpha
 
         # init memories and other stuff
         self._init_memories()
+        self.num_sectors = 360//angle        
         self.state_transitions = []
         self.output_shape = None
 
@@ -38,23 +44,30 @@ class State_n_Transition_Maker():
             such that the sum of reward from k to i is positive will have the 
             next-state replaced by the state at transition at index i. And the rewards
             will also be replaced by the summation from k to i.\n''')
+        
+        # setup debug
+        self.debugDir = debugDir
+        self.debug = debug
+        if debug:
+            if not os.path.exists(debugDir): os.makedirs(debugDir)
+            self.state_debugfile = open(os.path.join(debugDir, 'stMakerdebugstate.txt'), 'w', 1)
+            self.env_recordfile = open(os.path.join(debugDir, 'stMakerrecordenv.txt'), 'w', 1)
+
 
     def _init_memories(self):
         memory_grid_size = self.field_grid_size[0]*self.field_grid_size[1]
         self.path_memory = np.zeros(memory_grid_size) # aprox path
         self.berry_memory = np.zeros(memory_grid_size) # aprox place of sighting a berry
 
-
     # for computation of berry worth, can help to change 
     # the agent's preference of different sizes of berries. 
     def berry_worth_function(self, sizes, distances):
         """ the reward that can be gained by pursuing a berry of given size and distance"""
         rr, dr = self.berryField.REWARD_RATE, self.berryField.DRAIN_RATE
-        worth = rr * sizes - dr * distances + self.worth_offset
+        worth = rr * sizes - dr * distances
         worth = np.clip(worth, -1, 1)
-        return worth
+        return worth * self.worth_scale
 
-    
     def _compute_sectorized(self, raw_observation, info):
         """  """
         a1 = np.zeros(self.num_sectors) # max-worth of each sector
@@ -114,11 +127,11 @@ class State_n_Transition_Maker():
         index = int(index)
 
         # decay the path memory and updaate
-        self.path_memory *= 0.999
+        self.path_memory *= self.memory_alpha 
         self.path_memory[index] = 1
         
         # update berry memory
-        self.berry_memory[index] = 0.5*total_worth + 0.5*self.berry_memory[index]
+        self.berry_memory[index] = 0.2*total_worth + 0.8*self.berry_memory[index]
 
 
     def computeState(self, raw_observation, info, reward, done) -> np.ndarray:
@@ -147,18 +160,8 @@ class State_n_Transition_Maker():
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
-
-    def get_output_shape(self):
-        if not self.output_shape:
-            self.output_shape = self.computeState(None, None, None, None).shape
-        return self.output_shape
-
     
-    def makeState(self, skip_trajectory, action_taken):
-        """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
-        if not self.istraining: return self.computeState(*skip_trajectory[-1])
-        
-        # if mode = 'train' we make the state-transitions (s,a,r,ns,d) for replay-buffer
+    def _compute_transitons_n_finalstate(self, skip_trajectory, action_taken):
         self.state_transitions = []
         current_state = self.computeState(*skip_trajectory[0])
         for i in range(1, len(skip_trajectory)):
@@ -183,32 +186,94 @@ class State_n_Transition_Maker():
                     reward_b += r
                     self.state_transitions.append([s,a,reward_b,good_state,d])
                     if reward_b <= 0: break
+        
+        return current_state # the final state
 
-        return current_state
+    def get_output_shape(self):
+        if not self.output_shape:
+            self.output_shape = self.computeState(None, None, None, None).shape
+        return self.output_shape
+
+    def makeState(self, skip_trajectory, action_taken):
+        """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
+        if not self.istraining: 
+            final_state = self.computeState(*skip_trajectory[-1])
+        else:
+            final_state = self._compute_transitons_n_finalstate(skip_trajectory, action_taken)
+
+        # debug
+        if self.debug: 
+            agent, berries = self.berryField.get_human_observation()
+            np.savetxt(self.state_debugfile, [final_state])
+            np.savetxt(self.env_recordfile, [np.concatenate([agent, *berries[:,:3]])])
+
+        return final_state
         
     
     def makeTransitions(self, skip_trajectory, state, action, nextState):
         """ get the state-transitions """
         return self.state_transitions
+
+
+    def showDebug(self, debugDir = None):
         
+        # close the log files if not already closed
+        if self.debug and not self.state_debugfile.closed:
+            self.state_debugfile.write('end')
+            self.state_debugfile.close()
+        if self.debug and not self.env_recordfile.closed:
+            self.env_recordfile.write('end')
+            self.env_recordfile.close()
+        
+        if not debugDir: debugDir = self.debugDir
 
-# CODE SNIPPETS
+        fig, ax = plt.subplots(2,3, figsize=(15, 10))
+        plt.tight_layout()
+        f = open(os.path.join(debugDir, 'stMakerdebugstate.txt'), 'r')
+        g = open(os.path.join(debugDir, 'stMakerrecordenv.txt'), 'r')
+        while True:
+            line = f.readline()
+            line2 = g.readline()
+            if line == 'end': break
 
-# if self.positive_emphasis:# more emphasis on positive rewards
-#     for i in range(len(self.state_transitions)):
-#         # if a berry was encountered
-#         if self.state_transitions[i][2] > 0 and i > 0:
-#             good_state = self.state_transitions[i][3]
-#             reward_budget = self.state_transitions[i][2]
+            state = np.array(eval('[' + line[:-1].replace(' ', ',') + ']'), dtype=float)
+            agent_and_berries = np.array(eval('[' + line2[:-1].replace(' ', ',') + ']'), dtype=float).reshape(-1,3)
 
-#             # go back till the reward becomes 0 (due to living expense)
-#             sum_rewards = []
-#             for j in range(i-1, -1, -1):
-#                 reward_budget += self.state_transitions[j][2]
-#                 sum_rewards.append(reward_budget)
-#                 if reward_budget <= 0: break
+            sectorized_states = state[:4*self.num_sectors].reshape(4,self.num_sectors)
+            edge_dist = state[4*self.num_sectors: 4*self.num_sectors+4]
+            patch_relative = state[4*self.num_sectors+4:4*self.num_sectors+4+1]
+            memories = state[4*self.num_sectors+4+1:]
+            berry_memory = memories[:self.field_grid_size[0]*self.field_grid_size[1]].reshape(self.field_grid_size)
+            path_memory = memories[self.field_grid_size[0]*self.field_grid_size[1]:].reshape(self.field_grid_size)
 
-#             # make the next_state as good_state (goal) for all k: j <= k < i
-#             for k in range(j,i): 
-#                 self.state_transitions[k][3] = good_state
-#                 self.state_transitions[k][2] = sum_rewards[j-k]
+            berries = agent_and_berries[1:]
+            agent = agent_and_berries[0]
+            w,h = self.berryField.OBSERVATION_SPACE_SIZE
+            W, H = self.berryField.FIELD_SIZE
+
+            ax[0][0].imshow(sectorized_states)
+            ax[0][1].bar([*range(2)],patch_relative)
+            ax[0][2].bar([*range(4)],edge_dist)
+            ax[1][0].imshow(berry_memory)
+            ax[1][1].imshow(path_memory)
+
+            # draw the berry-field
+            ax[1][2].scatter(x=berries[:,0], y=berries[:,1], s=berries[:,2], c='r')
+            ax[1][2].scatter(x=agent[0], y=agent[1], s=agent[2], c='black')
+            ax[1][2].add_patch(Rectangle((agent[0]-w/2, agent[1]-h/2), w,h, fill=False))
+            ax[1][2].add_patch(Rectangle((agent[0]-w/2-30,agent[1]-h/2-30), w+60,h+60, fill=False))
+            if agent[0]-w/2 < 0: ax[1][2].add_patch(Rectangle((0, agent[1] - h/2), 1, h, color='blue'))
+            if agent[1]-h/2 < 0: ax[1][2].add_patch(Rectangle((agent[0] - w/2, 0), w, 1, color='blue'))
+            if W-agent[0]-w/2<0: ax[1][2].add_patch(Rectangle((W, agent[1] - h/2), 1, h, color='blue'))
+            if H-agent[1]-h/2<0: ax[1][2].add_patch(Rectangle((agent[0] - w/2, H), w, 1, color='blue'))
+
+            plt.pause(0.001)
+            
+            for b in ax: 
+                for a in b: a.clear() 
+            
+        plt.show()
+        plt.close()
+
+        f.close()
+        g.close()

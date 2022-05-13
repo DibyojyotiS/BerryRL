@@ -239,9 +239,9 @@ class BerryFieldEnv(gym.Env):
         # if the agent is in no patch, then the all 0.0 is returned (blends from patch to none)
         if self.current_patch_box is not None:
             px,py,pw,ph = self.current_patch_box
-            patch_relative = [1 - 2*abs(x-px)/pw, 1 - 2*abs(y-py)/ph]
+            patch_relative = [(1 - 2*abs(x-px)/pw)*(1 - 2*abs(y-py)/ph)]
         else:
-            patch_relative = [0.0, 0.0]
+            patch_relative = [0.0]
 
         info = {
             'patch-relative':patch_relative,
@@ -370,7 +370,14 @@ class BerryFieldEnv(gym.Env):
 
         return self.viewer.render(return_rgb_array=mode=="rgb_array")
 
-    
+
+    def get_human_observation(self):
+        """ returns the agent's (x,y,size) and all visible berries as (x,y,size) """
+        agent_cbox = [*self.position, self.AGENT_SIZE]
+        boxes = self._get_berries_in_view((*self.position, *self.OBSERVATION_SPACE_SIZE))
+        return agent_cbox, boxes[:,:3]
+
+
     def _init_berryfield(self, user_berry_data):
         """ Inits the collision trees and other structures to make the field """
         # load and process the data
