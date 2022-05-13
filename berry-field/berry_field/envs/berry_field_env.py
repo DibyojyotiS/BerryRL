@@ -154,7 +154,7 @@ class BerryFieldEnv(gym.Env):
         if enable_analytics: 
             analytics_folder = os.path.join(analytics_folder, 'analytics-berry-field')
             self.analytics_folder = os.path.join(analytics_folder, '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
-            self._init_analysis(self.analytics_folder)
+            self._init_analysis(self.analytics_folder, first_init=True)
 
 
     def reset(self, info=False, initial_position=None, berry_data=None):
@@ -169,9 +169,6 @@ class BerryFieldEnv(gym.Env):
         self.total_juice = 0.5
         self.current_action = 0
         self.num_berry_collected = 0
-        
-        # increment resets
-        self.num_resets += 1
 
         self.position = initial_position if initial_position is not None else self.INITIAL_POSITION
 
@@ -187,6 +184,9 @@ class BerryFieldEnv(gym.Env):
         if self.analysis_enabled: 
             self.analysis.close()
             self._init_analysis(self.analytics_folder)
+
+        # increment resets (increment only after _init_analysis)
+        self.num_resets += 1
 
         if info: return first_observation, first_info
         else: return first_observation
@@ -399,7 +399,7 @@ class BerryFieldEnv(gym.Env):
         self.berry_collision_tree = copy.deepcopy(self.ORIGINAL_BERRY_COLLISION_TREE)
         self.patch_visited = {i:0 for i in range(len(self.patch_tree.boxes))}
 
-    def _init_analysis(self, save_folder):
+    def _init_analysis(self, save_folder, first_init=False):
         """ always call after environment init """
         # imported here to avoid circular import
         from berry_field.envs.utils.analytics import BerryFieldAnalytics
@@ -408,17 +408,19 @@ class BerryFieldEnv(gym.Env):
         save_Folder = os.path.join(save_folder, f'{self.num_resets}')
         if not os.path.exists(save_Folder): os.makedirs(save_Folder)
 
-        # save the data neccessary to rebuild the same berry-field
-        self.analysis = None # because i.o wrapper cannot be pickled
-        with open(os.path.join(save_Folder, 'berryenv.obj'), 'wb') as f:
-            # save all the possibly user-modified functions
-            user_modified = {func:getattr(self, func) for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")}
-            # revert all user-modified functions and default defn
-            for func in user_modified.keys(): self.__setattr__(func, self.ORIGINAL_FUNCTIONS[func])
-            # save the berry-field
-            pickle.dump(self, f,pickle.HIGHEST_PROTOCOL)
-            # load back user-modified functions
-            for func in user_modified.keys(): self.__setattr__(func, user_modified[func])
+        # nothing to save in first-init
+        if not first_init:
+            # save the data neccessary to rebuild the same berry-field
+            self.analysis = None # because i.o wrapper cannot be pickled
+            with open(os.path.join(save_Folder, 'berryenv.obj'), 'wb') as f:
+                # save all the possibly user-modified functions
+                user_modified = {func:getattr(self, func) for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")}
+                # revert all user-modified functions and default defn
+                for func in user_modified.keys(): self.__setattr__(func, self.ORIGINAL_FUNCTIONS[func])
+                # save the berry-field
+                pickle.dump(self, f,pickle.HIGHEST_PROTOCOL)
+                # load back user-modified functions
+                for func in user_modified.keys(): self.__setattr__(func, user_modified[func])
 
         # init the analysis with the save folder
         self.analysis = BerryFieldAnalytics(self, save_Folder)
