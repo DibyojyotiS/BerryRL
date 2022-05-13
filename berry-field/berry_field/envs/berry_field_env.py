@@ -50,7 +50,7 @@ class BerryFieldEnv(gym.Env):
 
                 # for analytics
                 enable_analytics = True,
-                analytics_folder = '.temp/analytics-berry-field'
+                analytics_folder = '.temp'
                 ):
         '''
         ## Environment\n
@@ -152,6 +152,7 @@ class BerryFieldEnv(gym.Env):
         # for saving the pickle properly
         self.ORIGINAL_FUNCTIONS = {func:getattr(self, func) for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")}
         if enable_analytics: 
+            analytics_folder = os.path.join(analytics_folder, 'analytics-berry-field')
             self.analytics_folder = os.path.join(analytics_folder, '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
             self._init_analysis(self.analytics_folder)
 
