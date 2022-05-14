@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     nnet = agent.getNet(TORCH_DEVICE)
 
-    nnet.load_state_dict(torch.load('.temp\\2022-5-14 11-8-54\\trainLogs\\targetmodel_weights_episode_8.pth'))
+    nnet.load_state_dict(torch.load('.temp\\2022-5-14 11-39-27\\trainLogs\\targetmodel_weights_episode_100.pth'))
     nnet.eval()
 
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)
