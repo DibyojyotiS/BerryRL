@@ -17,6 +17,8 @@ def make_simple_convnet(inchannel:int, channels:list, kernels:list, strides:list
             nn.MaxPool2d(maxpkernels[i-1]),
             nn.Conv2d(channels[i-1], channels[i], kernels[i], strides[i], padding=paddings[i]),
         ])
+    if len(maxpkernels) == len(channels):
+        conv.append(nn.MaxPool2d(maxpkernels[-1]))
     return conv
 
 

@@ -3,12 +3,13 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
 
+BERRY_SIZES = [10,20,30,40]
+AGENT_SIZE=10
+
 def random_baby_berryfield(field_size=(4000,4000), patch_size = (1000,1000), 
                         num_patches=5, n_berries=10, show=False):
     """ n_berries: number of berries per patch """
-    berry_sizes = [10,20,30,40]
-    agent_size=10
-    max_berry_size = max(berry_sizes)
+    max_berry_size = max(BERRY_SIZES)
     pw,ph = patch_size
 
     # make random patches that don't overlap
@@ -32,14 +33,14 @@ def random_baby_berryfield(field_size=(4000,4000), patch_size = (1000,1000),
     berry_data = np.zeros((num_patches*n_berries, 4))
     for i,(px,py) in enumerate(zip(patch_centers_x, patch_centers_y)):
         berry_data[i*n_berries:(i+1)*n_berries, 0] = i
-        berry_data[i*n_berries:(i+1)*n_berries, 1] = np.random.choice(berry_sizes, n_berries)
+        berry_data[i*n_berries:(i+1)*n_berries, 1] = np.random.choice(BERRY_SIZES, n_berries)
         low_x, low_y = 2*max_berry_size - pw/2, 2*max_berry_size - ph/2,
         high_x, high_y = pw/2-2*max_berry_size, ph/2-2*max_berry_size
         berry_data[i*n_berries:(i+1)*n_berries, 2] = np.random.randint(low_x, high_x, n_berries) + px
         berry_data[i*n_berries:(i+1)*n_berries, 3] = np.random.randint(low_y, high_y, n_berries) + py
 
     # set the initial position
-    dist_to_keep = berry_data[:,1] + agent_size
+    dist_to_keep = berry_data[:,1] + AGENT_SIZE
     while True:
         i = np.random.randint(0, num_patches)
         init_x = np.random.randint(0, pw) - pw/2 + patch_centers_x[i]
@@ -54,16 +55,19 @@ def random_baby_berryfield(field_size=(4000,4000), patch_size = (1000,1000),
 
     if show:
         fig, ax = plt.subplots()
-        for x,y in zip(patch_centers_x, patch_centers_y): ax.add_patch(Rectangle((x-pw/2,y-ph/2), *patch_size, fill=False))
+        for x,y in zip(patch_centers_x, patch_centers_y): 
+            ax.add_patch(Rectangle((x-pw/2,y-ph/2), *patch_size, fill=False))
         ax.add_patch(Rectangle((0,0), *field_size, fill=False))
-        ax.scatter(x = berry_data[:,2], y=berry_data[:,3], s=berry_data[:,1], c='r', zorder=num_patches+1)
+        ax.scatter(x = berry_data[:,2], y=berry_data[:,3], 
+                    s=berry_data[:,1], c='r', zorder=num_patches+1)
         ax.scatter(x=init_x, y=init_y, c='black', s=10)
         plt.show()
 
     return berry_data, initial_position
 
 
-def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nberries=10, logDir='.temp', show=False):
+def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nberries=10, 
+                logDir='.temp', living_cost=True, show=False):
     # making the berry env
     random_berry_data, random_init_pos = random_baby_berryfield(field_size, patch_size, 
                                                                 num_patches, nberries, show)
@@ -86,12 +90,15 @@ def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nb
         return reset
 
     def env_step(berry_env_step):
-        print('no living cost: reward=(100*(reward>0)+(reward<=-1))*reward')
-        # print('all rewards scaled by 100 (except boundary hit)')
+        if living_cost: 
+            print('with living cost, rewards (except boundary hit) scaled by 1/(berry_env.REWARD_RATE*MAXSIZE)')
+        else: print('no living cost, rewards (except boundary hit) scaled by 1/(berry_env.REWARD_RATE*MAXSIZE)')
+        MAXSIZE = max(BERRY_SIZES)
+        scale = 1/(berry_env.REWARD_RATE*MAXSIZE)
         def step(action):
             state, reward, done, info = berry_env_step(action)
-            # if reward != -1: reward = 100*reward
-            reward = (100*(reward>0) + (reward<=-1))*reward # no living cost
+            if living_cost: reward = (scale*reward if reward != -1 else reward)
+            else: reward = (scale*(reward>0) + (reward<=-1))*reward # no living cost
             return state, reward, done, info
         return step
 

@@ -22,7 +22,8 @@ class Agent():
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
                     angle = 45, worth_offset=0.0, noise=0.05, positive_emphasis=True,
-                    memory_alpha=0.99, debug=False, debugDir='.temp') -> None:
+                    emphasis_mode= 'replace', memory_alpha=0.99, debug=False, 
+                    debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
         self.istraining = mode == 'train'
         self.angle = angle
@@ -30,6 +31,7 @@ class Agent():
         self.berryField = berryField
         self.field_grid_size = field_grid_size
         self.positive_emphasis = positive_emphasis
+        self.append_mode = emphasis_mode == 'append'
         self.noise = noise
         self.memory_alpha = memory_alpha
 
@@ -43,12 +45,13 @@ class Agent():
         self.divLenY = berryField.FIELD_SIZE[1]//field_grid_size[1]
 
         if self.positive_emphasis:
-            print('''positive rewards are now emphasised in the state-transitions
+            print(f'''positive rewards are now emphasised in the state-transitions
             Once a berry is encountered (say at index i), new transitions of the following
-            description will also be appended: all the transitions k < i
-            such that the sum of reward from k to i is positive will have the 
-            next-state replaced by the state at transition at index i. And the rewards
-            will also be replaced by the summation from k to i.\n''')
+            description will also be appended (if emphasis_mode = 'append') or the entries 
+            will be replaced: all the transitions k < i such that the sum of reward from
+            k to i is positive will have the next-state replaced by the state at transition
+            at index i. And the rewards will also be replaced by the summation from k to i.
+            currently, emphasis-mode is {'append' if self.append_mode else 'replace'}.\n''')
         
         # setup debug
         self.debugDir = debugDir
@@ -86,7 +89,7 @@ class Agent():
     def _compute_sectorized(self, raw_observation, info):
         """  """
         a1 = np.zeros(self.num_sectors) # max-worth of each sector
-        a2 = np.zeros(self.num_sectors) # stores worth-densities of each sector
+        a2 = np.zeros(self.num_sectors) # stores avg-worth of each sector
         a3 = np.zeros(self.num_sectors) # indicates the sector with the max worthy berry
         a4 = np.zeros(self.num_sectors) # a mesure of distance to max worthy in each sector
         total_worth = 0
@@ -115,7 +118,7 @@ class Agent():
                     worthinesses= self.berry_worth_function(_sizes,_dists)
                     maxworthyness_idx = np.argmax(worthinesses)
                     a1[idx] = worthyness = worthinesses[maxworthyness_idx]
-                    a2[idx] = np.sum(worthinesses)/10
+                    a2[idx] = np.average(worthinesses)
                     a4[idx] = 1 - _dists[maxworthyness_idx]
                     total_worth += sum(worthinesses)
                     if worthyness > maxworth:
@@ -199,8 +202,9 @@ class Agent():
                 for k in range(b-1, a, -1):
                     s, a, r, ns, d = self.state_transitions[k]
                     reward_b += r
-                    self.state_transitions.append([s,a,reward_b,good_state,d])
-                    if reward_b <= 0: break
+                    if reward_b < 0: break
+                    if self.append_mode: self.state_transitions.append([s,a,reward_b,good_state,d])
+                    else: self.state_transitions[k][2:4] = [reward_b,good_state]
         
         return current_state # the final state
 
@@ -243,13 +247,13 @@ class Agent():
         return self.state_transitions
     
     def getNet(self, TORCH_DEVICE, debug=False,
-                linearsDim = [32,16], # layers for the feed-forward net
-                channels = [4,4,8],
+                linearsDim = [16,16],
+                channels = [4,8,8],
                 kernels = [4,3,2],
-                strides = [2,2,1],
+                strides = [2,2,2],
                 padding = [3,3,1],
-                maxpkernels = [2,2,2],
-                final_linears = [416, 64, 32]):
+                maxpkernels = [2,2],
+                final_linears = [160, 16]):
         """ create and return the model """
         num_sectors = self.num_sectors
         memory_shape = self.field_grid_size
@@ -296,7 +300,7 @@ class Agent():
                 for i, layer in enumerate(self.conv1):
                     conv_part1 = layer(conv_part1)
                     if debug: print('conv_part1',i,conv_part1.shape)
-                    # because odd layers are maxpools
+                    # because odd number layers are maxpools
                     if i%2 == 0: self.activation(conv_part1, inplace=True)
     
                 # process conv_part2
@@ -361,6 +365,8 @@ class Agent():
             agent = agent_and_berries[0]
             w,h = self.berryField.OBSERVATION_SPACE_SIZE
             W, H = self.berryField.FIELD_SIZE
+
+            berry_memory[0][0] = 1
 
             ax[0][0].imshow(sectorized_states)
             ax[0][1].bar([1,2],[1,patch_relative], [0,1])
