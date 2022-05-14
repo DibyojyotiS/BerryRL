@@ -37,9 +37,11 @@ class BerryFieldAnalytics():
         self.num_patches = len(berryField.patch_tree.boxes)
         self.central_patch_times = {patch_no:0 for patch_no in range(self.num_patches)}
         self.peripheral_patch_times = {patch_no:0 for patch_no in range(self.num_patches)}
+
         # to store the time spent exploring between patches
         self.time_between_patches = 0
 
+        self.total_berries_collected = 0
         self.unique_berry_sizes = np.unique(berryField.berry_collision_tree.boxes[:,-1])
         self.collected_berries = {patch_no:{x:0 for x in self.unique_berry_sizes} for patch_no in range(self.num_patches)}
         # self.SD_berries = {x:0 for x in self.unique_berry_sizes}
@@ -100,6 +102,7 @@ class BerryFieldAnalytics():
         # berry related stats
         if len(self.berryField.recently_picked_berries) > 0:
             for size in self.berryField.recently_picked_berries:
+                self.total_berries_collected += 1
                 self.collected_berries[patch_id][size] += 1
                 self.berries_along_patch_path.append((size, self.current_patch_steps))
 
@@ -122,6 +125,7 @@ class BerryFieldAnalytics():
             print("total total_central_patch_time: ", total_central_patch_time)
             print("peripheral_patch_times", self.peripheral_patch_times)
             print("central_patch_times", self.central_patch_times)
+            print("total berries collected:", self.total_berries_collected)
 
         # save the results
         with open(os.path.join(self.saveFolder,'results.txt'), 'w') as f:
@@ -130,7 +134,8 @@ class BerryFieldAnalytics():
                 f"total peripheral_patch_time: {total_peripheral_patch_time}\n",
                 f"total total_central_patch_time: {total_central_patch_time}\n",
                 f"peripheral_patch_times: {self.peripheral_patch_times}\n",
-                f"central_patch_times: {self.central_patch_times}\n"
+                f"central_patch_times: {self.central_patch_times}\n",
+                f"total berries collected: {self.total_berries_collected}\n"
             ])
 
         
