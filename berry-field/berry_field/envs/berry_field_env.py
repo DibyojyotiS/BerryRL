@@ -238,7 +238,9 @@ class BerryFieldEnv(gym.Env):
         # if the agent is in no patch, then the all 0.0 is returned (blends from patch to none)
         if self.current_patch_box is not None:
             px,py,pw,ph = self.current_patch_box
-            patch_relative = [(1 - 2*abs(x-px)/pw)*(1 - 2*abs(y-py)/ph)]
+            assert x >= px-pw/2, (x,y, px-pw/2, self.current_patch_box)
+            assert y >= py-ph/2, (x,y, py-ph/2, self.current_patch_box)
+            patch_relative = [min(1 - 2*abs(px-x)/pw, 1 - 2*abs(py-y)/ph)]
         else:
             patch_relative = [0.0]
 
@@ -507,11 +509,11 @@ class BerryFieldEnv(gym.Env):
 
 
     def _get_current_patch(self):
-        """ get the patch-id and bounding-box of the patch where the agent is 
+        """ get the patch-id and bounding-box of the patch where the agent's center is 
         currently in and if the agent is in no patch, then it returns None, None
         make sure that the postion is as indented before calling this"""
-        agent_bbox = (*self.position, self.AGENT_SIZE, self.AGENT_SIZE)
-        overlaping_patches, boxes = self.patch_tree.boxes_within_overlap(agent_bbox, return_boxes=True)
+        pos_bbox = (*self.position, 0, 0) # represents a point
+        overlaping_patches, boxes = self.patch_tree.boxes_within_overlap(pos_bbox, return_boxes=True)
         if len(overlaping_patches) > 0: 
             self.patch_visited[overlaping_patches[0]] = 1
             return overlaping_patches[0], boxes[0]
