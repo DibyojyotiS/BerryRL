@@ -49,7 +49,7 @@ if __name__ == '__main__':
     ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=256, skipSteps=10,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
                         gamma=0.9, MaxTrainEpisodes=400, user_printFn=print_fn,
-                        printFreq=1, update_freq=2, polyak_tau=0.8, polyak_average= True,
+                        printFreq=1, update_freq=1, polyak_tau=0.2, polyak_average= True,
                         log_dir=LOG_DIR, save_snapshots=True, device=TORCH_DEVICE)
     trianHist = ddqn_trainer.trainAgent(render=False)
     ddqn_trainer.evaluate(estrat, render=True)
