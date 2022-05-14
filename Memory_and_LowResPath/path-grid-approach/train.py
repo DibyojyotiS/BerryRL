@@ -46,7 +46,7 @@ if __name__ == '__main__':
                 '| positive-in-buffer:', sum(buffer.buffer['reward'].cpu()>0).item(),
                 f'| amount-filled: {100*len(buffer)/buffer.bufferSize:.2f}')
 
-    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=256, skipSteps=15,
+    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=256, skipSteps=10,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
                         gamma=0.9, MaxTrainEpisodes=400, user_printFn=print_fn,
                         printFreq=1, update_freq=2, polyak_tau=0.8, polyak_average= True,
