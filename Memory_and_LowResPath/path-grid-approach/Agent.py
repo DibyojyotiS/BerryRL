@@ -271,7 +271,7 @@ class Agent():
                 self.conv2 = make_simple_convnet(inchannel, channels, kernels, strides, padding, maxpkernels)
 
                 # build the final stage
-                self.final_stage = make_simple_feedforward(concatn, [outDims])
+                self.final_stage = make_simple_feedforward(concatn, [64, 32, outDims])
 
             def forward(self, input:Tensor):
 
@@ -322,6 +322,7 @@ class Agent():
         
         nnet = net()
         nnet.to(TORCH_DEVICE)
+        print('total-params: ', sum(p.numel() for p in nnet.parameters() if p.requires_grad))
         return nnet
 
 
