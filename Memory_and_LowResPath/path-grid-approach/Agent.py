@@ -249,7 +249,7 @@ class Agent():
                 strides = [2,2,1],
                 padding = [3,3,1],
                 maxpkernels = [2,2,2],
-                concatn=416):
+                final_linears = [416, 64, 32]):
         """ create and return the model """
         num_sectors = self.num_sectors
         memory_shape = self.field_grid_size
@@ -271,7 +271,7 @@ class Agent():
                 self.conv2 = make_simple_convnet(inchannel, channels, kernels, strides, padding, maxpkernels)
 
                 # build the final stage
-                self.final_stage = make_simple_feedforward(concatn, [64, 32, outDims])
+                self.final_stage = make_simple_feedforward(final_linears[0], [*final_linears[1:], outDims])
 
             def forward(self, input:Tensor):
 
