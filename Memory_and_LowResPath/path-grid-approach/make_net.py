@@ -2,7 +2,25 @@ from torch import nn
 import torch.nn.functional as F
 import torch
 
-def make_net(inDim, outDim, hDim, output_probs=False, TORCH_DEVICE=torch.device('cuda' if torch.cuda.is_available() else 'cpu')) -> nn.Module:
+def make_simple_feedforward(infeatures, linearsDim = [32,16]):
+        # build the feed-forward network
+        return nn.ModuleList([nn.Linear(infeatures, linearsDim[0]), # input layer
+                            *[nn.Linear(linearsDim[i-1], linearsDim[i]) 
+                                for i in range(1,len(linearsDim))]
+                            ])
+
+def make_simple_convnet(inchannel:int, channels:list, kernels:list, strides:list, paddings:list, maxpkernels:list):
+    """ odd layers are max-pools """
+    conv = nn.ModuleList([nn.Conv2d(inchannel, channels[0], kernels[0], strides[0], padding=paddings[0])])
+    for i in range(1, len(channels)):
+        conv.extend([
+            nn.MaxPool2d(maxpkernels[i-1]),
+            nn.Conv2d(channels[i-1], channels[i], kernels[i], strides[i], padding=paddings[i]),
+        ])
+    return conv
+
+
+def example_net(inDim, outDim, hDim, output_probs=False, TORCH_DEVICE=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
     class net(nn.Module):
         def __init__(self, inDim, outDim, hDim, activation = F.relu):
             super(net, self).__init__()
@@ -28,3 +46,11 @@ def make_net(inDim, outDim, hDim, output_probs=False, TORCH_DEVICE=torch.device(
     netw = net(inDim, outDim, hDim)
     netw.to(TORCH_DEVICE)
     return netw
+
+# example
+if __name__ == "__main__":
+    nnet = example_net(
+        inDim = 4,
+        outDim = 2,
+        hDim = [8,8]
+    )

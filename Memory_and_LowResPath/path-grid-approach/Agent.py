@@ -2,20 +2,25 @@
 # remember a low-res path
 
 import os
+
+import numpy as np
+import torch
+import torch.nn.functional as F
 from berry_field.envs.berry_field_env import BerryFieldEnv
 from berry_field.envs.utils.misc import getTrueAngles
 from matplotlib import pyplot as plt
-from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
-import numpy as np
+from torch import Tensor, nn
+
+from make_net import make_simple_convnet, make_simple_feedforward
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8
 
-class State_n_Transition_Maker():
+class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
-    def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(25,25), 
+    def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
                     angle = 45, worth_offset=0.0, noise=0.05, positive_emphasis=True,
                     memory_alpha=0.99, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
@@ -123,7 +128,6 @@ class State_n_Transition_Maker():
 
         return [a1,a2,a3,a4], avg_worth
 
-
     def _update_memories(self, info, avg_worth):
         """ update the path-memory and berry memory """
         x,y = info['position']
@@ -146,8 +150,7 @@ class State_n_Transition_Maker():
         # update berry memory
         self.berry_memory[index] = 0.2*avg_worth + 0.8*self.berry_memory[index]
 
-
-    def computeState(self, raw_observation, info, reward, done) -> np.ndarray:
+    def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
         # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
         if info is None: # reinit memory and get the info and raw observation from berryField
@@ -173,13 +176,12 @@ class State_n_Transition_Maker():
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
-    
     def _compute_transitons_n_finalstate(self, skip_trajectory, action_taken):
         self.state_transitions = []
-        current_state = self.computeState(*skip_trajectory[0])
+        current_state = self._computeState(*skip_trajectory[0])
         for i in range(1, len(skip_trajectory)):
             reward, done = skip_trajectory[i][2:]
-            next_state = self.computeState(*skip_trajectory[i])
+            next_state = self._computeState(*skip_trajectory[i])
             self.state_transitions.append([current_state, action_taken, reward, next_state, done])
             current_state = next_state
         
@@ -202,15 +204,27 @@ class State_n_Transition_Maker():
         
         return current_state # the final state
 
+    def state_desc(self):
+        """ returns the start and stop+1 indices for various parts of the state """
+        memory_size = self.field_grid_size[0] * self.field_grid_size[1]
+        state_desc = {
+            'sectorized_states': [0, 4*self.num_sectors],
+            'edge_dist': [4*self.num_sectors, 4*self.num_sectors+4],
+            'patch_relative': [4*self.num_sectors+4, 4*self.num_sectors+4+1],
+            'berry_memory': [4*self.num_sectors+4+1, 4*self.num_sectors+4+1 + memory_size],
+            'path_memory': [4*self.num_sectors+4+1 + memory_size, 4*self.num_sectors+4+1 + memory_size]
+        }
+        return state_desc
+
     def get_output_shape(self):
         if not self.output_shape:
-            self.output_shape = self.computeState(None, None, None, None).shape
+            self.output_shape = self._computeState(None, None, None, None).shape
         return self.output_shape
 
     def makeState(self, skip_trajectory, action_taken):
         """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
         if not self.istraining: 
-            final_state = self.computeState(*skip_trajectory[-1])
+            final_state = self._computeState(*skip_trajectory[-1])
         else:
             final_state = self._compute_transitons_n_finalstate(skip_trajectory, action_taken)
 
@@ -221,11 +235,94 @@ class State_n_Transition_Maker():
             np.savetxt(self.env_recordfile, [np.concatenate([agent, *berries[:,:3]])])
 
         return final_state
-        
-    
-    def makeTransitions(self, skip_trajectory, state, action, nextState):
-        """ get the state-transitions """
+           
+    def makeStateTransitions(self, skip_trajectory, state, action, nextState):
+        """ get the state-transitions - these are already computed in the
+        makeState function when mode = 'train'. All inputs to  makeStateTransitions
+        are ignored."""
         return self.state_transitions
+    
+    def getNet(self, TORCH_DEVICE, debug=False,
+                linearsDim = [32,16], # layers for the feed-forward net
+                channels = [4,4,8],
+                kernels = [4,3,2],
+                strides = [2,2,1],
+                padding = [3,3,1],
+                maxpkernels = [2,2,2],
+                concatn=416):
+        """ create and return the model """
+        num_sectors = self.num_sectors
+        memory_shape = self.field_grid_size
+        memory_size = memory_shape[0]*memory_shape[1]
+        outDims = self.berryField.action_space.n
+
+        class net(nn.Module):
+            def __init__(self, activation = F.relu):
+                super(net, self).__init__()
+                self.activation = activation
+
+                # build the feed-forward network
+                infeatures = 4*num_sectors+4+1 # the sector-states and edge,patch relative
+                self.feedforward = make_simple_feedforward(infeatures, linearsDim)
+
+                # build the conv-network
+                inchannel=1
+                self.conv1 = make_simple_convnet(inchannel, channels, kernels, strides, padding, maxpkernels)
+                self.conv2 = make_simple_convnet(inchannel, channels, kernels, strides, padding, maxpkernels)
+
+                # build the final stage
+                self.final_stage = make_simple_feedforward(concatn, [outDims])
+
+            def forward(self, input:Tensor):
+
+                # split and reshape input
+                if debug: print(input.shape)
+                feedforward_part = input[:,0:self.feedforward[0].in_features]
+                conv_part1 = input[:,self.feedforward[0].in_features:self.feedforward[0].in_features+memory_size]
+                conv_part2 = input[:,self.feedforward[0].in_features+memory_size:]
+
+                # conv2d requires 4d inputs
+                conv_part1 = conv_part1.reshape((-1,1,*memory_shape))
+                conv_part2 = conv_part2.reshape((-1,1,*memory_shape))
+
+                # get feed-forward output
+                if debug: print(feedforward_part.shape)
+                for linears in self.feedforward:
+                    feedforward_part = linears(feedforward_part)
+                    self.activation(feedforward_part, inplace=True)
+
+                # process conv_part1
+                if debug: print('conv_part1', conv_part1.shape)
+                for i, layer in enumerate(self.conv1):
+                    conv_part1 = layer(conv_part1)
+                    if debug: print('conv_part1',i,conv_part1.shape)
+                    # because odd layers are maxpools
+                    if i%2 == 0: self.activation(conv_part1, inplace=True)
+    
+                # process conv_part2
+                if debug: print('conv_part2',conv_part2.shape)
+                for i, layer in enumerate(self.conv2):
+                    conv_part2 = layer(conv_part2)
+                    if debug: print('conv_part2',i,conv_part2.shape)
+                    # because odd layers are maxpools
+                    if i%2 == 0: self.activation(conv_part2, inplace=True)
+
+                # merge all and process
+                conv_part1 = torch.flatten(conv_part1, start_dim=1)
+                conv_part2 = torch.flatten(conv_part2, start_dim=1)
+                if debug: print('for concat',feedforward_part.shape,conv_part1.shape,conv_part2.shape)
+                concat = torch.cat([conv_part1, conv_part2, feedforward_part], dim=1)
+
+                if debug: print('concat',concat.shape)
+                for layer in self.final_stage:
+                    concat = layer(concat)
+                    self.activation(concat, inplace=True)
+                
+                return concat
+        
+        nnet = net()
+        nnet.to(TORCH_DEVICE)
+        return nnet
 
 
     def showDebug(self, debugDir = None):
@@ -285,8 +382,6 @@ class State_n_Transition_Maker():
             for b in ax: 
                 for a in b: a.clear() 
             
-        plt.show()
-        plt.close()
+        plt.show(); plt.close()
+        f.close(); g.close()
 
-        f.close()
-        g.close()
