@@ -283,7 +283,7 @@ class Agent():
                 self.final_stage = make_simple_feedforward(final_linears[0], final_linears[1:])
                 
                 # for action advantage estimates
-                self.outputL = nn.Linear(final_linears[-1], outDims)
+                self.valueL = nn.Linear(final_linears[-1], 1)
                 self.actadvs = nn.Linear(final_linears[-1], outDims)
 
             def forward(self, input:Tensor):
@@ -331,11 +331,11 @@ class Agent():
                     concat = layer(concat)
                     self.activation(concat, inplace=True)
 
-                output = self.outputL(concat)
+                value = self.valueL(concat)
                 advs = self.actadvs(concat)
-                output = output + (output - advs.mean())
+                qvalues = value + (advs - advs.mean())
                 
-                return output
+                return qvalues
         
         nnet = net()
         nnet.to(TORCH_DEVICE)
@@ -407,8 +407,8 @@ class Agent():
                 maxidx = np.argmax(originalqvals)
                 ax[1][2].text(agent[0]+20, agent[1]+20, f'q:{originalqvals[maxidx]:.2f}:{action_names[maxidx]}')
 
-                # add action-qvals circles
-                colors = originalqvals/max(originalqvals)
+                # add action-advs circles
+                colors = (originalqvals-min(originalqvals))/(max(originalqvals)-min(originalqvals))
                 for angle in range(0, 360, self.angle):
                     rad = 2*np.pi * (angle/360)
                     x,y = 100*np.cos(rad), 100*np.sin(rad)

@@ -9,16 +9,17 @@ from Agent import *
 
 # baby env params
 FIELD_SIZE = (5000,5000)
-PATCH_SIZE = (1000,1000)
+PATCH_SIZE = (1400,1400)
 N_PATCHES = 5
-N_BERRIES = 50
+N_BERRIES = 10
 
 LOG_DIR = os.path.join('.temp' , '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if __name__ == '__main__':
 
-    print(LOG_DIR)
+    print(LOG_DIR, '\n', 'FIELD_SIZE:', FIELD_SIZE, 'PATCH_SIZE:', 
+            PATCH_SIZE, 'N_PATCHES:', N_PATCHES, 'N_BERRIES:', N_BERRIES)
 
     # copy all files into log-dir and setup logging
     dest = os.path.join(LOG_DIR, 'pyfiles-backup')
