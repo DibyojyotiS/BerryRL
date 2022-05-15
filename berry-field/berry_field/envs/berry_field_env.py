@@ -368,8 +368,8 @@ class BerryFieldEnv(gym.Env):
             self.viewer.add_onetime(line)
 
         # draw position and total reward
-        label = pyglet.text.Label(f'x:{self.position[0]} y:{self.position[1]} a:{self.current_action} \t total-reward:{self.total_juice:.4f} Step: {self.num_steps}', 
-                                    x=screenw*0.1, y=screenh*0.9, color=(0, 0, 0, 255))
+        label = pyglet.text.Label(f'x:{self.position[0]:.2f} y:{self.position[1]:.2f} a:{self.current_action} \
+            \t total-reward:{self.total_juice:.4f} Step: {self.num_steps}', x=screenw*0.1, y=screenh*0.9, color=(0, 0, 0, 255))
         self.viewer.add_onetimeText(label)
 
         return self.viewer.render(return_rgb_array=mode=="rgb_array")
