@@ -23,8 +23,8 @@ class Agent():
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
                     angle = 45, worth_offset=0.0, noise=0.01, positive_emphasis=True,
-                    emphasis_mode= 'replace', memory_alpha=0.99, debug=False, 
-                    debugDir='.temp') -> None:
+                    emphasis_mode= 'replace', memory_alpha=0.99, disjoint=False, 
+                    debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
         self.istraining = mode == 'train'
         self.angle = angle
@@ -35,6 +35,7 @@ class Agent():
         self.append_mode = emphasis_mode == 'append'
         self.noise = noise
         self.memory_alpha = memory_alpha
+        self.disjoint = disjoint
 
         # init memories and other stuff
         self._init_memories()
@@ -52,7 +53,8 @@ class Agent():
             will be replaced: all the transitions k < i such that the sum of reward from
             k to i is positive will have the next-state replaced by the state at transition
             at index i. And the rewards will also be replaced by the summation from k to i.
-            currently, emphasis-mode is {'append' if self.append_mode else 'replace'}.\n''')
+            currently, emphasis-mode is {'append' if self.append_mode else 'replace'}.
+            if disjoint=True, then k is limited to the index of the last berry seen\n''')
         
         # setup debug
         self.debugDir = debugDir
@@ -194,15 +196,14 @@ class Agent():
         if self.positive_emphasis:# more emphasis on positive rewards
             # find where berries were encountered
             berry_indices = [0] + [i for i,x in enumerate(self.state_transitions) if x[2] > 0]
-            # for each k: a < k < b for consequitive a,b in berry indices
-            # append transitions with start-state at k and next-state at b (goal)
-            # if the summed reward from k to b is positive
+            # for each k: idx1 < k < idx2 for consequitive idx1,idx2 in berry indices
+            # append transitions with start-state at k and next-state at idx2 (goal)
+            # if the summed reward from k to idx2 is positive
             for i in range(1, len(berry_indices)):
-                a, b = berry_indices[i-1:i+1]
-                if a+1 >= b: continue
-                reward_b = self.state_transitions[b][2]
-                good_state = self.state_transitions[b][3]
-                for k in range(b-1, a, -1):
+                idx1, idx2 = berry_indices[i-1:i+1]
+                reward_b = self.state_transitions[idx2][2]
+                good_state = self.state_transitions[idx2][3]
+                for k in range(idx2-1, idx1 if self.disjoint else 0, -1):
                     s, a, r, ns, d = self.state_transitions[k]
                     reward_b += r
                     if reward_b < 0: break
