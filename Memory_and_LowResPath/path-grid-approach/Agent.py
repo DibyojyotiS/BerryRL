@@ -400,17 +400,19 @@ class Agent():
 
             # compute q-values and plot qvals
             if nnet: 
-                qvals = nnet(torch.tensor([state], dtype=torch.float32)).detach()[0]
-                max_c = 0
+                originalqvals = nnet(torch.tensor([state], dtype=torch.float32)).detach()[0]
+                colors = originalqvals.clamp(0,1).numpy()
+                ax[1][2].add_patch(Circle((agent[0], agent[1]), 100, color=(max(colors),max(colors),0,0.5)))
+                # add action-qvals circles
                 for angle in range(0, 360, self.angle):
                     rad = 2*np.pi * (angle/360)
                     x,y = 100*np.cos(rad), 100*np.sin(rad)
-                    c = (max(-2, min(2, qvals[angle//self.angle].item())) + 2)/4
+                    c = colors[angle//self.angle]
                     ax[1][2].add_patch(Circle((agent[0]+x, agent[1]+y), 20, color=(c,c,0,1)))
-                    max_c = max(c, max_c)
-                ax[1][2].add_patch(Circle((agent[0], agent[1]), 100, color=(max_c,max_c,0,0.5)))
-                str_qvals = ' '.join([f"{np.round(x,2)}" for x in qvals.numpy().tolist()])
-                ax[1][2].set_title(f'env-record with q-vals plot\nqvals: {str_qvals}')
+                # set title
+                str_qvals = ' '.join([f"{np.round(x,2):.2f}" for x in originalqvals.numpy().tolist()])
+                meanings = '[X   , N   , NE  , E   , SE  , S   , SW  , W   , NW  ]'
+                ax[1][2].set_title(f'env-record with q-vals plot\nqvals: {str_qvals}\n           {meanings}')
 
             # titles
             ax[0][0].set_title('sectorized states')
