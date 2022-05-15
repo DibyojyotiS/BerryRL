@@ -45,7 +45,8 @@ class BerryFieldEnv(gym.Env):
                 verbose= False,
 
                 # allow no action above this cumilaive reward
-                no_action_r_threshold = -float('inf'),
+                allow_action_noAction = False, # remove this no-action altogether
+                noAction_juice_threshold = -float('inf'),
                 end_on_boundary_hit = False,
                 penalize_boundary_hit = False,
 
@@ -79,6 +80,7 @@ class BerryFieldEnv(gym.Env):
 
         ## misc\n
             verbose: announce the picked berries in console\n
+            allow_action_noAction: add the no-action (agent doesnot move) action (default False)
             no_action_r_threshold: doesnot allow action-0 (no-movement) when
                                     cumilative-reward is below this threshold
                     cumilative-reward is not incremented by curiosity-reward
@@ -108,21 +110,22 @@ class BerryFieldEnv(gym.Env):
         self.done = False
         self.position = initial_position
         self.num_steps = 0
-        self.action_space = gym.spaces.Discrete(9)
+        self.action_space = gym.spaces.Discrete(9 if allow_action_noAction else 8)
         self.num_berry_collected = 0
         self.total_juice = initial_juice
-        self.no_action_r_threshold = no_action_r_threshold
+        self.allow_action_noAction = allow_action_noAction
+        self.noAction_juice_threshold = noAction_juice_threshold
         self.action_switcher = {
-            0: (0, 0),
-            1: (0, 1), # N
-            2: (1, 1), # NE
-            3: (1, 0), # E
-            4: (1, -1), # SE
-            5: (0, -1), # S
-            6: (-1, -1), # SW
-            7: (-1, 0), # W
-            8: (-1, 1) # NW
+            0: (0, 1), # N
+            1: (1, 1), # NE
+            2: (1, 0), # E
+            3: (1, -1), # SE
+            4: (0, -1), # S
+            5: (-1, -1), # SW
+            6: (-1, 0), # W
+            7: (-1, 1), # NW
         }
+        if allow_action_noAction: self.action_switcher.update({8:(0,0)})
 
 
         # for the rendering
@@ -202,7 +205,7 @@ class BerryFieldEnv(gym.Env):
 
         assert not self.done
 
-        if self.no_action_r_threshold > self.total_juice and action == 0:
+        if self.noAction_juice_threshold > self.total_juice and action == 0:
             action = np.random.randint(0, 9)
 
         self.num_steps+=1
