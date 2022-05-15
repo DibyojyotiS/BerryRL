@@ -386,7 +386,7 @@ class BerryFieldEnv(gym.Env):
         """ Inits the collision trees and other structures to make the field """
         # load and process the data
         berry_data = self._read_csv(FILE_PATHS) if user_berry_data is None else user_berry_data # [patch-no, size, x, y]
-        berry_radii = berry_data[:,1]
+        berry_radii = berry_data[:,1]/2 # size is taken to be the diameter of berries
         bounding_boxes = self._create_bounding_boxes(berry_data) # [x,y,width,height]
         patch_boxes = self._get_patch_boxes(berry_data) # compute patch boundaries using berry data assuming berries are already alloted to patches
 
@@ -531,7 +531,7 @@ class BerryFieldEnv(gym.Env):
 
 
     def _create_bounding_boxes(self, berry_data):
-        """ bounding boxes from berry-coordinates and size """
+        """ bounding boxes from berry-coordinates and size:[centerx, centery, width, height] """
         bounding_boxes = np.column_stack([berry_data[:,2:], berry_data[:,1], berry_data[:,1]])
         return bounding_boxes
 
