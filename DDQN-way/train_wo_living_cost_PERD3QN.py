@@ -41,7 +41,7 @@ if __name__ == "__main__":
     # making the berry env
     random_berry_data, random_init_pos = random_baby_berryfield(BABY_FIELD_SIZE, PATCH_SIZE, 
                                                                 NUM_PATCHES, BERRIES_PER_PATCH)
-    berry_env = BerryFieldEnv(no_action_r_threshold=float('inf'),
+    berry_env = BerryFieldEnv(noAction_juice_threshold=float('inf'),
                                         field_size=BABY_FIELD_SIZE,
                                         initial_position=random_init_pos,
                                         user_berry_data= random_berry_data,

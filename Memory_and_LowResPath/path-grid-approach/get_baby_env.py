@@ -113,7 +113,7 @@ def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nb
     random_berry_data, random_init_pos = random_baby_berryfield(field_size, patch_size, 
                                             num_patches, nberries, initial_pos_around_berry, 
                                             spawn_radius, show)
-    berry_env = BerryFieldEnv(no_action_r_threshold=float('inf'),
+    berry_env = BerryFieldEnv(noAction_juice_threshold=float('inf'),
                                 field_size=field_size,
                                 initial_position=random_init_pos,
                                 user_berry_data= random_berry_data,
