@@ -205,7 +205,8 @@ class BerryFieldEnv(gym.Env):
 
         assert not self.done
 
-        if self.noAction_juice_threshold > self.total_juice and action == 0:
+        # no-action is at index-8
+        if action == 8 and self.noAction_juice_threshold > self.total_juice:
             action = np.random.randint(0, 9)
 
         self.num_steps+=1
@@ -461,7 +462,7 @@ class BerryFieldEnv(gym.Env):
         """ private because this modifies the enviroment state 
         and is accessed in step(.) """
         juice_reward = self._pick_collided_berries()
-        living_cost = - self.DRAIN_RATE*(self.current_action != 0)
+        living_cost = - self.DRAIN_RATE*(self.current_action != 8) # noAction
         reward = juice_reward + living_cost
         self.total_juice += reward
 
