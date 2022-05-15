@@ -278,7 +278,11 @@ class Agent():
                 self.conv2 = make_simple_convnet(inchannel, channels, kernels, strides, padding, maxpkernels)
 
                 # build the final stage
-                self.final_stage = make_simple_feedforward(final_linears[0], [*final_linears[1:], outDims])
+                self.final_stage = make_simple_feedforward(final_linears[0], final_linears[1:])
+                
+                # for action advantage estimates
+                self.outputL = nn.Linear(final_linears[-1], outDims)
+                self.actadvs = nn.Linear(final_linears[-1], outDims)
 
             def forward(self, input:Tensor):
 
@@ -324,8 +328,12 @@ class Agent():
                 for layer in self.final_stage:
                     concat = layer(concat)
                     self.activation(concat, inplace=True)
+
+                output = self.outputL(concat)
+                advs = self.actadvs(concat)
+                output = output + (output - advs.mean())
                 
-                return concat
+                return output
         
         nnet = net()
         nnet.to(TORCH_DEVICE)
