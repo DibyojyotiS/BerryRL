@@ -16,12 +16,12 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if __name__ == '__main__':
 
-    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR)
-    agent = Agent(berry_env, mode='eval', debug=True, noise=0.05)
+    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, end_on_boundary_hit=True)
+    agent = Agent(berry_env, mode='eval', debug=True, noise=0.09)
 
     nnet = agent.getNet(TORCH_DEVICE)
 
-    nnet.load_state_dict(torch.load('.temp\\2022-5-14 18-22-48\\trainLogs\\onlinemodel_weights_episode_92.pth'))
+    nnet.load_state_dict(torch.load('.temp\\2022-5-15 8-46-30\\trainLogs\\onlinemodel_weights_episode_65.pth'))
     nnet.eval()
 
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)
