@@ -54,7 +54,8 @@ class Agent():
             k to i is positive will have the next-state replaced by the state at transition
             at index i. And the rewards will also be replaced by the summation from k to i.
             currently, emphasis-mode is {'append' if self.append_mode else 'replace'}.
-            if disjoint=True, then k is limited to the index of the last berry seen\n''')
+            if disjoint=True, then k is limited to the index of the last berry seen
+            currently disjoint behaviour is set to {self.disjoint}\n''')
         
         # setup debug
         self.debugDir = debugDir
