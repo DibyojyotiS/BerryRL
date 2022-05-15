@@ -111,14 +111,14 @@ class BerryFieldEnv(gym.Env):
         self.no_action_r_threshold = no_action_r_threshold
         self.action_switcher = {
             0: (0, 0),
-            1: (0, 1),
-            2: (1, 1),
-            3: (1, 0),
-            4: (1, -1),
-            5: (0, -1),
-            6: (-1, -1),
-            7: (-1, 0),
-            8: (-1, 1)
+            1: (0, 1), # N
+            2: (1, 1), # NE
+            3: (1, 0), # E
+            4: (1, -1), # SE
+            5: (0, -1), # S
+            6: (-1, -1), # SW
+            7: (-1, 0), # W
+            8: (-1, 1) # NW
         }
 
 
