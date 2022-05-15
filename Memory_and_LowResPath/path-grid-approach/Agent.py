@@ -22,7 +22,7 @@ class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
-                    angle = 45, worth_offset=0.0, noise=0.05, positive_emphasis=True,
+                    angle = 45, worth_offset=0.0, noise=0.01, positive_emphasis=True,
                     emphasis_mode= 'replace', memory_alpha=0.99, debug=False, 
                     debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
@@ -250,13 +250,13 @@ class Agent():
         return self.state_transitions
     
     def getNet(self, TORCH_DEVICE, debug=False,
-                linearsDim = [16,16],
+                linearsDim = [16,8],
                 channels = [4,8,8],
                 kernels = [4,3,2],
                 strides = [2,2,2],
                 padding = [3,3,1],
                 maxpkernels = [2,2],
-                final_linears = [160, 16]):
+                final_linears = [152, 16]):
         """ create and return the model """
         num_sectors = self.num_sectors
         memory_shape = self.field_grid_size
@@ -361,6 +361,7 @@ class Agent():
         plt.tight_layout(pad=5)
         staterecord = open(os.path.join(debugDir, 'stMakerdebugstate.txt'), 'r')
         envrecord = open(os.path.join(debugDir, 'stMakerrecordenv.txt'), 'r')
+        action_names = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'X']
         
         while True:
             line = staterecord.readline()
@@ -400,19 +401,22 @@ class Agent():
 
             # compute q-values and plot qvals
             if nnet: 
-                originalqvals = nnet(torch.tensor([state], dtype=torch.float32)).detach()[0]
-                colors = originalqvals.clamp(0,1).numpy()
-                ax[1][2].add_patch(Circle((agent[0], agent[1]), 100, color=(max(colors),max(colors),0,0.5)))
+                originalqvals = nnet(torch.tensor([state], dtype=torch.float32)).detach()[0].numpy()
+                maxidx = np.argmax(originalqvals)
+                ax[1][2].text(agent[0]+20, agent[1]+20, f'q:{originalqvals[maxidx]:.2f}:{action_names[maxidx]}')
+
                 # add action-qvals circles
+                colors = originalqvals/max(originalqvals)
                 for angle in range(0, 360, self.angle):
                     rad = 2*np.pi * (angle/360)
                     x,y = 100*np.cos(rad), 100*np.sin(rad)
                     c = colors[angle//self.angle]
                     ax[1][2].add_patch(Circle((agent[0]+x, agent[1]+y), 20, color=(c,c,0,1)))
+
                 # set title
-                str_qvals = ' '.join([f"{np.round(x,2):.2f}" for x in originalqvals.numpy().tolist()])
-                meanings = '[X   , N   , NE  , E   , SE  , S   , SW  , W   , NW  ]'
-                ax[1][2].set_title(f'env-record with q-vals plot\nqvals: {str_qvals}\n           {meanings}')
+                str_qvals = [f"{np.round(x,2):.2f}" for x in originalqvals.tolist()]
+                meanings = [action_names[i]+' '*(len(qv)-len(action_names[i])) for i,qv in enumerate(str_qvals)]
+                ax[1][2].set_title(f'env-record with q-vals plot\nqvals: {" ".join(str_qvals)}\n       {" ".join(meanings)}')
 
             # titles
             ax[0][0].set_title('sectorized states')
