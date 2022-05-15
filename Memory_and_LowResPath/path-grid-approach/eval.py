@@ -17,11 +17,11 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if __name__ == '__main__':
 
     berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR)
-    agent = Agent(berry_env, mode='eval', debug=True)
+    agent = Agent(berry_env, mode='eval', debug=True, noise=0.05)
 
     nnet = agent.getNet(TORCH_DEVICE)
 
-    nnet.load_state_dict(torch.load('.temp\\2022-5-14 17-19-4\\trainLogs\\onlinemodel_weights_episode_63.pth'))
+    nnet.load_state_dict(torch.load('.temp\\2022-5-14 18-22-48\\trainLogs\\onlinemodel_weights_episode_92.pth'))
     nnet.eval()
 
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), 0.95, 0.1, 0.01)
@@ -44,7 +44,7 @@ if __name__ == '__main__':
                         log_dir=LOG_DIR, save_snapshots=True, device=TORCH_DEVICE)
     ddqn_trainer.evaluate(estrat, render=True)
 
-    agent.showDebug()
+    agent.showDebug(nnet)
 
     # im=plt.imshow(stMaker.logberrymemory[0].reshape(25,25))
     # for row in stMaker.logberrymemory:

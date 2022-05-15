@@ -91,13 +91,13 @@ def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nb
 
     def env_step(berry_env_step):
         if living_cost: 
-            print('with living cost, rewards (except boundary hit) scaled by 1/(berry_env.REWARD_RATE*MAXSIZE)')
+            print('with living cost, rewards scaled by 1/(berry_env.REWARD_RATE*MAXSIZE)')
         else: print('no living cost, rewards (except boundary hit) scaled by 1/(berry_env.REWARD_RATE*MAXSIZE)')
         MAXSIZE = max(BERRY_SIZES)
         scale = 1/(berry_env.REWARD_RATE*MAXSIZE)
         def step(action):
             state, reward, done, info = berry_env_step(action)
-            if living_cost: reward = (scale*reward if reward != -1 else reward)
+            if living_cost: reward = scale*reward
             else: reward = (scale*(reward>0) + (reward<=-1))*reward # no living cost
             return state, reward, done, info
         return step

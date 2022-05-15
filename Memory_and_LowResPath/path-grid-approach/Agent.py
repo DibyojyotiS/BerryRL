@@ -2,6 +2,7 @@
 # remember a low-res path
 
 import os
+from typing import Union
 
 import numpy as np
 import torch
@@ -9,7 +10,7 @@ import torch.nn.functional as F
 from berry_field.envs.berry_field_env import BerryFieldEnv
 from berry_field.envs.utils.misc import getTrueAngles
 from matplotlib import pyplot as plt
-from matplotlib.patches import Rectangle
+from matplotlib.patches import Rectangle, Circle
 from torch import Tensor, nn
 
 from make_net import make_simple_convnet, make_simple_feedforward
@@ -56,11 +57,13 @@ class Agent():
         # setup debug
         self.debugDir = debugDir
         self.debug = debug
+        self.built_net = False
         if debug:
             self.debugDir = os.path.join(debugDir, 'stMakerdebug')
             if not os.path.exists(self.debugDir): os.makedirs(self.debugDir)
             self.state_debugfile = open(os.path.join(self.debugDir, 'stMakerdebugstate.txt'), 'w', 1)
             self.env_recordfile = open(os.path.join(self.debugDir, 'stMakerrecordenv.txt'), 'w', 1)
+            # self.qvals_debugfile = open(os.path.join(self.debugDir, 'stMakerdebugqvals.txt'), 'w', 1)
 
 
     def _init_memories(self):
@@ -326,11 +329,12 @@ class Agent():
         
         nnet = net()
         nnet.to(TORCH_DEVICE)
+        self.built_net = True
         print('total-params: ', sum(p.numel() for p in nnet.parameters() if p.requires_grad))
         return nnet
 
 
-    def showDebug(self, debugDir = None):
+    def showDebug(self, nnet:Union[nn.Module,None]=None, debugDir = None):
         
         # close the log files if not already closed
         if self.debug and not self.state_debugfile.closed:
@@ -342,13 +346,17 @@ class Agent():
         
         if not debugDir: debugDir = self.debugDir
 
+        # move nnet to cpu
+        if nnet: nnet.cpu()
+
         fig, ax = plt.subplots(2,3, figsize=(15, 10))
-        plt.tight_layout()
-        f = open(os.path.join(debugDir, 'stMakerdebugstate.txt'), 'r')
-        g = open(os.path.join(debugDir, 'stMakerrecordenv.txt'), 'r')
+        plt.tight_layout(pad=5)
+        staterecord = open(os.path.join(debugDir, 'stMakerdebugstate.txt'), 'r')
+        envrecord = open(os.path.join(debugDir, 'stMakerrecordenv.txt'), 'r')
+        
         while True:
-            line = f.readline()
-            line2 = g.readline()
+            line = staterecord.readline()
+            line2 = envrecord.readline()
             if line == 'end': break
 
             state = np.array(eval('[' + line[:-1].replace(' ', ',') + ']'), dtype=float)
@@ -366,8 +374,6 @@ class Agent():
             w,h = self.berryField.OBSERVATION_SPACE_SIZE
             W, H = self.berryField.FIELD_SIZE
 
-            berry_memory[0][0] = 1
-
             ax[0][0].imshow(sectorized_states)
             ax[0][1].bar([1,2],[1,patch_relative], [0,1])
             ax[0][2].bar([*range(4)],edge_dist)
@@ -375,14 +381,34 @@ class Agent():
             ax[1][1].imshow(path_memory)
 
             # draw the berry-field
-            ax[1][2].scatter(x=berries[:,0], y=berries[:,1], s=berries[:,2], c='r')
-            ax[1][2].scatter(x=agent[0], y=agent[1], s=agent[2], c='black')
             ax[1][2].add_patch(Rectangle((agent[0]-w/2, agent[1]-h/2), w,h, fill=False))
             ax[1][2].add_patch(Rectangle((agent[0]-w/2-30,agent[1]-h/2-30), w+60,h+60, fill=False))
+            ax[1][2].scatter(x=berries[:,0], y=berries[:,1], s=berries[:,2], c='r')
+            ax[1][2].scatter(x=agent[0], y=agent[1], s=agent[2], c='black')
             if agent[0]-w/2 < 0: ax[1][2].add_patch(Rectangle((0, agent[1] - h/2), 1, h, color='blue'))
             if agent[1]-h/2 < 0: ax[1][2].add_patch(Rectangle((agent[0] - w/2, 0), w, 1, color='blue'))
             if W-agent[0]-w/2<0: ax[1][2].add_patch(Rectangle((W, agent[1] - h/2), 1, h, color='blue'))
             if H-agent[1]-h/2<0: ax[1][2].add_patch(Rectangle((agent[0] - w/2, H), w, 1, color='blue'))
+
+            # compute q-values and plot qvals
+            if nnet: qvals = nnet(torch.tensor([state], dtype=torch.float32)).detach()[0]
+            max_c = 0
+            for angle in range(0, 360, self.angle):
+                rad = 2*np.pi * (angle/360)
+                x,y = 100*np.cos(rad), 100*np.sin(rad)
+                c = (max(-2, min(2, qvals[angle//self.angle].item())) + 2)/4
+                ax[1][2].add_patch(Circle((agent[0]+x, agent[1]+y), 20, color=(c,c,0,1)))
+                max_c = max(c, max_c)
+            ax[1][2].add_patch(Circle((agent[0], agent[1]), 100, color=(max_c,max_c,0,0.5)))
+
+            # titles
+            ax[0][0].set_title('sectorized states')
+            ax[0][1].set_title('measure of patch-center-dist')
+            ax[0][2].set_title('measure of dist-from-edge')
+            ax[1][0].set_title('berry-memory (avg-worth)')
+            ax[1][1].set_title('path-memory')
+            str_qvals = ' '.join([f"{np.round(x,2)}" for x in qvals.numpy().tolist()])
+            ax[1][2].set_title(f'env-record with q-vals plot\nqvals: {str_qvals}')
 
             plt.pause(0.001)
             
@@ -390,5 +416,5 @@ class Agent():
                 for a in b: a.clear() 
             
         plt.show(); plt.close()
-        f.close(); g.close()
+        staterecord.close(); envrecord.close()
 
