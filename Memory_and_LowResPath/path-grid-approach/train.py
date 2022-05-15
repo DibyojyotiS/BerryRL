@@ -32,9 +32,9 @@ if __name__ == '__main__':
     agent = Agent(berry_env)
     nnet = agent.getNet(TORCH_DEVICE); print(nnet)
     
-    buffer = PrioritizedExperienceRelpayBuffer(int(2E4), alpha=0.8, beta=0.1, beta_rate=0.01)
-    optim = Adam(nnet.parameters(), lr=0.00001)
-    tstrat = epsilonGreedyAction(nnet, 0.5, 0.01, 400)
+    buffer = PrioritizedExperienceRelpayBuffer(int(10E4), alpha=0.8, beta=0.1, beta_rate=0.01)
+    optim = Adam(nnet.parameters(), lr=0.00001); print('lr used = 0.00001')
+    tstrat = epsilonGreedyAction(nnet, 0.9, 0.1, 500)
     estrat = greedyAction(nnet)
 
     # an user-print-function to print extra stats
@@ -49,8 +49,8 @@ if __name__ == '__main__':
 
     ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=256, skipSteps=10,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
-                        gamma=0.99, MaxTrainEpisodes=400, user_printFn=print_fn,
-                        printFreq=1, update_freq=1, polyak_tau=0.5, polyak_average= True,
+                        gamma=0.99, MaxTrainEpisodes=500, user_printFn=print_fn,
+                        printFreq=1, update_freq=1, polyak_tau=0.2, polyak_average= True,
                         log_dir=LOG_DIR, save_snapshots=True, device=TORCH_DEVICE)
     trianHist = ddqn_trainer.trainAgent(render=False)
     ddqn_trainer.evaluate(estrat, render=True)
