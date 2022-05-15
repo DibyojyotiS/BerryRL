@@ -108,18 +108,19 @@ def random_baby_berryfield(field_size=(4000,4000), patch_size = (1000,1000),
 def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nberries=10, 
                 logDir='.temp', living_cost=True, initial_juice=0.5, end_on_boundary_hit= False, 
                 penalize_boundary_hit=False, initial_pos_around_berry = True, spawn_radius=100,
-                show=False):
+                allow_no_action=False, no_action_threshold=0.7, show=False):
     # making the berry env
     random_berry_data, random_init_pos = random_baby_berryfield(field_size, patch_size, 
                                             num_patches, nberries, initial_pos_around_berry, 
                                             spawn_radius, show)
-    berry_env = BerryFieldEnv(noAction_juice_threshold=float('inf'),
+    berry_env = BerryFieldEnv(noAction_juice_threshold=no_action_threshold,
                                 field_size=field_size,
                                 initial_position=random_init_pos,
                                 user_berry_data= random_berry_data,
                                 end_on_boundary_hit= end_on_boundary_hit,
                                 penalize_boundary_hit= penalize_boundary_hit,
                                 initial_juice= initial_juice,
+                                allow_action_noAction=allow_no_action,
                                 analytics_folder=logDir,
                                 enable_analytics = logDir is not None)
 
