@@ -14,7 +14,7 @@ input_size, make_state_fn, _ = get_make_state(avf=0.9, ks=0.0001, kd=0.011473, n
 
 
 # making the berry env
-berry_env = BerryFieldEnv(no_action_r_threshold=0.6, verbose=True)
+berry_env = BerryFieldEnv(noAction_juice_threshold=0.6, verbose=True)
 
 value_net = make_net(input_size, 9, [16,8,8])
 
