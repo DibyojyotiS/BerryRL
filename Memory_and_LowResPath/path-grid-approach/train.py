@@ -33,7 +33,7 @@ if __name__ == '__main__':
     nnet = agent.getNet(TORCH_DEVICE); print(nnet)
     
     buffer = PrioritizedExperienceRelpayBuffer(int(2E4), alpha=0.8, beta=0.1, beta_rate=0.01)
-    optim = Adam(nnet.parameters(), lr=0.0001)
+    optim = Adam(nnet.parameters(), lr=0.00001)
     tstrat = epsilonGreedyAction(nnet, 0.5, 0.01, 400)
     estrat = greedyAction(nnet)
 
