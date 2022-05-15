@@ -408,10 +408,10 @@ class Agent():
                 ax[1][2].text(agent[0]+20, agent[1]+20, f'q:{originalqvals[maxidx]:.2f}:{action_names[maxidx]}')
 
                 # add action-advs circles
-                colors = (originalqvals-min(originalqvals))/(max(originalqvals)-min(originalqvals))
+                colors = (originalqvals-min(originalqvals))/(max(originalqvals)-min(originalqvals)+EPSILON)
                 for angle in range(0, 360, self.angle):
                     rad = 2*np.pi * (angle/360)
-                    x,y = 100*np.cos(rad), 100*np.sin(rad)
+                    x,y = 100*np.sin(rad), 100*np.cos(rad)
                     c = colors[angle//self.angle]
                     ax[1][2].add_patch(Circle((agent[0]+x, agent[1]+y), 20, color=(c,c,0,1)))
 
