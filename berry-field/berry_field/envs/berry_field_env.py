@@ -31,6 +31,7 @@ class BerryFieldEnv(gym.Env):
                 speed=400, # pixels per second
                 maxtime=5*60, # default of 5 minutes max
                 reward_rate=1e-4, 
+                initial_juice = 0.5,
                 circular_berries=True, circular_agent=True,
 
                 # can specify only your berries
@@ -100,6 +101,8 @@ class BerryFieldEnv(gym.Env):
         self.CIRCULAR_AGENT = circular_agent
         self.END_ON_BOUNDARY_HIT = end_on_boundary_hit
         self.PENALIZE_BOUNDARY_HIT = penalize_boundary_hit
+        self.INTITAL_JUICE= initial_juice
+
 
         # for the step machinary
         self.done = False
@@ -107,7 +110,7 @@ class BerryFieldEnv(gym.Env):
         self.num_steps = 0
         self.action_space = gym.spaces.Discrete(9)
         self.num_berry_collected = 0
-        self.total_juice = 0.5
+        self.total_juice = initial_juice
         self.no_action_r_threshold = no_action_r_threshold
         self.action_switcher = {
             0: (0, 0),
@@ -165,7 +168,7 @@ class BerryFieldEnv(gym.Env):
         self.done = False
         self.num_steps = 0
         self.viewer = None
-        self.total_juice = 0.5
+        self.total_juice = self.INTITAL_JUICE
         self.current_action = 0
         self.num_berry_collected = 0
 
