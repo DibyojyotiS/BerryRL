@@ -259,7 +259,7 @@ class Agent():
                 padding = [3,3,1],
                 maxpkernels = [2,2],
                 final_linears = [152, 16]):
-        """ create and return the model """
+        """ create and return the model (a duelling net)"""
         num_sectors = self.num_sectors
         memory_shape = self.field_grid_size
         memory_size = memory_shape[0]*memory_shape[1]
