@@ -22,9 +22,9 @@ class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
-                    angle = 45, worth_offset=0.0, noise=0.01, positive_emphasis=True,
-                    emphasis_mode= 'replace', memory_alpha=0.99, disjoint=False, 
-                    debug=False, debugDir='.temp') -> None:
+                    angle = 45, worth_offset=0.0, noise=0.0, positive_emphasis=True,
+                    emphasis_mode= 'replace', memory_alpha=0.999, time_memory_delta=0.005, 
+                    time_memory_exp=1, disjoint=False, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
         self.istraining = mode == 'train'
         self.angle = angle
@@ -35,6 +35,8 @@ class Agent():
         self.append_mode = emphasis_mode == 'append'
         self.noise = noise
         self.memory_alpha = memory_alpha
+        self.time_memory_delta = time_memory_delta
+        self.time_memory_exp = time_memory_exp
         self.disjoint = disjoint
 
         # init memories and other stuff
@@ -73,6 +75,8 @@ class Agent():
         memory_grid_size = self.field_grid_size[0]*self.field_grid_size[1]
         self.path_memory = np.zeros(memory_grid_size) # aprox path
         self.berry_memory = np.zeros(memory_grid_size) # aprox place of sighting a berry
+        self.time_memory = 0 # the time spent at the current block
+        self.time_memory_data = np.zeros_like(self.path_memory)
 
     # for computation of berry worth, can help to change 
     # the agent's preference of different sizes of berries. 
@@ -159,6 +163,11 @@ class Agent():
         # update berry memory
         self.berry_memory[index] = 0.2*avg_worth + 0.8*self.berry_memory[index]
 
+        # decay time memory and update time_memory
+        self.time_memory_data *= 1-self.time_memory_delta
+        self.time_memory_data[index] += self.time_memory_delta
+        self.time_memory = min(1,self.time_memory_data[index])**self.time_memory_exp
+
     def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
         # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
@@ -179,7 +188,7 @@ class Agent():
 
         # make the state by concatenating sectorized_states and memories
         state = np.concatenate([
-            *sectorized_states, edge_dist, patch_relative,
+            *sectorized_states, edge_dist, patch_relative, [self.time_memory],
             self.berry_memory, self.path_memory
         ])
 
@@ -220,6 +229,7 @@ class Agent():
             'sectorized_states': [0, 4*self.num_sectors],
             'edge_dist': [4*self.num_sectors, 4*self.num_sectors+4],
             'patch_relative': [4*self.num_sectors+4, 4*self.num_sectors+4+1],
+            'time_memory': [4*self.num_sectors+4+1, 4*self.num_sectors+4+2],
             'berry_memory': [4*self.num_sectors+4+1, 4*self.num_sectors+4+1 + memory_size],
             'path_memory': [4*self.num_sectors+4+1 + memory_size, 4*self.num_sectors+4+1 + memory_size]
         }
@@ -271,7 +281,7 @@ class Agent():
                 self.activation = activation
 
                 # build the feed-forward network
-                infeatures = 4*num_sectors+4+1 # the sector-states and edge,patch relative
+                infeatures = 4*num_sectors+4+2 # the sector-states and edge,patch relative,time-memory
                 self.feedforward = make_simple_feedforward(infeatures, linearsDim)
 
                 # build the conv-network
@@ -376,7 +386,8 @@ class Agent():
             sectorized_states = state[:4*self.num_sectors].reshape(4,self.num_sectors)
             edge_dist = state[4*self.num_sectors: 4*self.num_sectors+4]
             patch_relative = state[4*self.num_sectors+4:4*self.num_sectors+4+1]
-            memories = state[4*self.num_sectors+4+1:]
+            time_memory = state[4*self.num_sectors+4+1]
+            memories = state[4*self.num_sectors+4+2:]
             berry_memory = memories[:self.field_grid_size[0]*self.field_grid_size[1]].reshape(self.field_grid_size)
             path_memory = memories[self.field_grid_size[0]*self.field_grid_size[1]:].reshape(self.field_grid_size)
 
@@ -386,7 +397,7 @@ class Agent():
             W, H = self.berryField.FIELD_SIZE
 
             ax[0][0].imshow(sectorized_states)
-            ax[0][1].bar([1,2],[1,patch_relative], [0,1])
+            ax[0][1].bar([0,1,2],[1,patch_relative, time_memory], [0,1,1])
             ax[0][2].bar([*range(4)],edge_dist)
             ax[1][0].imshow(berry_memory)
             ax[1][1].imshow(path_memory)

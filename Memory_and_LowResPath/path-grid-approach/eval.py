@@ -6,10 +6,10 @@ from make_net import *
 from Agent import *
 
 # baby env params
-FIELD_SIZE = (4000,4000)
-PATCH_SIZE = (1000,1000)
-N_PATCHES = 5
-N_BERRIES = 10
+FIELD_SIZE = (20000,20000)
+PATCH_SIZE = (2000,2000)
+N_PATCHES = 10
+N_BERRIES = 50
 
 LOG_DIR = None
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -17,16 +17,16 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if __name__ == '__main__':
 
     berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, 
-                            end_on_boundary_hit=True, allow_no_action=False)
-    agent = Agent(berry_env, mode='eval', debug=True, noise=0.09)
+                            end_on_boundary_hit=True, allow_no_action=False, show=False)
+    agent = Agent(berry_env, mode='eval', debug=True, noise=0.0)
 
     nnet = agent.getNet(TORCH_DEVICE)
 
-    nnet.load_state_dict(torch.load('.temp\\2022-5-15 21-0-59\\trainLogs\\onlinemodel_weights_episode_3.pth'))
+    nnet.load_state_dict(torch.load('.temp\\2022-5-16 3-57-46\\trainLogs\\onlinemodel_weights_episode_93.pth'))
     nnet.eval()
 
     buffer = None; optim = None; tstrat = None
-    estrat = softMaxAction(nnet,temperature=1)
+    estrat = greedyAction(nnet)
 
     ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=256, skipSteps=10,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
@@ -36,10 +36,3 @@ if __name__ == '__main__':
     ddqn_trainer.evaluate(estrat, render=True)
 
     agent.showDebug(nnet)
-
-    # im=plt.imshow(stMaker.logberrymemory[0].reshape(25,25))
-    # for row in stMaker.logberrymemory:
-    #     row=row.reshape(25, 25) # this is the size of my pictures
-    #     im.set_data(row)
-    #     plt.pause(0.02)
-    # plt.show()
