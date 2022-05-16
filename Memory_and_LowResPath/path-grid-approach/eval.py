@@ -16,13 +16,13 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if __name__ == '__main__':
 
-    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, 
+    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, initial_juice=0.1,
                             end_on_boundary_hit=True, allow_no_action=False, show=False)
     agent = Agent(berry_env, mode='eval', debug=True, noise=0.0)
 
     nnet = agent.getNet(TORCH_DEVICE)
 
-    nnet.load_state_dict(torch.load('.temp\\2022-5-16 3-57-46\\trainLogs\\onlinemodel_weights_episode_93.pth'))
+    nnet.load_state_dict(torch.load('.temp\\2022-5-16 11-28-40\\trainLogs\\onlinemodel_weights_episode_1.pth'))
     nnet.eval()
 
     buffer = None; optim = None; tstrat = None

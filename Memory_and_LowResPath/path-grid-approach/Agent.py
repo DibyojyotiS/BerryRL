@@ -23,7 +23,7 @@ class Agent():
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
                     angle = 45, worth_offset=0.0, noise=0.0, positive_emphasis=True,
-                    emphasis_mode= 'replace', memory_alpha=0.999, time_memory_delta=0.005, 
+                    emphasis_mode= 'replace', memory_alpha=0.995, time_memory_delta=0.001, 
                     time_memory_exp=1, disjoint=False, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
         self.istraining = mode == 'train'
@@ -136,7 +136,6 @@ class Agent():
                         maxworth = worthyness    
             if maxworth_idx > -1: a3[maxworth_idx]=1 
         
-        
         avg_worth = total_worth/len(raw_observation) if len(raw_observation) > 0 else 0
 
         return [a1,a2,a3,a4], avg_worth
@@ -213,7 +212,7 @@ class Agent():
                 idx1, idx2 = berry_indices[i-1:i+1]
                 reward_b = self.state_transitions[idx2][2]
                 good_state = self.state_transitions[idx2][3]
-                for k in range(idx2-1, idx1 if self.disjoint else 0, -1):
+                for k in range(idx2-1, idx1 if self.disjoint else -1, -1):
                     s, a, r, ns, d = self.state_transitions[k]
                     reward_b += r
                     if reward_b < 0: break
@@ -263,16 +262,15 @@ class Agent():
     
     def getNet(self, TORCH_DEVICE, debug=False,
                 linearsDim = [16,8],
-                channels = [4,8,8],
+                channels = [4,8,16],
                 kernels = [4,3,2],
                 strides = [2,2,2],
                 padding = [3,3,1],
                 maxpkernels = [2,2],
-                final_linears = [152, 16]):
+                final_linears = [200, 16]):
         """ create and return the model (a duelling net)"""
         num_sectors = self.num_sectors
         memory_shape = self.field_grid_size
-        memory_size = memory_shape[0]*memory_shape[1]
         outDims = self.berryField.action_space.n
 
         class net(nn.Module):
@@ -287,7 +285,6 @@ class Agent():
                 # build the conv-network
                 inchannel=1
                 self.conv1 = make_simple_convnet(inchannel, channels, kernels, strides, padding, maxpkernels)
-                self.conv2 = make_simple_convnet(inchannel, channels, kernels, strides, padding, maxpkernels)
 
                 # build the final stage
                 self.final_stage = make_simple_feedforward(final_linears[0], final_linears[1:])
@@ -301,12 +298,10 @@ class Agent():
                 # split and reshape input
                 if debug: print(input.shape)
                 feedforward_part = input[:,0:self.feedforward[0].in_features]
-                conv_part1 = input[:,self.feedforward[0].in_features:self.feedforward[0].in_features+memory_size]
-                conv_part2 = input[:,self.feedforward[0].in_features+memory_size:]
+                conv_part = input[:,self.feedforward[0].in_features:]
 
                 # conv2d requires 4d inputs
-                conv_part1 = conv_part1.reshape((-1,1,*memory_shape))
-                conv_part2 = conv_part2.reshape((-1,1,*memory_shape))
+                conv_part = conv_part.reshape((-1,1,2*memory_shape[0], memory_shape[1]))
 
                 # get feed-forward output
                 if debug: print(feedforward_part.shape)
@@ -315,26 +310,17 @@ class Agent():
                     self.activation(feedforward_part, inplace=True)
 
                 # process conv_part1
-                if debug: print('conv_part1', conv_part1.shape)
+                if debug: print('conv_part', conv_part.shape)
                 for i, layer in enumerate(self.conv1):
-                    conv_part1 = layer(conv_part1)
-                    if debug: print('conv_part1',i,conv_part1.shape)
+                    conv_part = layer(conv_part)
+                    if debug: print('conv_part',i,conv_part.shape)
                     # because odd number layers are maxpools
-                    if i%2 == 0: self.activation(conv_part1, inplace=True)
-    
-                # process conv_part2
-                if debug: print('conv_part2',conv_part2.shape)
-                for i, layer in enumerate(self.conv2):
-                    conv_part2 = layer(conv_part2)
-                    if debug: print('conv_part2',i,conv_part2.shape)
-                    # because odd layers are maxpools
-                    if i%2 == 0: self.activation(conv_part2, inplace=True)
+                    if i%2 == 0: self.activation(conv_part, inplace=True)
 
                 # merge all and process
-                conv_part1 = torch.flatten(conv_part1, start_dim=1)
-                conv_part2 = torch.flatten(conv_part2, start_dim=1)
-                if debug: print('for concat',feedforward_part.shape,conv_part1.shape,conv_part2.shape)
-                concat = torch.cat([conv_part1, conv_part2, feedforward_part], dim=1)
+                conv_part = torch.flatten(conv_part, start_dim=1)
+                if debug: print('for concat',feedforward_part.shape,conv_part.shape)
+                concat = torch.cat([conv_part, feedforward_part], dim=1)
 
                 if debug: print('concat',concat.shape)
                 for layer in self.final_stage:
@@ -431,10 +417,12 @@ class Agent():
                 meanings = [action_names[i]+' '*(len(qv)-len(action_names[i])) for i,qv in enumerate(str_qvals)]
                 ax[1][2].set_title(f'env-record with q-vals plot\nqvals: {" ".join(str_qvals)}\n       {" ".join(meanings)}')
 
-            # titles
+            # titles and ticks
             ax[0][0].set_title('sectorized states')
             ax[0][1].set_title('measure of patch-center-dist')
+            ax[0][1].set_xticklabels(["","","","patch-rel","","time-mem"]) 
             ax[0][2].set_title('measure of dist-from-edge')
+            ax[0][2].set_xticklabels(["","left","right","top","bottom"]) 
             ax[1][0].set_title('berry-memory (avg-worth)')
             ax[1][1].set_title('path-memory')
             if not nnet: ax[1][2].set_title(f'env-record')

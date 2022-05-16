@@ -32,7 +32,7 @@ if __name__ == '__main__':
     agent = Agent(berry_env)
     nnet = agent.getNet(TORCH_DEVICE); print(nnet)
     
-    buffer = PrioritizedExperienceRelpayBuffer(int(10E4), alpha=0.8, beta=0.1, beta_rate=0.01)
+    buffer = PrioritizedExperienceRelpayBuffer(int(5E4), alpha=0.8, beta=0.1, beta_rate=0.01)
     optim = Adam(nnet.parameters(), lr=0.0001); print('lr used = 0.0001')
     tstrat = epsilonGreedyAction(nnet, 0.9, 0.1, 800)
     estrat = greedyAction(nnet)
@@ -47,7 +47,7 @@ if __name__ == '__main__':
                 f'| amount-filled: {100*len(buffer)/buffer.bufferSize:.2f}%')
             print(f'\t| approx positives in sample {256}: {sum(buffer.sample(256)[0]["reward"].cpu()>0).item()}')
 
-    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=256, skipSteps=5,
+    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=256, skipSteps=10,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
                         gamma=0.99, MaxTrainEpisodes=800, user_printFn=print_fn,
                         printFreq=1, update_freq=1, polyak_tau=0.4, polyak_average= True,
