@@ -3,7 +3,7 @@ import numpy as np
 
 def printLocals(name, locals:dict):
     print(name,':')
-    for k,v in locals: print('\t',k,':',v)
+    for k in locals: print('\t',k,':',locals[k])
     print('\n')
 
 def my_print_fn(berry_env, buffer, tstrat, ssize=256):

@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     nnet = agent.getNet(TORCH_DEVICE)
 
-    nnet.load_state_dict(torch.load('.temp\\2022-5-17 7-31-59\\trainLogs\\onlinemodel_weights_episode_694.pth'))
+    nnet.load_state_dict(torch.load('..\\trainLogs\\onlinemodel_weights_episode_694.pth'))
     nnet.eval()
 
     buffer = None; optim = None; tstrat = None

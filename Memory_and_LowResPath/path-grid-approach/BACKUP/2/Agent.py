@@ -13,7 +13,7 @@ from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle, Circle
 from torch import Tensor, nn
 
-from make_net import make_simple_convnet, make_simple_feedforward
+from make_net import make_simple_conv2dnet, make_simple_feedforward
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8
@@ -286,8 +286,8 @@ class Agent():
 
                 # build the conv-network
                 inchannel=1
-                self.conv1 = make_simple_convnet(inchannel, channels, kernels, strides, padding, maxpkernels)
-                self.conv2 = make_simple_convnet(inchannel, channels, kernels, strides, padding, maxpkernels)
+                self.conv1 = make_simple_conv2dnet(inchannel, channels, kernels, strides, padding, maxpkernels)
+                self.conv2 = make_simple_conv2dnet(inchannel, channels, kernels, strides, padding, maxpkernels)
 
                 # build the final stage
                 self.final_stage = make_simple_feedforward(final_linears[0], final_linears[1:])
