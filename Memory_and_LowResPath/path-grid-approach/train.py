@@ -39,9 +39,10 @@ if __name__ == '__main__':
 
     print('lr used = 0.00005')
     print("optimizing the online-model after every 1000 actions (skipSteps=10)")
+    print("changed gamma to 0.65, 0.8 showed overestimation in a different model")
     ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=512, skipSteps=10,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
-                        gamma=0.8, MaxTrainEpisodes=1000, optimize_every_kth_action=1000, printFreq=1,
+                        gamma=0.65, MaxTrainEpisodes=1000, optimize_every_kth_action=1000, printFreq=1,
                         user_printFn=print_fn, polyak_tau=0.2, polyak_average= True, num_gradient_steps= 100,
                         update_freq=5, log_dir=LOG_DIR, save_snapshots=True, device=TORCH_DEVICE)
 
