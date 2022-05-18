@@ -2,7 +2,7 @@ from berry_field.envs.berry_field_env import BerryFieldEnv
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
-from pygame import init
+from print_utils import printLocals
 
 BERRY_SIZES = [10,20,30,40]
 AGENT_SIZE=10
@@ -15,8 +15,8 @@ def _random_initial_position_in_a_patch(num_patches, n_berries, patch_size,
     dist_to_keep = (berry_data[:,1] + AGENT_SIZE)/2 + 1
     while True:
         patchIdx = np.random.randint(0, num_patches)
-        init_x = np.random.randint(0, pw) - pw/2 + patch_centers_x[patchIdx]
-        init_y = np.random.randint(0, ph) - ph/2 + patch_centers_y[patchIdx]
+        init_x = int(np.random.randint(0, pw) - pw/2 + patch_centers_x[patchIdx])
+        init_y = int(np.random.randint(0, ph) - ph/2 + patch_centers_y[patchIdx])
         patch_berries = berry_data[patchIdx*n_berries:(patchIdx+1)*n_berries]
         patch_dist_to_keep = dist_to_keep[patchIdx*n_berries:(patchIdx+1)*n_berries]
         patch_dists = np.abs(patch_berries[:,2:] - [init_x,init_y])
@@ -37,7 +37,7 @@ def _random_initial_position_around_a_berry(berry_data, field_size, spawn_radius
         _, size, x, y = berry_data[rndIndx]
         rndR = np.random.randint((size+AGENT_SIZE)/2 + 1, spawn_radius) # 1 added just for sake of it
         rndAngle = np.random.uniform(0, 2*np.pi)
-        initial_position = x + rndR*np.cos(rndAngle), y + rndR*np.sin(rndAngle)
+        initial_position = int(x + rndR*np.cos(rndAngle)), int(y + rndR*np.sin(rndAngle))
 
         # if agent intersects with boundary then try again
         if (initial_position[0]-AGENT_SIZE/2 <= 0) or (initial_position[1]-AGENT_SIZE/2<=0) \
@@ -109,6 +109,7 @@ def getBabyEnv(field_size=(4000,4000), patch_size=(1000,1000), num_patches=5, nb
                 logDir='.temp', living_cost=True, initial_juice=0.5, end_on_boundary_hit= False, 
                 penalize_boundary_hit=False, initial_pos_around_berry = True, spawn_radius=100,
                 allow_no_action=False, no_action_threshold=0.7, show=False):
+    printLocals('getBabyEnv', locals())
     # making the berry env
     random_berry_data, random_init_pos = random_baby_berryfield(field_size, patch_size, 
                                             num_patches, nberries, initial_pos_around_berry, 

@@ -12,6 +12,7 @@ from berry_field.envs.utils.misc import getTrueAngles
 from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle, Circle
 from torch import Tensor, nn
+from print_utils import printLocals
 
 from make_net import make_simple_convnet, make_simple_feedforward
 
@@ -22,12 +23,14 @@ class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
-                    angle = 45, worth_offset=0.0, noise=0.0, positive_emphasis=True,
-                    emphasis_mode= 'replace', memory_alpha=0.995, time_memory_delta=0.001, 
+                    angle = 45, persistence=0.7, worth_offset=0.0, noise=0.01, positive_emphasis=True,
+                    emphasis_mode= 'replace', memory_alpha=0.995, time_memory_delta=0.005, 
                     time_memory_exp=1, disjoint=False, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
+        printLocals('Agent', locals())
         self.istraining = mode == 'train'
         self.angle = angle
+        self.persistence = persistence
         self.worth_offset = worth_offset
         self.berryField = berryField
         self.field_grid_size = field_grid_size
@@ -40,10 +43,10 @@ class Agent():
         self.disjoint = disjoint
 
         # init memories and other stuff
-        self._init_memories()
         self.num_sectors = 360//angle        
         self.state_transitions = []
         self.output_shape = None
+        self._init_memories()
 
         self.divLenX = berryField.FIELD_SIZE[0]//field_grid_size[0]
         self.divLenY = berryField.FIELD_SIZE[1]//field_grid_size[1]
@@ -77,6 +80,7 @@ class Agent():
         self.berry_memory = np.zeros(memory_grid_size) # aprox place of sighting a berry
         self.time_memory = 0 # the time spent at the current block
         self.time_memory_data = np.zeros_like(self.path_memory)
+        self.prev_sectorized = np.zeros((4,self.num_sectors))
 
     # for computation of berry worth, can help to change 
     # the agent's preference of different sizes of berries. 
@@ -98,10 +102,13 @@ class Agent():
 
     def _compute_sectorized(self, raw_observation, info):
         """  """
-        a1 = np.zeros(self.num_sectors) # max-worth of each sector
-        a2 = np.zeros(self.num_sectors) # stores avg-worth of each sector
-        a3 = np.zeros(self.num_sectors) # indicates the sector with the max worthy berry
-        a4 = np.zeros(self.num_sectors) # a mesure of distance to max worthy in each sector
+        # a1 = np.zeros(self.num_sectors) # max-worth of each sector
+        # a2 = np.zeros(self.num_sectors) # stores avg-worth of each sector
+        # a3 = np.zeros(self.num_sectors) # indicates the sector with the max worthy berry
+        # a4 = np.zeros(self.num_sectors) # a mesure of distance to max worthy in each sector
+
+        # apply persistence
+        a1,a2,a3,a4 = self.prev_sectorized * self.persistence
         total_worth = 0
 
         if len(raw_observation) > 0:
@@ -138,6 +145,7 @@ class Agent():
         
         avg_worth = total_worth/len(raw_observation) if len(raw_observation) > 0 else 0
 
+        self.prev_sectorized = np.array([a1,a2,a3,a4])
         return [a1,a2,a3,a4], avg_worth
 
     def _update_memories(self, info, avg_worth):
@@ -186,10 +194,8 @@ class Agent():
         patch_relative = info['patch-relative']
 
         # make the state by concatenating sectorized_states and memories
-        state = np.concatenate([
-            *sectorized_states, edge_dist, patch_relative, [self.time_memory],
-            self.berry_memory, self.path_memory
-        ])
+        state = np.concatenate([*sectorized_states, edge_dist, patch_relative, 
+                                [self.time_memory], self.berry_memory, self.path_memory])
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
@@ -262,7 +268,7 @@ class Agent():
     
     def getNet(self, TORCH_DEVICE, debug=False,
                 linearsDim = [16,8],
-                channels = [4,8,16],
+                channels = [8,8,16],
                 kernels = [4,3,2],
                 strides = [2,2,2],
                 padding = [3,3,1],
