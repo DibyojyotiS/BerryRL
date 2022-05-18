@@ -12,6 +12,9 @@ class CircularPad1d(nn.Module):
         x = torch.cat([lpad, x, rpad], dim=-1)
         return x
 
+    def extra_repr(self):
+        return f'padding={self.padding}'
+
 def make_simple_feedforward(infeatures, linearsDim = [32,16]):
     """ layer -> relu -> layer"""
     # build the feed-forward network
@@ -24,8 +27,11 @@ def make_simple_feedforward(infeatures, linearsDim = [32,16]):
 def make_simple_conv1dnet(inchannel:int, channels:list, kernels:list, strides:list, 
                         paddings:list, maxpkernels:list, padding_mode='zeros'):
     """ odd layers are max-pools {conv,maxpool,relu,conv, [?maxpool?]}"""
-    if padding_mode=='circuler': PADDING_LAYER = CircularPad1d()
-    conv = nn.ModuleList([nn.Conv1d(inchannel, channels[0], kernels[0], strides[0], 
+    if padding_mode=='circular':
+        conv = nn.ModuleList([CircularPad1d(paddings[0]),
+                    nn.Conv1d(inchannel, channels[0], kernels[0], strides[0])])
+    else:
+        conv = nn.ModuleList([nn.Conv1d(inchannel, channels[0], kernels[0], strides[0], 
                                     paddings[0], padding_mode=padding_mode)])
     for i in range(1, len(channels)):
         if len(maxpkernels) > i-1 and maxpkernels[i-1]:
