@@ -28,8 +28,8 @@ def make_simple_conv1dnet(inchannel:int, channels:list, kernels:list, strides:li
                         paddings:list, maxpkernels:list, padding_mode='zeros'):
     """ odd layers are max-pools {conv,maxpool,relu,conv, [?maxpool?]}"""
     if padding_mode=='circular':
-        conv = nn.ModuleList([CircularPad1d(paddings[0]),
-                    nn.Conv1d(inchannel, channels[0], kernels[0], strides[0])])
+        conv = nn.ModuleList([nn.Conv1d(inchannel, channels[0], kernels[0], strides[0])])
+        if paddings[0]: conv.insert(0, CircularPad1d(paddings[0]))
     else:
         conv = nn.ModuleList([nn.Conv1d(inchannel, channels[0], kernels[0], strides[0], 
                                     paddings[0], padding_mode=padding_mode)])
@@ -38,8 +38,8 @@ def make_simple_conv1dnet(inchannel:int, channels:list, kernels:list, strides:li
             conv.append(nn.MaxPool1d(maxpkernels[i-1]))
         conv.append(nn.ReLU())
         if padding_mode == 'circular': 
-            conv.extend([CircularPad1d(paddings[i]),
-                        nn.Conv1d(channels[i-1], channels[i], kernels[i], strides[i])])
+            if paddings[i]: conv.append(CircularPad1d(paddings[i]))
+            conv.append(nn.Conv1d(channels[i-1], channels[i], kernels[i], strides[i]))
         else:
             conv.append(nn.Conv1d(channels[i-1], channels[i], kernels[i], 
                         strides[i], paddings[i], padding_mode=padding_mode))
