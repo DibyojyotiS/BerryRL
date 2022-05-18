@@ -268,9 +268,9 @@ class Agent():
     
     def getNet(self, TORCH_DEVICE, debug=False,
                 linearsDim = [4], # for edge, patch-relative & time-memory
-                sector_conv = dict(channels = [2,1], kernels = [3,3], 
-                    strides = [1,1], paddings = [1,1], maxpkernels = [],
-                    padding_mode='circular'),
+                sector_conv = dict(channels = [2,4,8], kernels = [2,2,2], 
+                    strides = [2,2,2], paddings = [0,0,0], maxpkernels = [],
+                    padding_mode='zeros'),
                 memory_conv = dict(channels = [8,8,16], kernels = [4,3,2], 
                     strides = [2,2,2], paddings = [3,3,1], maxpkernels = [2,2],
                     padding_mode='zeros'),
