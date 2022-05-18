@@ -269,7 +269,7 @@ class Agent():
     def getNet(self, TORCH_DEVICE, debug=False,
                 linearsDim = [4], # for edge, patch-relative & time-memory
                 sector_conv = dict(channels = [2,1], kernels = [3,3], 
-                    strides = [1,1], paddings = [2,2], maxpkernels = [],
+                    strides = [1,1], paddings = [1,1], maxpkernels = [],
                     padding_mode='circular'),
                 memory_conv = dict(channels = [8,8,16], kernels = [4,3,2], 
                     strides = [2,2,2], paddings = [3,3,1], maxpkernels = [2,2],
