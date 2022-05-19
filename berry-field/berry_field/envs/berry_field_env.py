@@ -187,7 +187,6 @@ class BerryFieldEnv(gym.Env):
         first_observation, first_info = self.raw_observation(), self.get_info()
 
         if self.analysis_enabled: 
-            self.analysis.close()
             self._init_analysis(self.analytics_folder)
 
         # increment resets (increment only after _init_analysis)
@@ -230,7 +229,9 @@ class BerryFieldEnv(gym.Env):
         observation = self.raw_observation()
 
         # update the analytice
-        if self.analysis_enabled: self.analysis.update()
+        if self.analysis_enabled: 
+            self.analysis.update()
+            if done: self.analysis.close()
 
         return observation, reward, done, info
 
