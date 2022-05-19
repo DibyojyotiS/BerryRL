@@ -231,7 +231,7 @@ class BerryFieldEnv(gym.Env):
 
         # update the analytice
         if self.analysis_enabled: 
-            self.analysis.update()
+            self.analysis.update(done)
             if done: self.analysis.close()
         
         # close viewer if done
@@ -511,7 +511,7 @@ class BerryFieldEnv(gym.Env):
             patch_rects[i] = [centerx, centery, width, height]
         patch_bboxes = np.array(patch_rects)
 
-        # padding to account for berry radius
+        # padding to assure that berries can be collected only inside a patch
         max_berry_size = max(berry_data[:,1])
         patch_bboxes[:,2] += max_berry_size + self.AGENT_SIZE
         patch_bboxes[:,3] += max_berry_size + self.AGENT_SIZE

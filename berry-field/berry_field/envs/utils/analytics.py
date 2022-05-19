@@ -25,6 +25,7 @@ class BerryFieldAnalytics():
         self.berryField = berryField
         self.saveFolder = saveFolder
         self.verbose = verbose
+        self.closed = False
 
         # create files to log the data
         self.agent_path = open(os.path.join(saveFolder,'agent_path.txt'), 'w', encoding='utf-8') # path in (x,y) coordinates
@@ -58,7 +59,7 @@ class BerryFieldAnalytics():
         self.total_preference = {x:0 for x in self.unique_berry_sizes}
 
 
-    def update(self):
+    def update(self, done):
         """ log changes """
         # log the new updates
         self.agent_path.write(f'{self.berryField.position},')
@@ -68,13 +69,11 @@ class BerryFieldAnalytics():
         # if we are in the same patch, we may compute the berry preference by
         # noting the distance of the oollected berries along the trajectory line
         patch_id = self.berryField.current_patch_id
-        if self.previous_patch_id != patch_id:
-
+        if (self.previous_patch_id != patch_id) or done:
             # the agent leaves the previous patch
             if self.previous_patch_id is not None:
                 # log the previous berry-along-path
                 self.berries_along_patch_paths.write(f'{self.previous_patch_id}:{self.berries_along_patch_path}\n')
-
                 # compute the relative preference
                 berry_weight = {size:0 for size in self.unique_berry_sizes}
                 berry_count = {size:0 for size in self.unique_berry_sizes}
@@ -84,7 +83,6 @@ class BerryFieldAnalytics():
                 for size in self.unique_berry_sizes:
                     if berry_count[size] == 0: continue
                     self.total_preference[size] += berry_weight[size]/berry_count[size]
-
             # reset variables
             self.current_patch_steps = 1
             self.previous_patch_id = patch_id
@@ -99,7 +97,7 @@ class BerryFieldAnalytics():
             if abs(x) > 0.7 * pw/2 and abs(y) > 0.7 * ph/2: self.peripheral_patch_times[patch_id] += 1
             else: self.central_patch_times[patch_id] += 1 
 
-        # berry related stats
+        # berry related stats -- assumes that berries can be collected only in a patch
         if len(self.berryField.recently_picked_berries) > 0:
             for size in self.berryField.recently_picked_berries:
                 self.total_berries_collected += 1
@@ -108,8 +106,13 @@ class BerryFieldAnalytics():
 
         self.current_patch_steps += 1
 
+        # close analysis if done
+        if done: self.close()
+
 
     def close(self):
+        if self.closed: return
+        
         self.agent_path.close()
         self.agent_actions.close()
         self.berries_along_patch_paths.close()
@@ -137,6 +140,8 @@ class BerryFieldAnalytics():
                 f"central_patch_times: {self.central_patch_times}\n",
                 f"total berries collected: {self.total_berries_collected}\n"
             ])
+        
+        self.closed = True        
 
         
     def compute_stats(self):
