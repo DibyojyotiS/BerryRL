@@ -222,7 +222,8 @@ class BerryFieldEnv(gym.Env):
         self.current_patch_id, self.current_patch_box = self._get_current_patch()
 
         # compute the reward and done
-        reward,done = self._get_reward()
+        reward, done = self._get_reward()
+        self.done = done
 
         # generate the info and observation
         info = self.get_info()
@@ -232,6 +233,9 @@ class BerryFieldEnv(gym.Env):
         if self.analysis_enabled: 
             self.analysis.update()
             if done: self.analysis.close()
+        
+        # close viewer if done
+        if done and self.viewer is not None: self.viewer = self.viewer.close()
 
         return observation, reward, done, info
 
@@ -474,15 +478,14 @@ class BerryFieldEnv(gym.Env):
                  curiosity_reward * (1 - self.reward_curiosity_beta)
 
         # did the episode just end?
-        self.done = True if self.num_steps >= self.MAX_STEPS or \
-                            self.total_juice <= 0 or \
-                            self.END_ON_BOUNDARY_HIT and self._has_hit_boundary() \
-                         else False
+        done = True if self.num_steps >= self.MAX_STEPS or \
+                    self.total_juice <= 0 or \
+                    self.END_ON_BOUNDARY_HIT and self._has_hit_boundary() \
+                    else False
         
-        # -ve reward on hitting boundary with END_ON_BOUNDARY_HIT
+        # -ve reward on hitting boundary
         if self.PENALIZE_BOUNDARY_HIT and self._has_hit_boundary(): reward = -1
-        if self.done and self.viewer is not None: self.viewer = self.viewer.close()
-        return reward, self.done
+        return reward, done
 
 
     def _get_patch_boxes(self, berry_data):
