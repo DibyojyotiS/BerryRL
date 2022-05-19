@@ -308,7 +308,7 @@ class Agent():
                 # conv2d requires 4d inputs
                 memory_part = memory_part.reshape((-1,2,memory_shape[0], memory_shape[1]))
 
-                # get feed-forward output
+                # process feedforward_part
                 if debug: print('\nfeedforward_part',feedforward_part.shape)
                 for layer in self.feedforward:
                     feedforward_part = layer(feedforward_part)        
