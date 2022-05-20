@@ -15,17 +15,18 @@ class CircularPad1d(nn.Module):
     def extra_repr(self):
         return f'padding={self.padding}'
 
-def make_simple_feedforward(infeatures, linearsDim = [32,16]):
+def make_simple_feedforward(infeatures, linearsDim = [32,16], lreluslope=0.1):
     """ layer -> relu -> layer -> relu"""
     # build the feed-forward network
     input_layer = nn.Linear(infeatures, linearsDim[0])
-    ffn = nn.ModuleList([input_layer, nn.ReLU()])
+    ffn = nn.ModuleList([input_layer, nn.LeakyReLU(negative_slope=lreluslope)])
     for i in range(1,len(linearsDim)):
-        ffn.extend([nn.Linear(linearsDim[i-1], linearsDim[i]), nn.ReLU()])
+        ffn.extend([nn.Linear(linearsDim[i-1], linearsDim[i]), 
+                    nn.LeakyReLU(negative_slope=lreluslope)])
     return ffn
 
 def make_simple_conv1dnet(inchannel:int, channels:list, kernels:list, strides:list, 
-                        paddings:list, maxpkernels:list, padding_mode='zeros'):
+                        paddings:list, maxpkernels:list, padding_mode='zeros', lreluslope=0.1):
     """ odd layers are max-pools conv -> [maxpool?,relu,conv] -> maxpool? -> relu}"""
     if padding_mode=='circular':
         conv = nn.ModuleList([nn.Conv1d(inchannel, channels[0], kernels[0], strides[0])])
@@ -36,7 +37,7 @@ def make_simple_conv1dnet(inchannel:int, channels:list, kernels:list, strides:li
     for i in range(1, len(channels)):
         if len(maxpkernels) > i-1 and maxpkernels[i-1]:
             conv.append(nn.MaxPool1d(maxpkernels[i-1]))
-        conv.append(nn.ReLU())
+        conv.append(nn.LeakyReLU(negative_slope=lreluslope))
         if padding_mode == 'circular': 
             if paddings[i]: conv.append(CircularPad1d(paddings[i]))
             conv.append(nn.Conv1d(channels[i-1], channels[i], kernels[i], strides[i]))
@@ -44,11 +45,11 @@ def make_simple_conv1dnet(inchannel:int, channels:list, kernels:list, strides:li
             conv.append(nn.Conv1d(channels[i-1], channels[i], kernels[i], 
                         strides[i], paddings[i], padding_mode=padding_mode))
     if len(maxpkernels) == len(channels): conv.append(nn.MaxPool1d(maxpkernels[-1]))
-    conv.append(nn.ReLU())
+    conv.append(nn.LeakyReLU(negative_slope=lreluslope))
     return conv
 
 def make_simple_conv2dnet(inchannel:int, channels:list, kernels:list, strides:list, 
-                        paddings:list, maxpkernels:list, padding_mode='zeros'):
+                        paddings:list, maxpkernels:list, padding_mode='zeros', lreluslope=0.1):
     """ odd layers are max-pools {conv -> [maxpool?,relu,conv] -> maxpool? -> relu]} """
     conv = nn.ModuleList([nn.Conv2d(inchannel, channels[0], kernels[0], strides[0], 
                                     paddings[0], padding_mode=padding_mode)])
@@ -56,10 +57,13 @@ def make_simple_conv2dnet(inchannel:int, channels:list, kernels:list, strides:li
         if len(maxpkernels) > i-1 and maxpkernels[i-1]:
             conv.append(nn.MaxPool2d(maxpkernels[i-1]))
         conv.extend([ 
-            nn.ReLU(), 
+            nn.LeakyReLU(negative_slope=lreluslope), 
             nn.Conv2d(channels[i-1], channels[i], kernels[i], 
                     strides[i], paddings[i], padding_mode=padding_mode)
         ])
     if len(maxpkernels) == len(channels): conv.append(nn.MaxPool2d(maxpkernels[-1]))
-    conv.append(nn.ReLU())
+    conv.append(nn.LeakyReLU(negative_slope=lreluslope))
     return conv
+
+def make_simple_skip_conv2d():
+    pass

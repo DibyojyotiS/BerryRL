@@ -1,0 +1,537 @@
+with living cost, rewards scaled by 1/(berry_env.REWARD_RATE*MAXSIZE)
+positive rewards are now emphasised in the state-transitions
+            Once a berry is encountered (say at index i), new transitions of the following
+            description will also be appended (if emphasis_mode = 'append') or the entries 
+            will be replaced: all the transitions k < i such that the sum of reward from
+            k to i is positive will have the next-state replaced by the state at transition
+            at index i. And the rewards will also be replaced by the summation from k to i.
+            currently, emphasis-mode is replace.
+            if disjoint=True, then k is limited to the index of the last berry seen
+            currently disjoint behaviour is set to False
+
+total-params:  4617
+net(
+  (feedforward): ModuleList(
+    (0): Linear(in_features=38, out_features=16, bias=True)
+    (1): Linear(in_features=16, out_features=8, bias=True)
+  )
+  (conv1): ModuleList(
+    (0): Conv2d(1, 4, kernel_size=(4, 4), stride=(2, 2), padding=(3, 3))
+    (1): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (2): Conv2d(4, 8, kernel_size=(3, 3), stride=(2, 2), padding=(3, 3))
+    (3): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (4): Conv2d(8, 8, kernel_size=(2, 2), stride=(2, 2), padding=(1, 1))
+  )
+  (conv2): ModuleList(
+    (0): Conv2d(1, 4, kernel_size=(4, 4), stride=(2, 2), padding=(3, 3))
+    (1): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (2): Conv2d(4, 8, kernel_size=(3, 3), stride=(2, 2), padding=(3, 3))
+    (3): MaxPool2d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+    (4): Conv2d(8, 8, kernel_size=(2, 2), stride=(2, 2), padding=(1, 1))
+  )
+  (final_stage): ModuleList(
+    (0): Linear(in_features=152, out_features=16, bias=True)
+  )
+  (valueL): Linear(in_features=16, out_features=1, bias=True)
+  (actadvs): Linear(in_features=16, out_features=8, bias=True)
+)
+lr used = 0.00005
+Using greedy strategy as evalExplortionStrategy.
+episode: 0 -> reward: -25.002604166666426, steps:9601, time-elasped: 60.84s
+-> berries picked: 0 of 500 | patches-visited: [0] | positive-in-buffer: 0 | amount-filled: 17.46%
+	| approx positives in sample 256: 0
+episode: 1 -> reward: -25.002604166666462, steps:10273, time-elasped: 125.94s
+-> berries picked: 2 of 500 | patches-visited: [9] | positive-in-buffer: 2 | amount-filled: 36.13%
+	| approx positives in sample 256: 0
+episode: 2 -> reward: -25.00260416666643, steps:9697, time-elasped: 191.55s
+-> berries picked: 1 of 500 | patches-visited: [0] | positive-in-buffer: 5 | amount-filled: 53.76%
+	| approx positives in sample 256: 2
+episode: 3 -> reward: -25.002604166666426, steps:9601, time-elasped: 259.90s
+-> berries picked: 0 of 500 | patches-visited: [4] | positive-in-buffer: 5 | amount-filled: 71.22%
+	| approx positives in sample 256: 0
+episode: 4 -> reward: -25.002604166666426, steps:9601, time-elasped: 325.48s
+-> berries picked: 0 of 500 | patches-visited: [8] | positive-in-buffer: 5 | amount-filled: 88.68%
+	| approx positives in sample 256: 1
+episode: 5 -> reward: -25.002604166666462, steps:10369, time-elasped: 396.69s
+-> berries picked: 3 of 500 | patches-visited: [8] | positive-in-buffer: 18 | amount-filled: 100.00%
+	| approx positives in sample 256: 3
+episode: 6 -> reward: -25.002604166666423, steps:9793, time-elasped: 470.40s
+-> berries picked: 1 of 500 | patches-visited: [0] | positive-in-buffer: 19 | amount-filled: 100.00%
+	| approx positives in sample 256: 5
+episode: 7 -> reward: -25.00260416666642, steps:10177, time-elasped: 552.17s
+-> berries picked: 3 of 500 | patches-visited: [6] | positive-in-buffer: 33 | amount-filled: 100.00%
+	| approx positives in sample 256: 4
+episode: 8 -> reward: -25.002604166666416, steps:9697, time-elasped: 636.77s
+-> berries picked: 1 of 500 | patches-visited: [5] | positive-in-buffer: 34 | amount-filled: 100.00%
+	| approx positives in sample 256: 3
+episode: 9 -> reward: -25.002604166666426, steps:9601, time-elasped: 699.64s
+-> berries picked: 0 of 500 | patches-visited: [7] | positive-in-buffer: 34 | amount-filled: 100.00%
+	| approx positives in sample 256: 2
+episode: 10 -> reward: -25.002604166666426, steps:9601, time-elasped: 762.45s
+-> berries picked: 0 of 500 | patches-visited: [0] | positive-in-buffer: 34 | amount-filled: 100.00%
+	| approx positives in sample 256: 1
+episode: 11 -> reward: -25.002604166666433, steps:10177, time-elasped: 833.37s
+-> berries picked: 2 of 500 | patches-visited: [2] | positive-in-buffer: 48 | amount-filled: 100.00%
+	| approx positives in sample 256: 4
+episode: 12 -> reward: -25.002604166666426, steps:9601, time-elasped: 902.72s
+-> berries picked: 0 of 500 | patches-visited: [5] | positive-in-buffer: 48 | amount-filled: 100.00%
+	| approx positives in sample 256: 4
+episode: 13 -> reward: -25.002604166666416, steps:10081, time-elasped: 979.92s
+-> berries picked: 2 of 500 | patches-visited: [7] | positive-in-buffer: 61 | amount-filled: 100.00%
+	| approx positives in sample 256: 4
+episode: 14 -> reward: -25.002604166666426, steps:9793, time-elasped: 1043.06s
+-> berries picked: 1 of 500 | patches-visited: [3] | positive-in-buffer: 70 | amount-filled: 100.00%
+	| approx positives in sample 256: 4
+episode: 15 -> reward: -25.00260416666643, steps:10081, time-elasped: 1109.79s
+-> berries picked: 3 of 500 | patches-visited: [3] | positive-in-buffer: 82 | amount-filled: 100.00%
+	| approx positives in sample 256: 4
+episode: 16 -> reward: -25.002604166666426, steps:9601, time-elasped: 1174.86s
+-> berries picked: 0 of 500 | patches-visited: [2] | positive-in-buffer: 82 | amount-filled: 100.00%
+	| approx positives in sample 256: 4
+episode: 17 -> reward: -25.002604166666405, steps:9793, time-elasped: 1240.81s
+-> berries picked: 1 of 500 | patches-visited: [7] | positive-in-buffer: 85 | amount-filled: 100.00%
+	| approx positives in sample 256: 8
+episode: 18 -> reward: -25.002604166666426, steps:9985, time-elasped: 1308.44s
+-> berries picked: 1 of 500 | patches-visited: [5] | positive-in-buffer: 92 | amount-filled: 100.00%
+	| approx positives in sample 256: 9
+episode: 19 -> reward: -25.002604166666426, steps:9601, time-elasped: 1370.86s
+-> berries picked: 0 of 500 | patches-visited: [9] | positive-in-buffer: 92 | amount-filled: 100.00%
+	| approx positives in sample 256: 9
+episode: 20 -> reward: -25.00260416666642, steps:10177, time-elasped: 1440.61s
+-> berries picked: 3 of 500 | patches-visited: [5] | positive-in-buffer: 103 | amount-filled: 100.00%
+	| approx positives in sample 256: 6
+episode: 21 -> reward: -25.002604166666426, steps:9601, time-elasped: 1512.27s
+-> berries picked: 0 of 500 | patches-visited: [6] | positive-in-buffer: 103 | amount-filled: 100.00%
+	| approx positives in sample 256: 5
+episode: 22 -> reward: -25.002604166666426, steps:9793, time-elasped: 1576.90s
+-> berries picked: 1 of 500 | patches-visited: [0] | positive-in-buffer: 105 | amount-filled: 100.00%
+	| approx positives in sample 256: 8
+episode: 23 -> reward: -25.00260416666641, steps:10177, time-elasped: 1641.89s
+-> berries picked: 3 of 500 | patches-visited: [1] | positive-in-buffer: 113 | amount-filled: 100.00%
+	| approx positives in sample 256: 7
+episode: 24 -> reward: -25.002604166666416, steps:10657, time-elasped: 1715.50s
+-> berries picked: 3 of 500 | patches-visited: [9] | positive-in-buffer: 124 | amount-filled: 100.00%
+	| approx positives in sample 256: 3
+episode: 25 -> reward: -25.002604166666423, steps:9793, time-elasped: 1792.22s
+-> berries picked: 1 of 500 | patches-visited: [1] | positive-in-buffer: 125 | amount-filled: 100.00%
+	| approx positives in sample 256: 7
+episode: 26 -> reward: -25.002604166666426, steps:9601, time-elasped: 1861.53s
+-> berries picked: 0 of 500 | patches-visited: [3] | positive-in-buffer: 125 | amount-filled: 100.00%
+	| approx positives in sample 256: 12
+episode: 27 -> reward: -25.002604166666476, steps:10465, time-elasped: 1939.97s
+-> berries picked: 3 of 500 | patches-visited: [9] | positive-in-buffer: 138 | amount-filled: 100.00%
+	| approx positives in sample 256: 10
+episode: 28 -> reward: -25.002604166666426, steps:9601, time-elasped: 2006.62s
+-> berries picked: 0 of 500 | patches-visited: [7] | positive-in-buffer: 138 | amount-filled: 100.00%
+	| approx positives in sample 256: 11
+episode: 29 -> reward: -25.002604166666405, steps:9793, time-elasped: 2073.73s
+-> berries picked: 1 of 500 | patches-visited: [0] | positive-in-buffer: 140 | amount-filled: 100.00%
+	| approx positives in sample 256: 5
+episode: 30 -> reward: -25.002604166666426, steps:9793, time-elasped: 2141.67s
+-> berries picked: 1 of 500 | patches-visited: [3] | positive-in-buffer: 143 | amount-filled: 100.00%
+	| approx positives in sample 256: 3
+episode: 31 -> reward: -25.002604166666426, steps:9793, time-elasped: 2212.46s
+-> berries picked: 1 of 500 | patches-visited: [4] | positive-in-buffer: 145 | amount-filled: 100.00%
+	| approx positives in sample 256: 7
+episode: 32 -> reward: -25.002604166666426, steps:10177, time-elasped: 2286.13s
+-> berries picked: 2 of 500 | patches-visited: [8] | positive-in-buffer: 159 | amount-filled: 100.00%
+	| approx positives in sample 256: 10
+episode: 33 -> reward: -25.002604166666426, steps:9985, time-elasped: 2359.78s
+-> berries picked: 1 of 500 | patches-visited: [8] | positive-in-buffer: 166 | amount-filled: 100.00%
+	| approx positives in sample 256: 14
+episode: 34 -> reward: -25.002604166666426, steps:9985, time-elasped: 2436.67s
+-> berries picked: 1 of 500 | patches-visited: [1] | positive-in-buffer: 172 | amount-filled: 100.00%
+	| approx positives in sample 256: 9
+episode: 35 -> reward: -25.002604166666426, steps:9985, time-elasped: 2499.61s
+-> berries picked: 1 of 500 | patches-visited: [0] | positive-in-buffer: 178 | amount-filled: 100.00%
+	| approx positives in sample 256: 11
+episode: 36 -> reward: -25.00260416666642, steps:9889, time-elasped: 2571.98s
+-> berries picked: 1 of 500 | patches-visited: [3] | positive-in-buffer: 180 | amount-filled: 100.00%
+	| approx positives in sample 256: 5
+episode: 37 -> reward: -25.00260416666643, steps:10081, time-elasped: 2639.64s
+-> berries picked: 2 of 500 | patches-visited: [0] | positive-in-buffer: 186 | amount-filled: 100.00%
+	| approx positives in sample 256: 11
+episode: 38 -> reward: -25.002604166666426, steps:9985, time-elasped: 2713.24s
+-> berries picked: 1 of 500 | patches-visited: [5] | positive-in-buffer: 186 | amount-filled: 100.00%
+	| approx positives in sample 256: 12
+episode: 39 -> reward: -25.00260416666644, steps:10081, time-elasped: 2782.48s
+-> berries picked: 3 of 500 | patches-visited: [5] | positive-in-buffer: 202 | amount-filled: 100.00%
+	| approx positives in sample 256: 12
+episode: 40 -> reward: -25.002604166666426, steps:9601, time-elasped: 2847.74s
+-> berries picked: 0 of 500 | patches-visited: [6] | positive-in-buffer: 202 | amount-filled: 100.00%
+	| approx positives in sample 256: 10
+episode: 41 -> reward: -25.002604166666426, steps:9601, time-elasped: 2904.67s
+-> berries picked: 0 of 500 | patches-visited: [] | positive-in-buffer: 202 | amount-filled: 100.00%
+	| approx positives in sample 256: 10
+episode: 42 -> reward: -25.002604166666416, steps:9985, time-elasped: 2974.50s
+-> berries picked: 1 of 500 | patches-visited: [3] | positive-in-buffer: 208 | amount-filled: 100.00%
+	| approx positives in sample 256: 10
+episode: 43 -> reward: -25.002604166666426, steps:9601, time-elasped: 3036.33s
+-> berries picked: 0 of 500 | patches-visited: [1] | positive-in-buffer: 208 | amount-filled: 100.00%
+	| approx positives in sample 256: 9
+episode: 44 -> reward: -25.002604166666426, steps:9793, time-elasped: 3095.92s
+-> berries picked: 1 of 500 | patches-visited: [0] | positive-in-buffer: 213 | amount-filled: 100.00%
+	| approx positives in sample 256: 5
+episode: 45 -> reward: -25.002604166666426, steps:9889, time-elasped: 3165.28s
+-> berries picked: 1 of 500 | patches-visited: [1] | positive-in-buffer: 212 | amount-filled: 100.00%
+	| approx positives in sample 256: 11
+episode: 46 -> reward: -25.00260416666642, steps:9985, time-elasped: 3243.11s
+-> berries picked: 2 of 500 | patches-visited: [0] | positive-in-buffer: 215 | amount-filled: 100.00%
+	| approx positives in sample 256: 9
+episode: 47 -> reward: -25.00260416666642, steps:10081, time-elasped: 3309.72s
+-> berries picked: 2 of 500 | patches-visited: [6] | positive-in-buffer: 222 | amount-filled: 100.00%
+	| approx positives in sample 256: 13
+episode: 48 -> reward: -25.00260416666644, steps:10177, time-elasped: 3379.84s
+-> berries picked: 2 of 500 | patches-visited: [2] | positive-in-buffer: 231 | amount-filled: 100.00%
+	| approx positives in sample 256: 13
+episode: 49 -> reward: -25.002604166666426, steps:9985, time-elasped: 3450.15s
+-> berries picked: 1 of 500 | patches-visited: [6] | positive-in-buffer: 237 | amount-filled: 100.00%
+	| approx positives in sample 256: 11
+episode: 50 -> reward: -25.002604166666426, steps:10273, time-elasped: 3512.59s
+-> berries picked: 2 of 500 | patches-visited: [8] | positive-in-buffer: 254 | amount-filled: 100.00%
+	| approx positives in sample 256: 13
+episode: 51 -> reward: -25.002604166666387, steps:10273, time-elasped: 3581.20s
+-> berries picked: 3 of 500 | patches-visited: [5] | positive-in-buffer: 259 | amount-filled: 100.00%
+	| approx positives in sample 256: 10
+episode: 52 -> reward: -25.002604166666426, steps:9601, time-elasped: 3641.14s
+-> berries picked: 0 of 500 | patches-visited: [1] | positive-in-buffer: 258 | amount-filled: 100.00%
+	| approx positives in sample 256: 15
+episode: 53 -> reward: -25.002604166666398, steps:10081, time-elasped: 3718.05s
+-> berries picked: 2 of 500 | patches-visited: [2] | positive-in-buffer: 264 | amount-filled: 100.00%
+	| approx positives in sample 256: 10
+episode: 54 -> reward: -25.002604166666448, steps:9985, time-elasped: 3783.25s
+-> berries picked: 1 of 500 | patches-visited: [8] | positive-in-buffer: 266 | amount-filled: 100.00%
+	| approx positives in sample 256: 6
+episode: 55 -> reward: -25.00260416666646, steps:10657, time-elasped: 3856.62s
+-> berries picked: 3 of 500 | patches-visited: [3, 4] | positive-in-buffer: 282 | amount-filled: 100.00%
+	| approx positives in sample 256: 13
+episode: 56 -> reward: -25.002604166666426, steps:9697, time-elasped: 3926.64s
+-> berries picked: 1 of 500 | patches-visited: [8] | positive-in-buffer: 283 | amount-filled: 100.00%
+	| approx positives in sample 256: 9
+episode: 57 -> reward: -25.002604166666426, steps:9601, time-elasped: 3997.93s
+-> berries picked: 0 of 500 | patches-visited: [0] | positive-in-buffer: 282 | amount-filled: 100.00%
+	| approx positives in sample 256: 19
+episode: 58 -> reward: -25.002604166666416, steps:10177, time-elasped: 4076.29s
+-> berries picked: 2 of 500 | patches-visited: [0] | positive-in-buffer: 294 | amount-filled: 100.00%
+	| approx positives in sample 256: 16
+episode: 59 -> reward: -25.002604166666426, steps:9601, time-elasped: 4133.30s
+-> berries picked: 0 of 500 | patches-visited: [6] | positive-in-buffer: 292 | amount-filled: 100.00%
+	| approx positives in sample 256: 21
+episode: 60 -> reward: -25.002604166666423, steps:9985, time-elasped: 4202.53s
+-> berries picked: 2 of 500 | patches-visited: [8] | positive-in-buffer: 305 | amount-filled: 100.00%
+	| approx positives in sample 256: 19
+episode: 61 -> reward: -25.002604166666423, steps:10657, time-elasped: 4270.93s
+-> berries picked: 4 of 500 | patches-visited: [1] | positive-in-buffer: 322 | amount-filled: 100.00%
+	| approx positives in sample 256: 22
+episode: 62 -> reward: -25.002604166666426, steps:10177, time-elasped: 4347.53s
+-> berries picked: 2 of 500 | patches-visited: [2] | positive-in-buffer: 326 | amount-filled: 100.00%
+	| approx positives in sample 256: 12
+episode: 63 -> reward: -25.002604166666426, steps:9601, time-elasped: 4418.07s
+-> berries picked: 0 of 500 | patches-visited: [5] | positive-in-buffer: 326 | amount-filled: 100.00%
+	| approx positives in sample 256: 14
+episode: 64 -> reward: -25.002604166666384, steps:9985, time-elasped: 4495.19s
+-> berries picked: 1 of 500 | patches-visited: [7] | positive-in-buffer: 333 | amount-filled: 100.00%
+	| approx positives in sample 256: 20
+episode: 65 -> reward: -25.002604166666384, steps:9985, time-elasped: 4566.04s
+-> berries picked: 1 of 500 | patches-visited: [7] | positive-in-buffer: 333 | amount-filled: 100.00%
+	| approx positives in sample 256: 10
+episode: 66 -> reward: -25.002604166666405, steps:9793, time-elasped: 4639.13s
+-> berries picked: 1 of 500 | patches-visited: [0] | positive-in-buffer: 337 | amount-filled: 100.00%
+	| approx positives in sample 256: 10
+episode: 67 -> reward: -25.002604166666472, steps:11233, time-elasped: 4713.89s
+-> berries picked: 6 of 500 | patches-visited: [2] | positive-in-buffer: 353 | amount-filled: 100.00%
+	| approx positives in sample 256: 17
+episode: 68 -> reward: -25.00260416666642, steps:9889, time-elasped: 4787.27s
+-> berries picked: 1 of 500 | patches-visited: [8] | positive-in-buffer: 352 | amount-filled: 100.00%
+	| approx positives in sample 256: 18
+episode: 69 -> reward: -25.00260416666642, steps:10657, time-elasped: 4857.30s
+-> berries picked: 3 of 500 | patches-visited: [1] | positive-in-buffer: 353 | amount-filled: 100.00%
+	| approx positives in sample 256: 14
+episode: 70 -> reward: -25.002604166666437, steps:10369, time-elasped: 4931.96s
+-> berries picked: 3 of 500 | patches-visited: [0] | positive-in-buffer: 361 | amount-filled: 100.00%
+	| approx positives in sample 256: 23
+episode: 71 -> reward: -25.002604166666426, steps:10081, time-elasped: 4999.60s
+-> berries picked: 2 of 500 | patches-visited: [7] | positive-in-buffer: 374 | amount-filled: 100.00%
+	| approx positives in sample 256: 17
+episode: 72 -> reward: -25.00260416666647, steps:10369, time-elasped: 5071.92s
+-> berries picked: 4 of 500 | patches-visited: [4] | positive-in-buffer: 392 | amount-filled: 100.00%
+	| approx positives in sample 256: 19
+episode: 73 -> reward: -25.00260416666642, steps:10369, time-elasped: 5149.69s
+-> berries picked: 4 of 500 | patches-visited: [4] | positive-in-buffer: 404 | amount-filled: 100.00%
+	| approx positives in sample 256: 19
+episode: 74 -> reward: -25.00260416666643, steps:9985, time-elasped: 5213.24s
+-> berries picked: 1 of 500 | patches-visited: [7] | positive-in-buffer: 407 | amount-filled: 100.00%
+	| approx positives in sample 256: 21
+episode: 75 -> reward: -25.00260416666646, steps:10561, time-elasped: 5288.77s
+-> berries picked: 3 of 500 | patches-visited: [9] | positive-in-buffer: 423 | amount-filled: 100.00%
+	| approx positives in sample 256: 14
+episode: 76 -> reward: -25.002604166666426, steps:9601, time-elasped: 5356.57s
+-> berries picked: 0 of 500 | patches-visited: [9] | positive-in-buffer: 422 | amount-filled: 100.00%
+	| approx positives in sample 256: 13
+episode: 77 -> reward: -25.00260416666638, steps:10273, time-elasped: 5426.80s
+-> berries picked: 2 of 500 | patches-visited: [9] | positive-in-buffer: 437 | amount-filled: 100.00%
+	| approx positives in sample 256: 23
+episode: 78 -> reward: -25.002604166666394, steps:10081, time-elasped: 5496.01s
+-> berries picked: 4 of 500 | patches-visited: [8] | positive-in-buffer: 453 | amount-filled: 100.00%
+	| approx positives in sample 256: 17
+episode: 79 -> reward: -25.0026041666664, steps:10561, time-elasped: 5568.30s
+-> berries picked: 4 of 500 | patches-visited: [2] | positive-in-buffer: 473 | amount-filled: 100.00%
+	| approx positives in sample 256: 11
+episode: 80 -> reward: -25.002604166666448, steps:10657, time-elasped: 5641.26s
+-> berries picked: 4 of 500 | patches-visited: [9] | positive-in-buffer: 483 | amount-filled: 100.00%
+	| approx positives in sample 256: 21
+episode: 81 -> reward: -25.002604166666426, steps:9601, time-elasped: 5706.73s
+-> berries picked: 0 of 500 | patches-visited: [2] | positive-in-buffer: 483 | amount-filled: 100.00%
+	| approx positives in sample 256: 16
+episode: 82 -> reward: -25.002604166666426, steps:9601, time-elasped: 5765.88s
+-> berries picked: 0 of 500 | patches-visited: [1] | positive-in-buffer: 483 | amount-filled: 100.00%
+	| approx positives in sample 256: 20
+episode: 83 -> reward: -25.00260416666648, steps:10849, time-elasped: 5841.13s
+-> berries picked: 5 of 500 | patches-visited: [9] | positive-in-buffer: 511 | amount-filled: 100.00%
+	| approx positives in sample 256: 23
+episode: 84 -> reward: -25.00260416666642, steps:11713, time-elasped: 5921.09s
+-> berries picked: 7 of 500 | patches-visited: [0] | positive-in-buffer: 534 | amount-filled: 100.00%
+	| approx positives in sample 256: 19
+episode: 85 -> reward: -25.002604166666423, steps:10081, time-elasped: 5996.57s
+-> berries picked: 2 of 500 | patches-visited: [2] | positive-in-buffer: 539 | amount-filled: 100.00%
+	| approx positives in sample 256: 30
+episode: 86 -> reward: -25.00260416666642, steps:10273, time-elasped: 6076.36s
+-> berries picked: 3 of 500 | patches-visited: [5] | positive-in-buffer: 548 | amount-filled: 100.00%
+	| approx positives in sample 256: 20
+episode: 87 -> reward: -25.002604166666423, steps:9793, time-elasped: 6142.98s
+-> berries picked: 1 of 500 | patches-visited: [0, 8] | positive-in-buffer: 547 | amount-filled: 100.00%
+	| approx positives in sample 256: 21
+episode: 88 -> reward: -25.002604166666426, steps:9601, time-elasped: 6206.92s
+-> berries picked: 0 of 500 | patches-visited: [7] | positive-in-buffer: 547 | amount-filled: 100.00%
+	| approx positives in sample 256: 30
+episode: 89 -> reward: -25.002604166666405, steps:11137, time-elasped: 6282.59s
+-> berries picked: 4 of 500 | patches-visited: [2] | positive-in-buffer: 558 | amount-filled: 100.00%
+	| approx positives in sample 256: 20
+episode: 90 -> reward: -25.00260416666645, steps:10561, time-elasped: 6356.73s
+-> berries picked: 3 of 500 | patches-visited: [4] | positive-in-buffer: 567 | amount-filled: 100.00%
+	| approx positives in sample 256: 19
+episode: 91 -> reward: -25.002604166666416, steps:10177, time-elasped: 6425.49s
+-> berries picked: 3 of 500 | patches-visited: [0] | positive-in-buffer: 578 | amount-filled: 100.00%
+	| approx positives in sample 256: 26
+episode: 92 -> reward: -25.002604166666394, steps:11329, time-elasped: 6510.66s
+-> berries picked: 6 of 500 | patches-visited: [9] | positive-in-buffer: 604 | amount-filled: 100.00%
+	| approx positives in sample 256: 19
+episode: 93 -> reward: -25.00260416666643, steps:9985, time-elasped: 6579.62s
+-> berries picked: 2 of 500 | patches-visited: [6, 7] | positive-in-buffer: 608 | amount-filled: 100.00%
+	| approx positives in sample 256: 35
+episode: 94 -> reward: -25.002604166666426, steps:9985, time-elasped: 6657.00s
+-> berries picked: 1 of 500 | patches-visited: [8] | positive-in-buffer: 612 | amount-filled: 100.00%
+	| approx positives in sample 256: 39
+episode: 95 -> reward: -25.002604166666426, steps:10465, time-elasped: 6735.92s
+-> berries picked: 3 of 500 | patches-visited: [2] | positive-in-buffer: 620 | amount-filled: 100.00%
+	| approx positives in sample 256: 23
+episode: 96 -> reward: -25.002604166666433, steps:10177, time-elasped: 6810.49s
+-> berries picked: 2 of 500 | patches-visited: [9] | positive-in-buffer: 629 | amount-filled: 100.00%
+	| approx positives in sample 256: 31
+episode: 97 -> reward: -25.00260416666638, steps:10561, time-elasped: 6885.36s
+-> berries picked: 4 of 500 | patches-visited: [3] | positive-in-buffer: 655 | amount-filled: 100.00%
+	| approx positives in sample 256: 26
+episode: 98 -> reward: -25.00260416666636, steps:10369, time-elasped: 6965.10s
+-> berries picked: 3 of 500 | patches-visited: [3] | positive-in-buffer: 674 | amount-filled: 100.00%
+	| approx positives in sample 256: 21
+episode: 99 -> reward: -25.002604166666462, steps:10753, time-elasped: 7032.75s
+-> berries picked: 5 of 500 | patches-visited: [6] | positive-in-buffer: 682 | amount-filled: 100.00%
+	| approx positives in sample 256: 29
+episode: 100 -> reward: -25.002604166666416, steps:11041, time-elasped: 7116.91s
+-> berries picked: 6 of 500 | patches-visited: [2, 6] | positive-in-buffer: 707 | amount-filled: 100.00%
+	| approx positives in sample 256: 33
+episode: 101 -> reward: -25.002604166666444, steps:10081, time-elasped: 7195.82s
+-> berries picked: 2 of 500 | patches-visited: [6] | positive-in-buffer: 715 | amount-filled: 100.00%
+	| approx positives in sample 256: 39
+episode: 102 -> reward: -25.00260416666639, steps:10753, time-elasped: 7283.99s
+-> berries picked: 3 of 500 | patches-visited: [5] | positive-in-buffer: 729 | amount-filled: 100.00%
+	| approx positives in sample 256: 26
+episode: 103 -> reward: -25.002604166666426, steps:9985, time-elasped: 7361.46s
+-> berries picked: 1 of 500 | patches-visited: [9] | positive-in-buffer: 732 | amount-filled: 100.00%
+	| approx positives in sample 256: 27
+episode: 104 -> reward: -25.00260416666643, steps:10369, time-elasped: 7435.95s
+-> berries picked: 2 of 500 | patches-visited: [2] | positive-in-buffer: 738 | amount-filled: 100.00%
+	| approx positives in sample 256: 29
+episode: 105 -> reward: -25.002604166666423, steps:10369, time-elasped: 7526.81s
+-> berries picked: 3 of 500 | patches-visited: [4] | positive-in-buffer: 746 | amount-filled: 100.00%
+	| approx positives in sample 256: 27
+episode: 106 -> reward: -25.002604166666416, steps:11041, time-elasped: 7613.28s
+-> berries picked: 6 of 500 | patches-visited: [0] | positive-in-buffer: 782 | amount-filled: 100.00%
+	| approx positives in sample 256: 33
+episode: 107 -> reward: -25.00260416666636, steps:11425, time-elasped: 7693.43s
+-> berries picked: 9 of 500 | patches-visited: [5] | positive-in-buffer: 837 | amount-filled: 100.00%
+	| approx positives in sample 256: 29
+episode: 108 -> reward: -25.002604166666462, steps:10849, time-elasped: 7792.50s
+-> berries picked: 4 of 500 | patches-visited: [6] | positive-in-buffer: 848 | amount-filled: 100.00%
+	| approx positives in sample 256: 27
+episode: 109 -> reward: -25.002604166666384, steps:11137, time-elasped: 7899.17s
+-> berries picked: 6 of 500 | patches-visited: [4] | positive-in-buffer: 880 | amount-filled: 100.00%
+	| approx positives in sample 256: 29
+episode: 110 -> reward: -25.002604166666366, steps:10945, time-elasped: 7994.45s
+-> berries picked: 4 of 500 | patches-visited: [4] | positive-in-buffer: 902 | amount-filled: 100.00%
+	| approx positives in sample 256: 24
+episode: 111 -> reward: -25.002604166666455, steps:10369, time-elasped: 8083.09s
+-> berries picked: 4 of 500 | patches-visited: [1] | positive-in-buffer: 913 | amount-filled: 100.00%
+	| approx positives in sample 256: 33
+episode: 112 -> reward: -25.002604166666416, steps:9985, time-elasped: 8177.30s
+-> berries picked: 1 of 500 | patches-visited: [3] | positive-in-buffer: 920 | amount-filled: 100.00%
+	| approx positives in sample 256: 36
+episode: 113 -> reward: -25.00260416666633, steps:11617, time-elasped: 8278.13s
+-> berries picked: 7 of 500 | patches-visited: [8] | positive-in-buffer: 959 | amount-filled: 100.00%
+	| approx positives in sample 256: 26
+episode: 114 -> reward: -25.002604166666423, steps:9985, time-elasped: 8373.11s
+-> berries picked: 2 of 500 | patches-visited: [5] | positive-in-buffer: 963 | amount-filled: 100.00%
+	| approx positives in sample 256: 21
+episode: 115 -> reward: -25.00260416666644, steps:11521, time-elasped: 8471.65s
+-> berries picked: 7 of 500 | patches-visited: [8] | positive-in-buffer: 987 | amount-filled: 100.00%
+	| approx positives in sample 256: 35
+episode: 116 -> reward: -25.0026041666664, steps:10945, time-elasped: 8559.89s
+-> berries picked: 4 of 500 | patches-visited: [9] | positive-in-buffer: 1007 | amount-filled: 100.00%
+	| approx positives in sample 256: 35
+episode: 117 -> reward: -25.00260416666638, steps:10753, time-elasped: 8666.68s
+-> berries picked: 4 of 500 | patches-visited: [9] | positive-in-buffer: 1020 | amount-filled: 100.00%
+	| approx positives in sample 256: 26
+episode: 118 -> reward: -25.002604166666423, steps:10273, time-elasped: 8777.35s
+-> berries picked: 3 of 500 | patches-visited: [2] | positive-in-buffer: 1031 | amount-filled: 100.00%
+	| approx positives in sample 256: 31
+episode: 119 -> reward: -25.002604166666426, steps:9697, time-elasped: 8883.80s
+-> berries picked: 1 of 500 | patches-visited: [5] | positive-in-buffer: 1039 | amount-filled: 100.00%
+	| approx positives in sample 256: 33
+episode: 120 -> reward: -25.002604166666362, steps:11617, time-elasped: 8989.99s
+-> berries picked: 8 of 500 | patches-visited: [3] | positive-in-buffer: 1089 | amount-filled: 100.00%
+	| approx positives in sample 256: 31
+episode: 121 -> reward: -25.002604166666444, steps:10945, time-elasped: 9076.99s
+-> berries picked: 4 of 500 | patches-visited: [4] | positive-in-buffer: 1106 | amount-filled: 100.00%
+	| approx positives in sample 256: 34
+episode: 122 -> reward: -25.00260416666647, steps:10369, time-elasped: 9153.08s
+-> berries picked: 3 of 500 | patches-visited: [7] | positive-in-buffer: 1121 | amount-filled: 100.00%
+	| approx positives in sample 256: 37
+episode: 123 -> reward: -25.00260416666642, steps:11425, time-elasped: 9233.92s
+-> berries picked: 6 of 500 | patches-visited: [9] | positive-in-buffer: 1129 | amount-filled: 100.00%
+	| approx positives in sample 256: 35
+episode: 124 -> reward: -25.002604166666345, steps:11233, time-elasped: 9321.38s
+-> berries picked: 6 of 500 | patches-visited: [1] | positive-in-buffer: 1169 | amount-filled: 100.00%
+	| approx positives in sample 256: 34
+episode: 125 -> reward: -25.002604166666444, steps:10465, time-elasped: 9386.86s
+-> berries picked: 3 of 500 | patches-visited: [2] | positive-in-buffer: 1183 | amount-filled: 100.00%
+	| approx positives in sample 256: 34
+episode: 126 -> reward: -25.002604166666465, steps:10753, time-elasped: 9465.06s
+-> berries picked: 5 of 500 | patches-visited: [3] | positive-in-buffer: 1207 | amount-filled: 100.00%
+	| approx positives in sample 256: 38
+episode: 127 -> reward: -25.002604166666426, steps:10177, time-elasped: 9533.35s
+-> berries picked: 2 of 500 | patches-visited: [1] | positive-in-buffer: 1207 | amount-filled: 100.00%
+	| approx positives in sample 256: 32
+episode: 128 -> reward: -25.002604166666327, steps:11425, time-elasped: 9621.49s
+-> berries picked: 6 of 500 | patches-visited: [4] | positive-in-buffer: 1241 | amount-filled: 100.00%
+	| approx positives in sample 256: 34
+episode: 129 -> reward: -25.002604166666426, steps:10177, time-elasped: 9688.78s
+-> berries picked: 2 of 500 | patches-visited: [9] | positive-in-buffer: 1248 | amount-filled: 100.00%
+	| approx positives in sample 256: 33
+episode: 130 -> reward: -25.00260416666644, steps:10657, time-elasped: 9770.09s
+-> berries picked: 4 of 500 | patches-visited: [7] | positive-in-buffer: 1263 | amount-filled: 100.00%
+	| approx positives in sample 256: 39
+episode: 131 -> reward: -25.00260416666644, steps:10753, time-elasped: 9848.30s
+-> berries picked: 4 of 500 | patches-visited: [1] | positive-in-buffer: 1285 | amount-filled: 100.00%
+	| approx positives in sample 256: 43
+episode: 132 -> reward: -25.00260416666638, steps:10465, time-elasped: 9924.68s
+-> berries picked: 4 of 500 | patches-visited: [4, 5] | positive-in-buffer: 1302 | amount-filled: 100.00%
+	| approx positives in sample 256: 39
+episode: 133 -> reward: -25.002604166666373, steps:11329, time-elasped: 10006.75s
+-> berries picked: 6 of 500 | patches-visited: [8] | positive-in-buffer: 1318 | amount-filled: 100.00%
+	| approx positives in sample 256: 35
+episode: 134 -> reward: -25.002604166666423, steps:10177, time-elasped: 10080.03s
+-> berries picked: 2 of 500 | patches-visited: [9] | positive-in-buffer: 1325 | amount-filled: 100.00%
+	| approx positives in sample 256: 28
+episode: 135 -> reward: -25.002604166666416, steps:12193, time-elasped: 10169.56s
+-> berries picked: 10 of 500 | patches-visited: [0] | positive-in-buffer: 1358 | amount-filled: 100.00%
+	| approx positives in sample 256: 40
+episode: 136 -> reward: -25.002604166666426, steps:9601, time-elasped: 10238.19s
+-> berries picked: 0 of 500 | patches-visited: [7] | positive-in-buffer: 1356 | amount-filled: 100.00%
+	| approx positives in sample 256: 38
+episode: 137 -> reward: -25.002604166666423, steps:10081, time-elasped: 10310.50s
+-> berries picked: 3 of 500 | patches-visited: [4] | positive-in-buffer: 1368 | amount-filled: 100.00%
+	| approx positives in sample 256: 36
+episode: 138 -> reward: -25.002604166666366, steps:10561, time-elasped: 10388.96s
+-> berries picked: 3 of 500 | patches-visited: [4] | positive-in-buffer: 1377 | amount-filled: 100.00%
+	| approx positives in sample 256: 42
+episode: 139 -> reward: -25.002604166666377, steps:10849, time-elasped: 10464.12s
+-> berries picked: 4 of 500 | patches-visited: [0] | positive-in-buffer: 1395 | amount-filled: 100.00%
+	| approx positives in sample 256: 38
+episode: 140 -> reward: -25.002604166666448, steps:10177, time-elasped: 10544.96s
+-> berries picked: 3 of 500 | patches-visited: [2] | positive-in-buffer: 1408 | amount-filled: 100.00%
+	| approx positives in sample 256: 40
+episode: 141 -> reward: -25.002604166666448, steps:10561, time-elasped: 10621.30s
+-> berries picked: 3 of 500 | patches-visited: [0] | positive-in-buffer: 1417 | amount-filled: 100.00%
+	| approx positives in sample 256: 45
+episode: 142 -> reward: -25.002604166666377, steps:11425, time-elasped: 10704.45s
+-> berries picked: 8 of 500 | patches-visited: [1, 5] | positive-in-buffer: 1442 | amount-filled: 100.00%
+	| approx positives in sample 256: 34
+episode: 143 -> reward: -25.002604166666426, steps:10657, time-elasped: 10777.42s
+-> berries picked: 5 of 500 | patches-visited: [5] | positive-in-buffer: 1459 | amount-filled: 100.00%
+	| approx positives in sample 256: 34
+episode: 144 -> reward: -25.002604166666302, steps:12193, time-elasped: 10865.58s
+-> berries picked: 9 of 500 | patches-visited: [9] | positive-in-buffer: 1492 | amount-filled: 100.00%
+	| approx positives in sample 256: 28
+episode: 145 -> reward: -25.00260416666641, steps:10369, time-elasped: 10943.06s
+-> berries picked: 3 of 500 | patches-visited: [1] | positive-in-buffer: 1503 | amount-filled: 100.00%
+	| approx positives in sample 256: 34
+episode: 146 -> reward: -25.00260416666635, steps:12961, time-elasped: 11038.92s
+-> berries picked: 12 of 500 | patches-visited: [6] | positive-in-buffer: 1563 | amount-filled: 100.00%
+	| approx positives in sample 256: 35
+episode: 147 -> reward: -25.002604166666334, steps:12001, time-elasped: 11129.00s
+-> berries picked: 8 of 500 | patches-visited: [3] | positive-in-buffer: 1598 | amount-filled: 100.00%
+	| approx positives in sample 256: 39
+episode: 148 -> reward: -25.002604166666373, steps:11137, time-elasped: 11220.65s
+-> berries picked: 5 of 500 | patches-visited: [7] | positive-in-buffer: 1606 | amount-filled: 100.00%
+	| approx positives in sample 256: 43
+episode: 149 -> reward: -25.002604166666426, steps:13153, time-elasped: 11319.76s
+-> berries picked: 12 of 500 | patches-visited: [0] | positive-in-buffer: 1638 | amount-filled: 100.00%
+	| approx positives in sample 256: 40
+episode: 150 -> reward: -25.00260416666623, steps:11809, time-elasped: 11414.22s
+-> berries picked: 6 of 500 | patches-visited: [8] | positive-in-buffer: 1662 | amount-filled: 100.00%
+	| approx positives in sample 256: 48
+episode: 151 -> reward: -25.00260416666641, steps:10945, time-elasped: 11503.59s
+-> berries picked: 5 of 500 | patches-visited: [8] | positive-in-buffer: 1670 | amount-filled: 100.00%
+	| approx positives in sample 256: 44
+episode: 152 -> reward: -25.00260416666641, steps:10945, time-elasped: 11587.23s
+-> berries picked: 5 of 500 | patches-visited: [3] | positive-in-buffer: 1680 | amount-filled: 100.00%
+	| approx positives in sample 256: 41
+episode: 153 -> reward: -25.002604166666273, steps:11329, time-elasped: 11676.52s
+-> berries picked: 5 of 500 | patches-visited: [7] | positive-in-buffer: 1702 | amount-filled: 100.00%
+	| approx positives in sample 256: 41
+episode: 154 -> reward: -25.002604166666334, steps:11905, time-elasped: 11763.58s
+-> berries picked: 8 of 500 | patches-visited: [9] | positive-in-buffer: 1750 | amount-filled: 100.00%
+	| approx positives in sample 256: 48
+episode: 155 -> reward: -25.002604166666433, steps:11425, time-elasped: 11845.86s
+-> berries picked: 6 of 500 | patches-visited: [2] | positive-in-buffer: 1769 | amount-filled: 100.00%
+	| approx positives in sample 256: 39
+episode: 156 -> reward: -25.002604166666373, steps:11233, time-elasped: 11926.50s
+-> berries picked: 6 of 500 | patches-visited: [6] | positive-in-buffer: 1792 | amount-filled: 100.00%
+	| approx positives in sample 256: 41
+episode: 157 -> reward: -25.002604166666426, steps:9889, time-elasped: 11997.50s
+-> berries picked: 2 of 500 | patches-visited: [4] | positive-in-buffer: 1790 | amount-filled: 100.00%
+	| approx positives in sample 256: 43
+episode: 158 -> reward: -25.002604166666423, steps:12097, time-elasped: 12087.04s
+-> berries picked: 8 of 500 | patches-visited: [3] | positive-in-buffer: 1817 | amount-filled: 100.00%
+	| approx positives in sample 256: 40
+episode: 159 -> reward: -25.002604166666416, steps:10849, time-elasped: 12176.95s
+-> berries picked: 4 of 500 | patches-visited: [0] | positive-in-buffer: 1826 | amount-filled: 100.00%
+	| approx positives in sample 256: 42
+episode: 160 -> reward: -25.002604166666295, steps:11809, time-elasped: 12267.38s
+-> berries picked: 9 of 500 | patches-visited: [8, 9] | positive-in-buffer: 1858 | amount-filled: 100.00%
+	| approx positives in sample 256: 43
+episode: 161 -> reward: -25.002604166666437, steps:11137, time-elasped: 12351.64s
+-> berries picked: 5 of 500 | patches-visited: [6] | positive-in-buffer: 1877 | amount-filled: 100.00%
+	| approx positives in sample 256: 46
+episode: 162 -> reward: -25.002604166666522, steps:11425, time-elasped: 12439.56s
+-> berries picked: 6 of 500 | patches-visited: [1] | positive-in-buffer: 1890 | amount-filled: 100.00%
+	| approx positives in sample 256: 45
+episode: 163 -> reward: -25.002604166666345, steps:11521, time-elasped: 12522.55s
+-> berries picked: 9 of 500 | patches-visited: [4] | positive-in-buffer: 1932 | amount-filled: 100.00%
+	| approx positives in sample 256: 46
+episode: 164 -> reward: -25.00260416666641, steps:12769, time-elasped: 12613.92s
+-> berries picked: 11 of 500 | patches-visited: [8] | positive-in-buffer: 1985 | amount-filled: 100.00%
+	| approx positives in sample 256: 46
+episode: 165 -> reward: -25.002604166666362, steps:11905, time-elasped: 12701.83s
+-> berries picked: 7 of 500 | patches-visited: [8] | positive-in-buffer: 2013 | amount-filled: 100.00%
+	| approx positives in sample 256: 49

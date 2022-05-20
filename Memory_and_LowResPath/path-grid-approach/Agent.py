@@ -23,7 +23,7 @@ class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
-                    angle = 45, persistence=0.7, worth_offset=0.0, noise=0.005, positive_emphasis=True,
+                    angle = 45, persistence=0.7, worth_offset=0.0, noise=0.01, positive_emphasis=True,
                     emphasis_mode= 'replace', memory_alpha=0.995, time_memory_delta=0.005, 
                     time_memory_exp=1, disjoint=False, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
@@ -267,11 +267,12 @@ class Agent():
         return self.state_transitions
     
     def getNet(self, TORCH_DEVICE, debug=False,
-                linearsDim = [16,8],
-                memory_conv = dict(channels = [8,16,32], kernels = [4,3,3], 
-                    strides = [2,2,1], paddings = [3,3,1], maxpkernels = [2,2,2],
-                    padding_mode='zeros'),
-                final_linears = [136, 16, 16]):
+                feedforward = dict(linearsDim = [16,8], lreluslope=0.1),
+                memory_conv = dict(channels = [8,16], kernels = [4,3], 
+                    strides = [2,2], paddings = [3,3], maxpkernels = [2,2],
+                    padding_mode='zeros', lreluslope=0.1),
+                final_stage = dict(infeatures=264, linearsDim = [16, 16, 8], 
+                    lreluslope=0.1)):
         """ create and return the model (a duelling net)"""
         num_sectors = self.num_sectors
         memory_shape = self.field_grid_size
@@ -282,17 +283,17 @@ class Agent():
                 super(net, self).__init__()
 
                 # build the feed-forward network -> sectors, edge, patch-relative & time-memory
-                self.feedforward = make_simple_feedforward(infeatures=4*num_sectors+6, linearsDim=linearsDim)
+                self.feedforward = make_simple_feedforward(infeatures=4*num_sectors+6, **feedforward)
 
                 # build the conv-networks
                 self.memory_conv = make_simple_conv2dnet(inchannel=2, **memory_conv)
 
                 # build the final stage
-                self.final_stage = make_simple_feedforward(final_linears[0], final_linears[1:])
+                self.final_stage = make_simple_feedforward(**final_stage)
                 
                 # for action advantage estimates
-                self.valueL = nn.Linear(final_linears[-1], 1)
-                self.actadvs = nn.Linear(final_linears[-1], outDims)
+                self.valueL = nn.Linear(final_stage['linearsDim'][-1], 1)
+                self.actadvs = nn.Linear(final_stage['linearsDim'][-1], outDims)
 
                 # indices to split at
                 self.ffpart = (0, 4*num_sectors+6)
