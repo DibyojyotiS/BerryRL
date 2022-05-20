@@ -1,5 +1,4 @@
 from DRLagents import *
-from torch.optim.rmsprop import RMSprop
 from get_baby_env import getBabyEnv
 from make_net import *
 from Agent import *
@@ -22,7 +21,7 @@ if __name__ == '__main__':
 
     nnet = agent.getNet(TORCH_DEVICE)
 
-    nnet.load_state_dict(torch.load('..\\trainLogs\\onlinemodel_weights_episode_694.pth'))
+    nnet.load_state_dict(torch.load('.temp\\2022-5-20 11-12-55\\trainLogs\\onlinemodel_weights_episode_4.pth'))
     nnet.eval()
 
     buffer = None; optim = None; tstrat = None

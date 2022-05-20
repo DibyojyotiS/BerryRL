@@ -31,7 +31,7 @@ if __name__ == '__main__':
     berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, living_cost=True)
     agent = Agent(berry_env)
     nnet = agent.getNet(TORCH_DEVICE); print(nnet)
-    optim = RMSprop(nnet.parameters(), lr=0.00005)
+    optim = Adam(nnet.parameters(), lr=0.00005)
     buffer = PrioritizedExperienceRelpayBuffer(int(5E4), alpha=0.99, beta=0.1, beta_rate=0.00125)
     tstrat = epsilonGreedyAction(nnet, 0.5, 0.1, 800)
     estrat = greedyAction(nnet)
@@ -46,11 +46,11 @@ if __name__ == '__main__':
                         user_printFn=print_fn, polyak_tau=0.2, polyak_average= True, num_gradient_steps= 100,
                         update_freq=5, log_dir=LOG_DIR, save_snapshots=True, device=TORCH_DEVICE)
 
-    # train, save optimizer on keybrd intrpt
-    try:
+    try: # train, save optimizer on keyborad interupt
         trianHist = ddqn_trainer.trainAgent(render=False)
     except KeyboardInterrupt as kb:
-        torch.save(optim.state_dict(), f'optimizer_state.pth')
-        
+        torch.save(optim.state_dict(), 
+            os.path.join(LOG_DIR,f'optimizer_state.pth'))
+
     ddqn_trainer.evaluate(estrat, render=True)
     logger.close()
