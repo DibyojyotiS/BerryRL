@@ -12,7 +12,7 @@ from print_utils import my_print_fn
 
 # baby env params
 FIELD_SIZE = (20000,20000)
-PATCH_SIZE = (2000,2000)
+PATCH_SIZE = (2600,2600)
 N_PATCHES = 10
 N_BERRIES = 80
 
@@ -29,7 +29,7 @@ if __name__ == '__main__':
 
     # setup env and model and training params
     berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, living_cost=True)
-    agent = Agent(berry_env)
+    agent = Agent(berry_env, emphasis_mode='append')
     nnet = agent.getNet(TORCH_DEVICE); print(nnet)
     optim = Adam(nnet.parameters(), lr=0.00005)
     buffer = PrioritizedExperienceRelpayBuffer(int(5E4), alpha=0.99, beta=0.1, beta_rate=0.00125)

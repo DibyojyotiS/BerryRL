@@ -268,14 +268,15 @@ class Agent():
     
     def getNet(self, TORCH_DEVICE, debug=False,
                 feedforward = dict(linearsDim = [16,8], lreluslope=0.1),
-                memory_conv = dict(channels = [8,16], kernels = [4,3], 
-                    strides = [2,2], paddings = [3,3], maxpkernels = [2,2],
+                memory_conv = dict(channels = [16,32], kernels = [10,3], 
+                    strides = [5,2], paddings = [5,2], maxpkernels = [0,3],
                     padding_mode='zeros', lreluslope=0.1),
-                final_stage = dict(infeatures=264, linearsDim = [16, 16, 8], 
+                final_stage = dict(infeatures=264, linearsDim = [16, 8], 
                     lreluslope=0.1)):
         """ create and return the model (a duelling net)"""
         num_sectors = self.num_sectors
         memory_shape = self.field_grid_size
+        memory_size = memory_shape[0]*memory_shape[1]
         outDims = self.berryField.action_space.n
 
         class net(nn.Module):
@@ -286,7 +287,7 @@ class Agent():
                 self.feedforward = make_simple_feedforward(infeatures=4*num_sectors+6, **feedforward)
 
                 # build the conv-networks
-                self.memory_conv = make_simple_conv2dnet(inchannel=2, **memory_conv)
+                self.memory_conv = make_simple_conv2dnet(inchannel=1, **memory_conv)
 
                 # build the final stage
                 self.final_stage = make_simple_feedforward(**final_stage)
@@ -307,24 +308,35 @@ class Agent():
                 memory_part = input[:,self.mempart[0]:self.mempart[1]]
 
                 # conv2d requires 4d inputs
-                memory_part = memory_part.reshape((-1,2,memory_shape[0], memory_shape[1]))
+                if debug: print('memory_part:', memory_part.shape)
+                bery_memory = memory_part[:,:memory_size].reshape((-1,1,*memory_shape))
+                path_memory = memory_part[:,memory_size:].reshape((-1,1,*memory_shape))
 
                 # process feedforward_part
                 if debug: print('\nfeedforward_part',feedforward_part.shape)
                 for layer in self.feedforward:
                     feedforward_part = layer(feedforward_part)        
 
-                # process memory_part
-                if debug: print('\nmemory_part', memory_part.shape)
+                # process path_memory
+                if debug: print('\npath_memory', path_memory.shape)
                 for i, layer in enumerate(self.memory_conv):
-                    memory_part = layer(memory_part)
-                    if debug: print(layer.__class__.__name__,i,memory_part.shape)
+                    path_memory = layer(path_memory)
+                    if debug: print(layer.__class__.__name__,i,path_memory.shape)
 
-                # merge all and process
-                memory_part = torch.flatten(memory_part, start_dim=1)
-                if debug: print('\nfor concat',feedforward_part.shape,memory_part.shape)
-                concat = torch.cat([memory_part, feedforward_part], dim=1)
+                # process bery_memory
+                if debug: print('\nbery_memory', bery_memory.shape)
+                for i, layer in enumerate(self.memory_conv):
+                    bery_memory = layer(bery_memory)
+                    if debug: print(layer.__class__.__name__,i,bery_memory.shape)
 
+                # merge all
+                path_memory = torch.flatten(path_memory, start_dim=1)
+                bery_memory = torch.flatten(bery_memory, start_dim=1)
+                if debug: print('\nfor concat',feedforward_part.shape, 
+                                bery_memory.shape, path_memory.shape)
+
+                # process merged features
+                concat = torch.cat([feedforward_part, bery_memory, path_memory], dim=1)
                 if debug: print('concat',concat.shape)
                 for layer in self.final_stage:
                     concat = layer(concat)
