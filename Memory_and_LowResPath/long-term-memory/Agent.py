@@ -23,9 +23,9 @@ class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
-                    angle = 45, persistence=0.7, worth_offset=0.0, noise=0.01, positive_emphasis=True,
-                    emphasis_mode= 'replace', memory_alpha=0.995, time_memory_delta=0.005, 
-                    time_memory_exp=1, disjoint=False, debug=False, debugDir='.temp') -> None:
+                angle = 45, persistence=0.9, worth_offset=0.0, noise=0.01, positive_emphasis=True, 
+                emphasis_mode= 'replace', memory_alpha=0.9995, time_memory_delta=0.005, time_memory_exp=1, 
+                skipSteps=10, disjoint=False, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
         printLocals('Agent', locals())
         self.istraining = mode == 'train'
@@ -41,6 +41,12 @@ class Agent():
         self.time_memory_delta = time_memory_delta
         self.time_memory_exp = time_memory_exp
         self.disjoint = disjoint
+
+        # when in eval mode
+        if not self.istraining:
+            self.persistence**=skipSteps+1
+            self.memory_alpha**=skipSteps+1
+            self.time_memory_delta*=skipSteps+1
 
         # init memories and other stuff
         self.num_sectors = 360//angle        
@@ -267,12 +273,12 @@ class Agent():
         return self.state_transitions
     
     def getNet(self, TORCH_DEVICE, debug=False,
-                feedforward = dict(linearsDim = [16,8], lreluslope=0.1),
-                memory_conv = dict(channels = [16,32], kernels = [10,3], 
-                    strides = [5,2], paddings = [5,2], maxpkernels = [0,3],
-                    padding_mode='zeros', lreluslope=0.1),
-                final_stage = dict(infeatures=264, linearsDim = [16, 8], 
-                    lreluslope=0.1)):
+            feedforward = dict(linearsDim = [16,8], lreluslope=0.1),
+            memory_conv = dict(channels = [8,16], kernels = [6,4], 
+                strides = [4,3], paddings = [3,1], maxpkernels = [0,2],
+                padding_mode='zeros', lreluslope=0.1),
+            final_stage = dict(infeatures=136, linearsDim = [16,8], 
+                lreluslope=0.1)):
         """ create and return the model (a duelling net)"""
         num_sectors = self.num_sectors
         memory_shape = self.field_grid_size
