@@ -29,21 +29,21 @@ if __name__ == '__main__':
 
     # setup env and model and training params
     berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, living_cost=True)
-    agent = Agent(berry_env, skipSteps=10, emphasis_mode='append')
+    agent = Agent(berry_env, state_transition_mode='single')
     nnet = agent.getNet(TORCH_DEVICE); print(nnet)
     optim = Adam(nnet.parameters(), lr=0.000025)
-    buffer = PrioritizedExperienceRelpayBuffer(int(5E4), alpha=0.99, beta=0.1, beta_rate=0.00125)
-    tstrat = epsilonGreedyAction(nnet, 0.5, 0.1, 800)
+    buffer = PrioritizedExperienceRelpayBuffer(int(5E4), alpha=0.99, beta=0.1, beta_rate=0.9/2000)
+    tstrat = epsilonGreedyAction(nnet, 0.5, 0.1, 2000)
     estrat = greedyAction(nnet)
     print_fn = my_print_fn(berry_env, buffer, tstrat, 512)
 
-    print('lr used = 0.000025, num_gradient_steps= 100')
-    print("optimizing the online-model after every 1000 actions (skipSteps=10)")
-    print("batch size-512")
-    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=512, skipSteps=10,
+    print('lr used = 0.000025, num_gradient_steps= 500')
+    print("optimizing the online-model after every episode (skipSteps=10)")
+    print("batch size-1024, gamma=0.8")
+    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, batchSize=1024, skipSteps=10,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
-                        gamma=0.8, MaxTrainEpisodes=1000, optimize_every_kth_action=1000, printFreq=1,
-                        user_printFn=print_fn, polyak_tau=0.2, polyak_average= True, num_gradient_steps= 100,
+                        gamma=0.8, MaxTrainEpisodes=2000, optimize_every_kth_action=-1, printFreq=1,
+                        user_printFn=print_fn, polyak_tau=0.2, polyak_average= True, num_gradient_steps= 500,
                         update_freq=5, log_dir=LOG_DIR, save_snapshots=True, device=TORCH_DEVICE)
 
     try: # train, save optimizer on keyborad interupt

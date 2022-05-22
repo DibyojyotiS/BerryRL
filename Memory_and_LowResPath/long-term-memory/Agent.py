@@ -23,9 +23,9 @@ class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
-                angle = 45, persistence=0.9, worth_offset=0.0, noise=0.01, positive_emphasis=True, 
-                emphasis_mode= 'replace', memory_alpha=0.9995, time_memory_delta=0.005, time_memory_exp=1, 
-                skipSteps=10, disjoint=False, debug=False, debugDir='.temp') -> None:
+                angle = 45, persistence=0.9, worth_offset=0.0, noise=0.01, state_transition_mode = 'all',
+                positive_emphasis=True, emphasis_mode= 'replace', memory_alpha=0.9995, time_memory_delta=0.005, 
+                time_memory_exp=1, disjoint=False, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
         printLocals('Agent', locals())
         self.istraining = mode == 'train'
@@ -34,6 +34,7 @@ class Agent():
         self.worth_offset = worth_offset
         self.berryField = berryField
         self.field_grid_size = field_grid_size
+        self.state_transition_mode = state_transition_mode
         self.positive_emphasis = positive_emphasis
         self.append_mode = emphasis_mode == 'append'
         self.noise = noise
@@ -41,12 +42,6 @@ class Agent():
         self.time_memory_delta = time_memory_delta
         self.time_memory_exp = time_memory_exp
         self.disjoint = disjoint
-
-        # when in eval mode
-        if not self.istraining:
-            self.persistence**=skipSteps+1
-            self.memory_alpha**=skipSteps+1
-            self.time_memory_delta*=skipSteps+1
 
         # init memories and other stuff
         self.num_sectors = 360//angle        
@@ -57,16 +52,7 @@ class Agent():
         self.divLenX = berryField.FIELD_SIZE[0]//field_grid_size[0]
         self.divLenY = berryField.FIELD_SIZE[1]//field_grid_size[1]
 
-        if self.positive_emphasis:
-            print(f'''positive rewards are now emphasised in the state-transitions
-            Once a berry is encountered (say at index i), new transitions of the following
-            description will also be appended (if emphasis_mode = 'append') or the entries 
-            will be replaced: all the transitions k < i such that the sum of reward from
-            k to i is positive will have the next-state replaced by the state at transition
-            at index i. And the rewards will also be replaced by the summation from k to i.
-            currently, emphasis-mode is {'append' if self.append_mode else 'replace'}.
-            if disjoint=True, then k is limited to the index of the last berry seen
-            currently disjoint behaviour is set to {self.disjoint}\n''')
+        self.print_information()
         
         # setup debug
         self.debugDir = debugDir
@@ -79,6 +65,27 @@ class Agent():
             self.env_recordfile = open(os.path.join(self.debugDir, 'stMakerrecordenv.txt'), 'w', 1)
             # self.qvals_debugfile = open(os.path.join(self.debugDir, 'stMakerdebugqvals.txt'), 'w', 1)
 
+    def print_information(self):
+        if not self.istraining: 
+            print('eval mode'); return
+        if self.positive_emphasis and self.state_transition_mode=='all':
+            print(f'''positive rewards are now emphasised in the state-transitions
+            Once a berry is encountered (say at index i), new transitions of the following
+            description will also be appended (if emphasis_mode = 'append') or the entries 
+            will be replaced: all the transitions k < i such that the sum of reward from
+            k to i is positive will have the next-state replaced by the state at transition
+            at index i. And the rewards will also be replaced by the summation from k to i.
+            currently, emphasis-mode is {'append' if self.append_mode else 'replace'}.
+            if disjoint=True, then k is limited to the index of the last berry seen
+            currently disjoint behaviour is set to {self.disjoint}\n''')
+        if self.state_transition_mode != 'all':
+            print("""state_transition_mode is not 'all'. The state-transitions being appended 
+            every action will be as [[state, action, sum-reward, nextState, done]] where:
+            state is the one the model has taken action on,
+            sum-reward is the sum of the rewards in the skip-trajectory,
+            nextState is the new state after the action was repeated at most skip-steps times,
+            done is wether the terminal state was reached.""")
+        
 
     def _init_memories(self):
         memory_grid_size = self.field_grid_size[0]*self.field_grid_size[1]
@@ -253,10 +260,10 @@ class Agent():
 
     def makeState(self, skip_trajectory, action_taken):
         """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
-        if not self.istraining: 
-            final_state = self._computeState(*skip_trajectory[-1])
-        else:
+        if self.istraining and self.state_transition_mode == 'all': 
             final_state = self._compute_transitons_n_finalstate(skip_trajectory, action_taken)
+        else:
+            final_state = self._computeState(*skip_trajectory[-1])
 
         # debug
         if self.debug: 
@@ -270,7 +277,10 @@ class Agent():
         """ get the state-transitions - these are already computed in the
         makeState function when mode = 'train'. All inputs to  makeStateTransitions
         are ignored."""
-        return self.state_transitions
+        if self.state_transition_mode == 'all': return self.state_transitions
+        reward = sum([r for o,i,r,d in skip_trajectory])
+        done = skip_trajectory[-1][-1]
+        return [[state, action, reward, nextState, done]]
     
     def getNet(self, TORCH_DEVICE, debug=False,
             feedforward = dict(linearsDim = [16,8], lreluslope=0.1),
