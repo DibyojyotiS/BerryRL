@@ -85,7 +85,7 @@ class Agent():
             sum-reward is the sum of the rewards in the skip-trajectory,
             nextState is the new state after the action was repeated at most skip-steps times,
             done is wether the terminal state was reached.""")
-        print('agent now aware of total-juice')
+        
 
     def _init_memories(self):
         memory_grid_size = self.field_grid_size[0]*self.field_grid_size[1]
@@ -205,12 +205,10 @@ class Agent():
         # other extra information
         edge_dist = info['scaled_dist_from_edge']
         patch_relative = info['patch-relative']
-        total_juice = info['total_juice']
 
         # make the state by concatenating sectorized_states and memories
         state = np.concatenate([*sectorized_states, edge_dist, patch_relative, 
-                                [self.time_memory], [total_juice], 
-                                self.berry_memory, self.path_memory])
+                                [self.time_memory], self.berry_memory, self.path_memory])
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
@@ -250,9 +248,8 @@ class Agent():
             'edge_dist': [4*self.num_sectors, 4*self.num_sectors+4],
             'patch_relative': [4*self.num_sectors+4, 4*self.num_sectors+4+1],
             'time_memory': [4*self.num_sectors+4+1, 4*self.num_sectors+4+2],
-            'total_juice': [4*self.num_sectors+4+2, 4*self.num_sectors+4+3],
-            'berry_memory': [4*self.num_sectors+4+3, 4*self.num_sectors+4+3 + memory_size],
-            'path_memory': [4*self.num_sectors+4+3 + memory_size, 4*self.num_sectors+4+3 + 2*memory_size]
+            'berry_memory': [4*self.num_sectors+4+1, 4*self.num_sectors+4+1 + memory_size],
+            'path_memory': [4*self.num_sectors+4+1 + memory_size, 4*self.num_sectors+4+1 + memory_size]
         }
         return state_desc
 
@@ -290,7 +287,7 @@ class Agent():
             memory_conv = dict(channels = [8,8,16], kernels = [4,3,3], 
                 strides = [2,2,2], paddings = [3,2,1], maxpkernels = [2,0,2],
                 padding_mode='zeros', lreluslope=0.1),
-            final_stage = dict(infeatures=136, linearsDim = [16,16], 
+            final_stage = dict(infeatures=136, linearsDim = [16,8], 
                 lreluslope=0.1)):
         """ create and return the model (a duelling net)"""
         num_sectors = self.num_sectors
@@ -303,7 +300,7 @@ class Agent():
                 super(net, self).__init__()
 
                 # build the feed-forward network -> sectors, edge, patch-relative & time-memory
-                self.feedforward = make_simple_feedforward(infeatures=4*num_sectors+7, **feedforward)
+                self.feedforward = make_simple_feedforward(infeatures=4*num_sectors+6, **feedforward)
 
                 # build the conv-networks
                 self.memory_conv = make_simple_conv2dnet(inchannel=1, **memory_conv)
@@ -316,7 +313,7 @@ class Agent():
                 self.actadvs = nn.Linear(final_stage['linearsDim'][-1], outDims)
 
                 # indices to split at
-                self.ffpart = (0, 4*num_sectors+7)
+                self.ffpart = (0, 4*num_sectors+6)
                 self.mempart = (self.ffpart[1], self.ffpart[1]+2*memory_shape[0]*memory_shape[1])
 
             def forward(self, input:Tensor):
@@ -409,8 +406,7 @@ class Agent():
             edge_dist = state[4*self.num_sectors: 4*self.num_sectors+4]
             patch_relative = state[4*self.num_sectors+4:4*self.num_sectors+4+1]
             time_memory = state[4*self.num_sectors+4+1]
-            total_juice = state[4*self.num_sectors+4+2]
-            memories = state[4*self.num_sectors+4+3:]
+            memories = state[4*self.num_sectors+4+2:]
             berry_memory = memories[:self.field_grid_size[0]*self.field_grid_size[1]].reshape(self.field_grid_size)
             path_memory = memories[self.field_grid_size[0]*self.field_grid_size[1]:].reshape(self.field_grid_size)
 
@@ -420,7 +416,7 @@ class Agent():
             W, H = self.berryField.FIELD_SIZE
 
             ax[0][0].imshow(sectorized_states)
-            ax[0][1].bar([0,1,2],[total_juice, patch_relative, time_memory], [1,1,1])
+            ax[0][1].bar([0,1,2],[1,patch_relative, time_memory], [0,1,1])
             ax[0][2].bar([*range(4)],edge_dist)
             ax[1][0].imshow(berry_memory)
             ax[1][1].imshow(path_memory)
@@ -462,7 +458,6 @@ class Agent():
             ax[0][2].set_xticklabels(["","left","right","top","bottom"]) 
             ax[1][0].set_title('berry-memory (avg-worth)')
             ax[1][1].set_title('path-memory')
-            ax[0][1].ylim(top=1)
             if not nnet: ax[1][2].set_title(f'env-record')
 
             plt.pause(0.001)
