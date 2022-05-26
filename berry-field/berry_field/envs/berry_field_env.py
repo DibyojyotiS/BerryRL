@@ -257,6 +257,7 @@ class BerryFieldEnv(gym.Env):
             patch_relative = [0.0]
 
         info = {
+            'current-patch-id':self.current_patch_id,
             'patch-relative':patch_relative,
             'position':self.position,
             'total_juice': self.total_juice,
