@@ -14,14 +14,14 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if __name__ == '__main__':
 
-    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, #initial_juice=0.1,
-                            end_on_boundary_hit=False, allow_no_action=False, show=False)
-    # berry_env = BerryFieldEnv()
-    agent = Agent(berry_env, mode='eval', debug=True, noise=0.025, persistence=0.7)
+    # berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, initial_juice=0.1,
+                            # end_on_boundary_hit=False, allow_no_action=False, show=False)
+    berry_env = BerryFieldEnv()
+    agent = Agent(berry_env, mode='eval', debug=True, noise=0.01, persistence=0.7, memory_alpha=0.9965, time_memory_delta=0.01)
 
     nnet = agent.getNet(TORCH_DEVICE)
 
-    nnet.load_state_dict(torch.load('..\\trainLogs\\onlinemodel_weights_episode_263.pth'))
+    nnet.load_state_dict(torch.load('..\\trainLogs\\onlinemodel_weights_episode_1020.pth'))
     nnet.eval()
 
     buffer = None; optim = None; tstrat = None
@@ -33,4 +33,4 @@ if __name__ == '__main__':
                         printFreq=1, log_dir=LOG_DIR, save_snapshots=True, device=TORCH_DEVICE)
     ddqn_trainer.evaluate(estrat, render=True)
 
-    agent.showDebug(nnet)
+    agent.showDebug(nnet, f=2)

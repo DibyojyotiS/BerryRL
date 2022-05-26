@@ -14,9 +14,9 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if __name__ == '__main__':
 
-    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, #initial_juice=0.1,
-                            end_on_boundary_hit=False, allow_no_action=False, show=False)
-    # berry_env = BerryFieldEnv()
+    # berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, #initial_juice=0.1,
+                            # end_on_boundary_hit=False, allow_no_action=False, show=False)
+    berry_env = BerryFieldEnv()
     agent = Agent(berry_env, mode='eval', debug=True, noise=0.025, persistence=0.7)
 
     nnet = agent.getNet(TORCH_DEVICE)
