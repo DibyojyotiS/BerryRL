@@ -25,7 +25,7 @@ class Agent():
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
                 angle = 45, persistence=0.8, worth_offset=0.0, noise=0.01, state_transition_mode = 'all',
                 positive_emphasis=True, emphasis_mode= 'replace', memory_alpha=0.9965, time_memory_delta=0.01, 
-                time_memory_exp=1, disjoint=False, debug=False, debugDir='.temp') -> None:
+                time_memory_exp=1, reward_patch_discovery=True, disjoint=False, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
         printLocals('Agent', locals())
         self.istraining = mode == 'train'
@@ -41,6 +41,7 @@ class Agent():
         self.memory_alpha = memory_alpha
         self.time_memory_delta = time_memory_delta
         self.time_memory_exp = time_memory_exp
+        self.reward_patch_discovery = reward_patch_discovery
         self.disjoint = disjoint
 
         # init memories and other stuff
@@ -63,7 +64,6 @@ class Agent():
             if not os.path.exists(self.debugDir): os.makedirs(self.debugDir)
             self.state_debugfile = open(os.path.join(self.debugDir, 'stMakerdebugstate.txt'), 'w', 1)
             self.env_recordfile = open(os.path.join(self.debugDir, 'stMakerrecordenv.txt'), 'w', 1)
-            # self.qvals_debugfile = open(os.path.join(self.debugDir, 'stMakerdebugqvals.txt'), 'w', 1)
 
     def print_information(self):
         if not self.istraining: 
@@ -85,10 +85,13 @@ class Agent():
             sum-reward is the sum of the rewards in the skip-trajectory,
             nextState is the new state after the action was repeated at most skip-steps times,
             done is wether the terminal state was reached.""")
+        if self.reward_patch_discovery:
+            print("Rewarding the agent for discovering new patches")
         print('agent now aware of total-juice')
 
     def _init_memories(self):
         memory_grid_size = self.field_grid_size[0]*self.field_grid_size[1]
+        self.visited_patches = set() # needed to reward patch discovery
         self.path_memory = np.zeros(memory_grid_size) # aprox path
         self.berry_memory = np.zeros(memory_grid_size) # aprox place of sighting a berry
         self.time_memory = 0 # the time spent at the current block
@@ -112,6 +115,37 @@ class Agent():
         worth = (worth + self.worth_offset)/(1 + self.worth_offset)
 
         return worth
+
+    def _reward_patch_discovery(self, skip_transitions):
+        # skip_transitions -> [[observation, info, reward, done]]
+        # info, reward are None at start (spawn)
+        reward = 0
+        for o,info,r,d in skip_transitions:
+            if info is None: continue
+            patch_id = info['current-patch-id']
+            if patch_id is not None:
+                if patch_id not in self.visited_patches:
+                    self.visited_patches.add(patch_id)
+                    # don't give +ve to spawn patch!!!
+                    if len(self.visited_patches) > 1: reward += 1
+        return reward
+
+    def _do_positive_emphasis(self):
+        # find where berries were encountered
+        # for each k: idx1 < k < idx2 for consequitive idx1,idx2 in berry indices
+        # append transitions with start-state at k and next-state at idx2 (goal)
+        # if the summed reward from k to idx2 is positive
+        berry_indices = [0] + [i for i,x in enumerate(self.state_transitions) if x[2] > 0]
+        for i in range(1, len(berry_indices)):
+            idx1, idx2 = berry_indices[i-1:i+1]
+            reward_b = self.state_transitions[idx2][2]
+            good_state = self.state_transitions[idx2][3]
+            for k in range(idx2-1, idx1 if self.disjoint else -1, -1):
+                s, a, r, ns, d = self.state_transitions[k]
+                reward_b += r
+                if reward_b < 0: break
+                if self.append_mode: self.state_transitions.append([s,a,reward_b,good_state,d])
+                else: self.state_transitions[k][2:4] = [reward_b,good_state]
 
     def _compute_sectorized(self, raw_observation, info):
         """  """
@@ -214,6 +248,7 @@ class Agent():
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
+
     def _compute_transitons_n_finalstate(self, skip_trajectory, action_taken):
         self.state_transitions = []
         current_state = self._computeState(*skip_trajectory[0])
@@ -224,21 +259,7 @@ class Agent():
             current_state = next_state
         
         if self.positive_emphasis:# more emphasis on positive rewards
-            # find where berries were encountered
-            berry_indices = [0] + [i for i,x in enumerate(self.state_transitions) if x[2] > 0]
-            # for each k: idx1 < k < idx2 for consequitive idx1,idx2 in berry indices
-            # append transitions with start-state at k and next-state at idx2 (goal)
-            # if the summed reward from k to idx2 is positive
-            for i in range(1, len(berry_indices)):
-                idx1, idx2 = berry_indices[i-1:i+1]
-                reward_b = self.state_transitions[idx2][2]
-                good_state = self.state_transitions[idx2][3]
-                for k in range(idx2-1, idx1 if self.disjoint else -1, -1):
-                    s, a, r, ns, d = self.state_transitions[k]
-                    reward_b += r
-                    if reward_b < 0: break
-                    if self.append_mode: self.state_transitions.append([s,a,reward_b,good_state,d])
-                    else: self.state_transitions[k][2:4] = [reward_b,good_state]
+            self._do_positive_emphasis()
         
         return current_state # the final state
 
@@ -275,15 +296,25 @@ class Agent():
             np.savetxt(self.env_recordfile, [np.concatenate([agent, *berries[:,:3]])])
 
         return final_state
+
            
     def makeStateTransitions(self, skip_trajectory, state, action, nextState):
         """ get the state-transitions - these are already computed in the
         makeState function when mode = 'train'. All inputs to  makeStateTransitions
         are ignored."""
-        if self.state_transition_mode == 'all': return self.state_transitions
+        if self.state_transition_mode == 'all':
+            self.state_transitions.append([state, skip_trajectory[0][2], action, skip_trajectory[0][3]])
+            if self.reward_patch_discovery: 
+                patchreward = self._reward_patch_discovery(skip_trajectory)/len(self.state_transitions)
+                for i in range(len(self.state_transitions)): self.state_transitions[i][1]+=patchreward
+            return self.state_transitions
+
         reward = sum([r for o,i,r,d in skip_trajectory])
+        reward += self._reward_patch_discovery(skip_trajectory) if self.reward_patch_discovery else 0
         done = skip_trajectory[-1][-1]
-        return [[state, action, reward, nextState, done]]
+        transition = [[state, action, reward, nextState, done]]
+        return transition
+
     
     def getNet(self, TORCH_DEVICE, debug=False,
             feedforward = dict(linearsDim = [16,8], lreluslope=0.1),
@@ -366,11 +397,10 @@ class Agent():
                 
                 return qvalues
         
-        nnet = net()
-        nnet.to(TORCH_DEVICE)
+        self.nnet = net().to(TORCH_DEVICE)
         self.built_net = True
-        print('total-params: ', sum(p.numel() for p in nnet.parameters() if p.requires_grad))
-        return nnet
+        print('total-params: ', sum(p.numel() for p in self.nnet.parameters() if p.requires_grad))
+        return self.nnet
 
 
     def showDebug(self, nnet:Union[nn.Module,None]=None, debugDir = None, f=20):
@@ -457,12 +487,12 @@ class Agent():
             # titles and ticks
             ax[0][0].set_title('sectorized states')
             ax[0][1].set_title('measure of patch-center-dist')
-            ax[0][1].set_xticklabels(["","","","patch-rel","","time-mem"]) 
+            ax[0][1].set_xticklabels(["","","total-juice","","patch-rel","","time-mem"]) 
             ax[0][2].set_title('measure of dist-from-edge')
             ax[0][2].set_xticklabels(["","left","right","top","bottom"]) 
             ax[1][0].set_title('berry-memory (avg-worth)')
             ax[1][1].set_title('path-memory')
-            ax[0][1].ylim(top=1)
+            ax[0][1].set_ylim(top=1)
             if not nnet: ax[1][2].set_title(f'env-record')
 
             plt.pause(0.001)
