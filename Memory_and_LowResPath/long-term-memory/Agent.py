@@ -23,7 +23,7 @@ class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
-                angle = 45, persistence=0.8, worth_offset=0.0, noise=0.01, state_transition_mode = 'all',
+                angle = 45, persistence=0.8, worth_offset=0.0, noise=0.01, state_transition_mode = 'single',
                 positive_emphasis=True, emphasis_mode= 'replace', memory_alpha=0.9965, time_memory_delta=0.01, 
                 time_memory_exp=1, reward_patch_discovery=True, disjoint=False, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """

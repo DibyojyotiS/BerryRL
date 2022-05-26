@@ -31,7 +31,7 @@ if __name__ == '__main__':
 
     # setup env and model and training params
     berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, living_cost=True)
-    agent = Agent(berry_env, state_transition_mode='single')
+    agent = Agent(berry_env)
     nnet = agent.getNet(TORCH_DEVICE); print(nnet)
     optim = Adam(nnet.parameters(), lr=0.00001)
     buffer = PrioritizedExperienceRelpayBuffer(int(5E4), alpha=0.95, beta=0.1, beta_rate=0.9/2000)
