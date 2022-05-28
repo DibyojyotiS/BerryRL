@@ -4,17 +4,19 @@
 import os
 from typing import Union
 
+import imageio
 import numpy as np
 import torch
 import torch.nn.functional as F
 from berry_field.envs.berry_field_env import BerryFieldEnv
 from berry_field.envs.utils.misc import getTrueAngles
 from matplotlib import pyplot as plt
-from matplotlib.patches import Rectangle, Circle
+from matplotlib.patches import Circle, Rectangle
 from torch import Tensor, nn
-from print_utils import printLocals
 
-from make_net import make_simple_conv1dnet, make_simple_conv2dnet, make_simple_feedforward
+from make_net import (make_simple_conv1dnet, make_simple_conv2dnet,
+                      make_simple_feedforward)
+from print_utils import printLocals
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8
@@ -403,7 +405,7 @@ class Agent():
         return self.nnet
 
 
-    def showDebug(self, nnet:Union[nn.Module,None]=None, debugDir = None, f=20):
+    def showDebug(self, nnet:Union[nn.Module,None]=None, debugDir = None, f=20, gif=False):
         
         # close the log files if not already closed
         if self.debug and not self.state_debugfile.closed:
@@ -413,7 +415,13 @@ class Agent():
             self.env_recordfile.write('end')
             self.env_recordfile.close()
         
+        # init the debug directory
         if not debugDir: debugDir = self.debugDir
+        else: debugDir = os.path.join(debugDir, 'stMakerdebug')
+
+        # init the gif file
+        if gif:
+            giffile = imageio.get_writer(f'{debugDir}/debug.gif')
 
         # move nnet to cpu
         if nnet: nnet.cpu()
@@ -495,6 +503,12 @@ class Agent():
             ax[0][1].set_ylim(top=1)
             if not nnet: ax[1][2].set_title(f'env-record')
 
+            if gif: 
+                fig.savefig(f'{debugDir}/tmpimg.png')
+                img = imageio.imread(f'{debugDir}/tmpimg.png')
+                giffile.append_data(img)
+                os.remove(f'{debugDir}/tmpimg.png')
+
             plt.pause(0.001)
             
             for b in ax: 
@@ -502,4 +516,4 @@ class Agent():
             
         plt.show(); plt.close()
         staterecord.close(); envrecord.close()
-
+        if gif: giffile.close()
