@@ -33,7 +33,7 @@ def my_print_fn(berry_env, buffer, tstrat, ssize=256):
             print(f'\t| approx action-dist in sample {ssize}: {cpunptolist(asmp)} {cpunptolist(countsmp)}')
     return print_fn
 
-def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10)):
+def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None):
     # open the berry_field pickle and draw patches and berries
     path = f'{LOG_DIR}/analytics-berry-field/{episode}/berryenv.obj'
     with open(path, 'rb') as f: berry_field:BerryFieldEnv = pickle.load(f)
@@ -51,4 +51,6 @@ def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10)):
     print('total steps', len(agentpath)-1)
     agentpath = np.array(agentpath[::K])
     ax.plot(agentpath[:,0],agentpath[:,1])
+
+    if title: plt.title(title)
     plt.show()
