@@ -34,7 +34,7 @@ def my_print_fn(berry_env, buffer, tstrat, ssize=256):
             print(f'\t| approx action-dist in sample {ssize}: {cpunptolist(asmp)} {cpunptolist(countsmp)}')
     return print_fn
 
-def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None, show=False):
+def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None, show=True):
     """ plt plot showing patches, berries and the agent path """
     # open the berry_field pickle and draw patches and berries
     path = f'{LOG_DIR}/analytics-berry-field/{episode}/berryenv.obj'
@@ -43,6 +43,8 @@ def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None, show=Fa
     patch_data = berry_field.patch_tree.boxes
     fig, ax = plt.subplots(figsize=figsize)
     ax.scatter(x=berry_data[:,0],y=berry_data[:,1],s=berry_data[:,2],c='red')
+    # for berry in berry_data:
+    #     ax.add_patch(CirclePolygon(berry[:2], berry[-1],color='r'))
     ax.add_patch(Rectangle((0,0), *berry_field.FIELD_SIZE, fill=False))
     for x,y,pw,ph in patch_data: 
         ax.add_patch(Rectangle((x-pw/2,y-ph/2), pw, ph, fill=False))
