@@ -4,7 +4,8 @@ import numpy as np
 import torch
 from berry_field.envs.berry_field_env import BerryFieldEnv
 from matplotlib.patches import Rectangle
-
+import os
+import imageio
 
 def printLocals(name, locals:dict):
     print(name,':')
@@ -33,7 +34,8 @@ def my_print_fn(berry_env, buffer, tstrat, ssize=256):
             print(f'\t| approx action-dist in sample {ssize}: {cpunptolist(asmp)} {cpunptolist(countsmp)}')
     return print_fn
 
-def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None):
+def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None, show=False):
+    """ plt plot showing patches, berries and the agent path """
     # open the berry_field pickle and draw patches and berries
     path = f'{LOG_DIR}/analytics-berry-field/{episode}/berryenv.obj'
     with open(path, 'rb') as f: berry_field:BerryFieldEnv = pickle.load(f)
@@ -53,4 +55,15 @@ def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None):
     ax.plot(agentpath[:,0],agentpath[:,1])
 
     if title: plt.title(title)
-    plt.show()
+    if show: plt.show()
+
+def picture_episodes_gif(fname, LOG_DIR, episodes, K=10, figsize=(10,10), titlefmt='', duration=0.5):
+    if not fname.endswith('.gif'): fname+='.gif'
+    with imageio.get_writer(fname, duration=duration) as f:
+        for i in episodes:
+            picture_episode(LOG_DIR,i,K,figsize,titlefmt.format(i),False)
+            plt.savefig('temp_pic_episode_img.png')
+            plt.close()
+            img = imageio.imread('temp_pic_episode_img.png')
+            f.append_data(img)
+            os.remove('temp_pic_episode_img.png')
