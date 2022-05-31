@@ -134,7 +134,7 @@ def _random_initial_position_around_a_berry(berry_data, field_size, spawn_radius
 
 
 def random_baby_berryfield(field_size=(20000,20000), patch_size = (2600,2600), 
-                        num_patches=10, seperation=2400, n_berries=80, 
+                        num_patches=10, n_berries=80, seperation=2400,
                         initial_pos_around_berry = True, spawn_radius=100, 
                         sampling_type=0, show=False):
     """ n_berries: number of berries per patch 
@@ -175,16 +175,18 @@ def random_baby_berryfield(field_size=(20000,20000), patch_size = (2600,2600),
     return berry_data, initial_position
 
 
-def getBabyEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=10, nberries=80, 
-                logDir=None, living_cost=True, initial_juice=0.5, end_on_boundary_hit= False, 
-                penalize_boundary_hit=False, initial_pos_around_berry = True, spawn_radius=100,
-                seperation=2400, allow_no_action=False, no_action_threshold=0.7, 
+def getBabyEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=10, 
+                seperation=2400, nberries=80, logDir=None, living_cost=True, initial_juice=0.5, 
+                end_on_boundary_hit= False, penalize_boundary_hit=False, 
+                initial_pos_around_berry = True, spawn_radius=100, sampling_type=0, 
+                allow_no_action=False, no_action_threshold=0.7, 
                 show=False):
     printLocals('getBabyEnv', locals())
     # making the berry env
     random_berry_data, random_init_pos = random_baby_berryfield(field_size, patch_size, 
-                                            num_patches, nberries, initial_pos_around_berry, 
-                                            spawn_radius, seperation, show=show)
+                                            num_patches, nberries, seperation, 
+                                            initial_pos_around_berry, spawn_radius, 
+                                            sampling_type, show=show)
     berry_env = BerryFieldEnv(noAction_juice_threshold=no_action_threshold,
                                 field_size=field_size,
                                 initial_position=random_init_pos,
@@ -200,8 +202,9 @@ def getBabyEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=10,
     def env_reset(berry_env_reset):
         def reset(**args):
             berry_data, initial_pos = random_baby_berryfield(field_size, patch_size, 
-                                        num_patches, nberries, initial_pos_around_berry, 
-                                        spawn_radius, seperation, show=show) # reset the env  
+                                            num_patches, nberries, seperation, 
+                                            initial_pos_around_berry, spawn_radius, 
+                                            sampling_type, show=show) # reset the env  
             x = berry_env_reset(berry_data=berry_data, initial_position=initial_pos)
             return x
         return reset
