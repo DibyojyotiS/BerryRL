@@ -14,6 +14,7 @@ from print_utils import my_print_fn
 FIELD_SIZE = (20000,20000)
 PATCH_SIZE = (2600,2600)
 N_PATCHES = 10
+SEPERATION= 2400
 N_BERRIES = 80
 
 LOG_DIR = os.path.join('.temp' , '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
@@ -30,9 +31,14 @@ if __name__ == '__main__':
     for file in [f for f in os.listdir('.') if f.endswith('.py')]: shutil.copy2(file, dest)
 
     # setup env and model and training params
-    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, living_cost=True)
+    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, SEPERATION, 
+                            N_BERRIES, LOG_DIR, living_cost=True)
+    
+    # make the agent and network
     agent = Agent(berry_env)
     nnet = agent.getNet(TORCH_DEVICE); print(nnet)
+
+    # training stuffs
     optim = Adam(nnet.parameters(), lr=0.00001)
     buffer = PrioritizedExperienceRelpayBuffer(int(5E4), alpha=0.95, beta=0.1, beta_rate=0.9/2000)
     tstrat = epsilonGreedyAction(0.5, 0.1, 2000)

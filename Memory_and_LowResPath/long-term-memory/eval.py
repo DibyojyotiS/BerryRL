@@ -8,6 +8,7 @@ from print_utils import picture_episode
 FIELD_SIZE = (20000,20000)
 PATCH_SIZE = (2600,2600)
 N_PATCHES = 10
+SEPERATION= 2400
 N_BERRIES = 80
 
 LOG_DIR = None
@@ -15,8 +16,8 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if __name__ == '__main__':
 
-    # berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, #initial_juice=0.1,
-    #                         end_on_boundary_hit=False, allow_no_action=False, show=False)
+    # berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, SEPERATION, 
+    #                         N_BERRIES, LOG_DIR, living_cost=True)
     berry_env = BerryFieldEnv()
     agent = Agent(berry_env, mode='eval', debug=True, noise=0.03, persistence=0.9, time_memory_delta=0.01)
 
