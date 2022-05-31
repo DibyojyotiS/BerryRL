@@ -56,7 +56,7 @@ class BerryFieldAnalytics():
         self.previous_patch_id = -1 # to detect patch-changes
         self.current_patch_steps = 1
         self.berries_along_patch_path = [] # the distance,size of berry collected
-        self.total_preference = {x:0 for x in self.unique_berry_sizes}
+        # self.total_preference = {x:0 for x in self.unique_berry_sizes}
 
 
     def update(self, done):
@@ -74,15 +74,6 @@ class BerryFieldAnalytics():
             if self.previous_patch_id is not None:
                 # log the previous berry-along-path
                 self.berries_along_patch_paths.write(f'{self.previous_patch_id}:{self.berries_along_patch_path}\n')
-                # compute the relative preference
-                berry_weight = {size:0 for size in self.unique_berry_sizes}
-                berry_count = {size:0 for size in self.unique_berry_sizes}
-                for berry_size, distance in self.berries_along_patch_path: 
-                    berry_weight[berry_size] += distance
-                    berry_count[berry_size] += 1
-                for size in self.unique_berry_sizes:
-                    if berry_count[size] == 0: continue
-                    self.total_preference[size] += berry_weight[size]/berry_count[size]
             # reset variables
             self.current_patch_steps = 1
             self.previous_patch_id = patch_id
@@ -123,7 +114,8 @@ class BerryFieldAnalytics():
 
         # print stats
         if self.verbose:
-            print("preference: ", self.total_preference)
+            # print("preference: ", self.total_preference)
+            print("berry-collection:", self.collected_berries)
             print("total peripheral_patch_time: ", total_peripheral_patch_time)
             print("total total_central_patch_time: ", total_central_patch_time)
             print("peripheral_patch_times", self.peripheral_patch_times)
@@ -133,7 +125,8 @@ class BerryFieldAnalytics():
         # save the results
         with open(os.path.join(self.saveFolder,'results.txt'), 'w') as f:
             f.writelines([
-                f"preference: {self.total_preference}\n",
+                # f"preference: {self.total_preference}\n",
+                f"berry-collection: {self.collected_berries}"
                 f"total peripheral_patch_time: {total_peripheral_patch_time}\n",
                 f"total total_central_patch_time: {total_central_patch_time}\n",
                 f"peripheral_patch_times: {self.peripheral_patch_times}\n",
@@ -146,3 +139,12 @@ class BerryFieldAnalytics():
         
     def compute_stats(self):
         """ compute the stats from the logged information """
+        # # compute the relative preference
+        # berry_weight = {size:0 for size in self.unique_berry_sizes}
+        # berry_count = {size:0 for size in self.unique_berry_sizes}
+        # for berry_size, distance in self.berries_along_patch_path: 
+        #     berry_weight[berry_size] += distance
+        #     berry_count[berry_size] += 1
+        # for size in self.unique_berry_sizes:
+        #     if berry_count[size] == 0: continue
+        #     self.total_preference[size] += berry_weight[size]/berry_count[size]
