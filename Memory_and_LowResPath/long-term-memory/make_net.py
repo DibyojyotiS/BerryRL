@@ -49,18 +49,23 @@ def make_simple_conv1dnet(inchannel:int, channels:list, kernels:list, strides:li
     return conv
 
 def make_simple_conv2dnet(inchannel:int, channels:list, kernels:list, strides:list, 
-                        paddings:list, maxpkernels:list, padding_mode='zeros', lreluslope=0.1):
-    """ odd layers are max-pools {conv -> [maxpool?,relu,conv] -> maxpool? -> relu]} """
-    conv = nn.ModuleList([nn.Conv2d(inchannel, channels[0], kernels[0], strides[0], 
-                                    paddings[0], padding_mode=padding_mode)])
+                        paddings:list, maxpkernels:list, padding_mode='zeros', 
+                        lreluslope=0.1, add_batchnorms=False):
+    """ odd layers are max-pools {conv -> [bn?,maxpool?,relu,conv] -> bn?,maxpool? -> relu]} """
+    conv = nn.ModuleList([])
+    if add_batchnorms: conv.append(nn.BatchNorm2d(num_features=inchannel))
+    conv.append(nn.Conv2d(inchannel, channels[0], kernels[0], 
+                strides[0], paddings[0], padding_mode=padding_mode))
+                
     for i in range(1, len(channels)):
-        if len(maxpkernels) > i-1 and maxpkernels[i-1]:
+        if len(maxpkernels) > i-1 and maxpkernels[i-1]: 
             conv.append(nn.MaxPool2d(maxpkernels[i-1]))
-        conv.extend([ 
-            nn.LeakyReLU(negative_slope=lreluslope), 
-            nn.Conv2d(channels[i-1], channels[i], kernels[i], 
-                    strides[i], paddings[i], padding_mode=padding_mode)
-        ])
+        conv.append(nn.LeakyReLU(negative_slope=lreluslope))
+        if add_batchnorms: 
+            conv.append(nn.BatchNorm2d(num_features=channels[i-1]))
+        conv.append(nn.Conv2d(channels[i-1], channels[i], kernels[i], 
+                    strides[i], paddings[i], padding_mode=padding_mode))
+
     if len(maxpkernels) == len(channels): conv.append(nn.MaxPool2d(maxpkernels[-1]))
     conv.append(nn.LeakyReLU(negative_slope=lreluslope))
     return conv
