@@ -43,7 +43,7 @@ class BerryFieldAnalytics():
         self.time_between_patches = 0
 
         self.total_berries_collected = 0
-        self.unique_berry_sizes = np.unique(berryField.berry_collision_tree.boxes[:,-1])
+        self.unique_berry_sizes = np.unique(berryField.berry_collision_tree.boxes[:,-1]).astype(int)
         self.collected_berries = {patch_no:{x:0 for x in self.unique_berry_sizes} for patch_no in range(self.num_patches)}
         # self.SD_berries = {x:0 for x in self.unique_berry_sizes}
         # self.SD_time_center = 0
@@ -111,11 +111,12 @@ class BerryFieldAnalytics():
 
         total_peripheral_patch_time = sum([self.peripheral_patch_times[i] for i in range(self.num_patches)])
         total_central_patch_time = sum([self.central_patch_times[i] for i in range(self.num_patches)])
+        berrycollstr = '\n\t'.join([f'{x}:{z}' for x,z in self.collected_berries.items()])
 
         # print stats
         if self.verbose:
             # print("preference: ", self.total_preference)
-            print("berry-collection:", self.collected_berries)
+            print(f"berry-collection:\n\t{berrycollstr}")
             print("total peripheral_patch_time: ", total_peripheral_patch_time)
             print("total total_central_patch_time: ", total_central_patch_time)
             print("peripheral_patch_times", self.peripheral_patch_times)
@@ -126,7 +127,7 @@ class BerryFieldAnalytics():
         with open(os.path.join(self.saveFolder,'results.txt'), 'w') as f:
             f.writelines([
                 # f"preference: {self.total_preference}\n",
-                f"berry-collection: {self.collected_berries}"
+                f"berry-collection: \n\t{berrycollstr}\n"
                 f"total peripheral_patch_time: {total_peripheral_patch_time}\n",
                 f"total total_central_patch_time: {total_central_patch_time}\n",
                 f"peripheral_patch_times: {self.peripheral_patch_times}\n",
