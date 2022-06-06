@@ -12,6 +12,7 @@ from gym.envs.classic_control import rendering
 from .utils.collision_tree import collision_tree
 from .utils.renderingViewer import renderingViewer
 
+INVSQRT2 = 0.5**0.5
 
 # location of the csv files with the location and description of each berry and patch
 DATA_PATHS = ['data/berry_coordinates.csv', 'data/patch_coordinates.csv']
@@ -117,13 +118,13 @@ class BerryFieldEnv(gym.Env):
         self.noAction_juice_threshold = noAction_juice_threshold
         self.action_switcher = {
             0: (0, 1), # N
-            1: (1, 1), # NE
+            1: (INVSQRT2, INVSQRT2), # NE
             2: (1, 0), # E
-            3: (1, -1), # SE
+            3: (INVSQRT2, -INVSQRT2), # SE
             4: (0, -1), # S
-            5: (-1, -1), # SW
+            5: (-INVSQRT2, -INVSQRT2), # SW
             6: (-1, 0), # W
-            7: (-1, 1), # NW
+            7: (-INVSQRT2, INVSQRT2), # NW
         }
         if allow_action_noAction: self.action_switcher.update({8:(0,0)})
 
