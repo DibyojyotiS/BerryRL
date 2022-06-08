@@ -25,9 +25,9 @@ class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
-                angle = 45, persistence=0.8, worth_offset=0.0, noise=0.01, state_transition_mode = 'single',
-                positive_emphasis=True, emphasis_mode= 'replace', memory_alpha=0.9965, time_memory_delta=0.01, 
-                time_memory_exp=1, reward_patch_discovery=True, disjoint=False, debug=False, debugDir='.temp') -> None:
+                angle = 45, persistence=0.8, worth_offset=0.0, noise=0.01, 
+                emphasis_mode= 'replace', memory_alpha=0.9965, time_memory_delta=0.005, 
+                time_memory_exp=1, reward_patch_discovery=False, disjoint=False, debug=False, debugDir='.temp') -> None:
         """ mode is required to assert whether it is required to make transitions """
         printLocals('Agent', locals())
         self.istraining = mode == 'train'
@@ -36,8 +36,6 @@ class Agent():
         self.worth_offset = worth_offset
         self.berryField = berryField
         self.field_grid_size = field_grid_size
-        self.state_transition_mode = state_transition_mode
-        self.positive_emphasis = positive_emphasis
         self.append_mode = emphasis_mode == 'append'
         self.noise = noise
         self.memory_alpha = memory_alpha
@@ -68,20 +66,8 @@ class Agent():
             self.env_recordfile = open(os.path.join(self.debugDir, 'stMakerrecordenv.txt'), 'w', 1)
 
     def print_information(self):
-        if not self.istraining: 
-            print('eval mode'); return
-        if self.positive_emphasis and self.state_transition_mode=='all':
-            print(f'''positive rewards are now emphasised in the state-transitions
-            Once a berry is encountered (say at index i), new transitions of the following
-            description will also be appended (if emphasis_mode = 'append') or the entries 
-            will be replaced: all the transitions k < i such that the sum of reward from
-            k to i is positive will have the next-state replaced by the state at transition
-            at index i. And the rewards will also be replaced by the summation from k to i.
-            currently, emphasis-mode is {'append' if self.append_mode else 'replace'}.
-            if disjoint=True, then k is limited to the index of the last berry seen
-            currently disjoint behaviour is set to {self.disjoint}\n''')
-        if self.state_transition_mode != 'all':
-            print("""state_transition_mode is not 'all'. The state-transitions being appended 
+        if not self.istraining: print('eval mode'); return
+        print("""The state-transitions being appended 
             every action will be as [[state, action, sum-reward, nextState, done]] where:
             state is the one the model has taken action on,
             sum-reward is the sum of the rewards in the skip-trajectory,
@@ -131,23 +117,6 @@ class Agent():
                     # don't give +ve to spawn patch!!!
                     if len(self.visited_patches) > 1: reward += 1
         return reward
-
-    def _do_positive_emphasis(self):
-        # find where berries were encountered
-        # for each k: idx1 < k < idx2 for consequitive idx1,idx2 in berry indices
-        # append transitions with start-state at k and next-state at idx2 (goal)
-        # if the summed reward from k to idx2 is positive
-        berry_indices = [0] + [i for i,x in enumerate(self.state_transitions) if x[2] > 0]
-        for i in range(1, len(berry_indices)):
-            idx1, idx2 = berry_indices[i-1:i+1]
-            reward_b = self.state_transitions[idx2][2]
-            good_state = self.state_transitions[idx2][3]
-            for k in range(idx2-1, idx1 if self.disjoint else -1, -1):
-                s, a, r, ns, d = self.state_transitions[k]
-                reward_b += r
-                if reward_b < 0: break
-                if self.append_mode: self.state_transitions.append([s,a,reward_b,good_state,d])
-                else: self.state_transitions[k][2:4] = [reward_b,good_state]
 
     def _compute_sectorized(self, raw_observation, info):
         """  """
@@ -250,21 +219,6 @@ class Agent():
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
-
-    def _compute_transitons_n_finalstate(self, skip_trajectory, action_taken):
-        self.state_transitions = []
-        current_state = self._computeState(*skip_trajectory[0])
-        for i in range(1, len(skip_trajectory)):
-            reward, done = skip_trajectory[i][2:]
-            next_state = self._computeState(*skip_trajectory[i])
-            self.state_transitions.append([current_state, action_taken, reward, next_state, done])
-            current_state = next_state
-        
-        if self.positive_emphasis:# more emphasis on positive rewards
-            self._do_positive_emphasis()
-        
-        return current_state # the final state
-
     def state_desc(self):
         """ returns the start and stop+1 indices for various parts of the state """
         memory_size = self.field_grid_size[0] * self.field_grid_size[1]
@@ -286,10 +240,7 @@ class Agent():
 
     def makeState(self, skip_trajectory, action_taken):
         """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
-        if self.istraining and self.state_transition_mode == 'all': 
-            final_state = self._compute_transitons_n_finalstate(skip_trajectory, action_taken)
-        else:
-            final_state = self._computeState(*skip_trajectory[-1])
+        final_state = self._computeState(*skip_trajectory[-1])
 
         # debug
         if self.debug: 
@@ -304,13 +255,6 @@ class Agent():
         """ get the state-transitions - these are already computed in the
         makeState function when mode = 'train'. All inputs to  makeStateTransitions
         are ignored."""
-        if self.state_transition_mode == 'all':
-            self.state_transitions.append([state, skip_trajectory[0][2], action, skip_trajectory[0][3]])
-            if self.reward_patch_discovery: 
-                patchreward = self._reward_patch_discovery(skip_trajectory)/len(self.state_transitions)
-                for i in range(len(self.state_transitions)): self.state_transitions[i][1]+=patchreward
-            return self.state_transitions
-
         reward = sum([r for o,i,r,d in skip_trajectory])
         reward += self._reward_patch_discovery(skip_trajectory) if self.reward_patch_discovery else 0
         done = skip_trajectory[-1][-1]
@@ -320,9 +264,9 @@ class Agent():
     
     def getNet(self, TORCH_DEVICE, debug=False,
             feedforward = dict(linearsDim = [16,8], lreluslope=0.1),
-            memory_conv = dict(channels = [8,8,16], kernels = [4,3,3], 
+            memory_conv = dict(channels = [8,16,16], kernels = [4,3,3], 
                 strides = [2,2,2], paddings = [3,2,1], maxpkernels = [2,0,2],
-                padding_mode='zeros', lreluslope=0.1),
+                padding_mode='zeros', lreluslope=0.1, add_batchnorms=False),
             final_stage = dict(infeatures=136, linearsDim = [16,16], 
                 lreluslope=0.1)):
         """ create and return the model (a duelling net)"""
@@ -339,7 +283,8 @@ class Agent():
                 self.feedforward = make_simple_feedforward(infeatures=4*num_sectors+7, **feedforward)
 
                 # build the conv-networks
-                self.memory_conv = make_simple_conv2dnet(inchannel=1, **memory_conv)
+                self.memory_conv1 = make_simple_conv2dnet(inchannel=1, **memory_conv)
+                self.memory_conv2 = make_simple_conv2dnet(inchannel=1, **memory_conv)
 
                 # build the final stage
                 self.final_stage = make_simple_feedforward(**final_stage)
@@ -351,6 +296,8 @@ class Agent():
                 # indices to split at
                 self.ffpart = (0, 4*num_sectors+7)
                 self.mempart = (self.ffpart[1], self.ffpart[1]+2*memory_shape[0]*memory_shape[1])
+
+                print('seperate conv-nets for berry and path memory')
 
             def forward(self, input:Tensor):
 
@@ -371,13 +318,13 @@ class Agent():
 
                 # process path_memory
                 if debug: print('\npath_memory', path_memory.shape)
-                for i, layer in enumerate(self.memory_conv):
+                for i, layer in enumerate(self.memory_conv1):
                     path_memory = layer(path_memory)
                     if debug: print(layer.__class__.__name__,i,path_memory.shape)
 
                 # process bery_memory
-                if debug: print('\nbery_memory', bery_memory.shape)
-                for i, layer in enumerate(self.memory_conv):
+                if debug: print('\nberry_memory', bery_memory.shape)
+                for i, layer in enumerate(self.memory_conv2):
                     bery_memory = layer(bery_memory)
                     if debug: print(layer.__class__.__name__,i,bery_memory.shape)
 
