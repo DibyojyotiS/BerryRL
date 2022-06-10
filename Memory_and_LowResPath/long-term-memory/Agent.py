@@ -2,6 +2,7 @@
 # remember a low-res path
 
 import os
+from collections import deque
 from typing import Union
 
 import imageio
@@ -24,11 +25,28 @@ EPSILON = 1E-8
 class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
-    def __init__(self, berryField:BerryFieldEnv, mode='train', field_grid_size=(40,40), 
-                angle = 45, persistence=0.8, worth_offset=0.0, noise=0.01, 
-                emphasis_mode= 'replace', memory_alpha=0.9965, time_memory_delta=0.005, 
-                time_memory_exp=1, reward_patch_discovery=False, disjoint=False, debug=False, debugDir='.temp') -> None:
-        """ mode is required to assert whether it is required to make transitions """
+    def __init__(self, berryField:BerryFieldEnv, mode='train', 
+                angle = 45, persistence=0.8, worth_offset=0.0, 
+                noise=0.01, field_grid_size=(40,40), memory_alpha=0.9965, 
+                time_memory_delta=0.005, time_memory_exp=1, nstep_transition=[1], 
+                reward_patch_discovery=False, debug=False, debugDir='.temp') -> None:
+        """ 
+        ### parameters
+        - berryField: BerryFieldEnv instance
+        - mode: 'train' or 'eval'
+        - angle: int (default 45)
+                - the observation space divided into angular sectors
+                - number of sectors is 360/angle
+        - persistence: float (default 0.8)
+                - the persistence of vision for the sectorized states 
+        - worth_offset: float (default 0)
+                - the offset in the berry worth function
+        - noise: float (default 0.01)
+                - uniform noise between [-noise, noise) is added to state
+        - field_grid_size: tupple[int,int] (default (40,40))
+                - the size of memory grid must divide field size of env
+        - memory_alpha: float (default 0.9965)
+         """
         printLocals('Agent', locals())
         self.istraining = mode == 'train'
         self.angle = angle
@@ -36,22 +54,19 @@ class Agent():
         self.worth_offset = worth_offset
         self.berryField = berryField
         self.field_grid_size = field_grid_size
-        self.append_mode = emphasis_mode == 'append'
         self.noise = noise
         self.memory_alpha = memory_alpha
         self.time_memory_delta = time_memory_delta
         self.time_memory_exp = time_memory_exp
+        self.nstep_transitions = nstep_transition # for approx n-step TD effect
         self.reward_patch_discovery = reward_patch_discovery
-        self.disjoint = disjoint
 
         # init memories and other stuff
         self.num_sectors = 360//angle        
-        self.state_transitions = []
-        self.output_shape = None
-        self._init_memories()
-
         self.divLenX = berryField.FIELD_SIZE[0]//field_grid_size[0]
         self.divLenY = berryField.FIELD_SIZE[1]//field_grid_size[1]
+        self.output_shape = self.get_output_shape()
+        self._init_memories()
 
         self.print_information()
         
@@ -79,19 +94,30 @@ class Agent():
 
     def _init_memories(self):
         memory_grid_size = self.field_grid_size[0]*self.field_grid_size[1]
-        self.visited_patches = set() # needed to reward patch discovery
+
+        # for the approx n-step TD construct
+        self.state_deque = deque(maxlen=max(self.nstep_transitions) + 1)
+        self.state_deque.append([None,None,0]) # init deque
+
+        # needed to reward patch discovery
+        self.visited_patches = set() 
+
+        # for path and berry memory
         self.path_memory = np.zeros(memory_grid_size) # aprox path
         self.berry_memory = np.zeros(memory_grid_size) # aprox place of sighting a berry
         self.time_memory = 0 # the time spent at the current block
         self.time_memory_data = np.zeros_like(self.path_memory)
-        self.prev_sectorized = np.zeros((4,self.num_sectors))
 
-    # for computation of berry worth, can help to change 
-    # the agent's preference of different sizes of berries. 
+        # for persistence
+        self.prev_sectorized_state = np.zeros((4,self.num_sectors))
+        return
+
     def berry_worth_function(self, sizes, distances):
         """ the reward that can be gained by pursuing a berry of given size and distance
         we note that the distances are scaled to be in range 0 to 1 by dividing by half-diag
         of observation space """
+        # for computation of berry worth, can help to change 
+        # the agent's preference of different sizes of berries. 
         rr, dr = self.berryField.REWARD_RATE, self.berryField.DRAIN_RATE
         worth = rr * sizes - dr * distances * self.berryField.HALFDIAGOBS
         
@@ -126,7 +152,7 @@ class Agent():
         # a4 = np.zeros(self.num_sectors) # a mesure of distance to max worthy in each sector
 
         # apply persistence
-        a1,a2,a3,a4 = self.prev_sectorized * self.persistence
+        a1,a2,a3,a4 = self.prev_sectorized_state * self.persistence
         total_worth = 0
 
         if len(raw_observation) > 0:
@@ -163,7 +189,7 @@ class Agent():
         
         avg_worth = total_worth/len(raw_observation) if len(raw_observation) > 0 else 0
 
-        self.prev_sectorized = np.array([a1,a2,a3,a4])
+        self.prev_sectorized_state = np.array([a1,a2,a3,a4])
         return [a1,a2,a3,a4], avg_worth
 
     def _update_memories(self, info, avg_worth):
@@ -192,6 +218,7 @@ class Agent():
         self.time_memory_data *= 1-self.time_memory_delta
         self.time_memory_data[index] += self.time_memory_delta
         self.time_memory = min(1,self.time_memory_data[index])**self.time_memory_exp
+        return
 
     def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
@@ -234,9 +261,8 @@ class Agent():
         return state_desc
 
     def get_output_shape(self):
-        if not self.output_shape:
-            self.output_shape = self._computeState(None, None, None, None).shape
-        return self.output_shape
+        try: return self.output_shape
+        except: self._computeState(None, None, None, None).shape
 
     def makeState(self, skip_trajectory, action_taken):
         """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
@@ -249,19 +275,30 @@ class Agent():
             np.savetxt(self.env_recordfile, [np.concatenate([agent, *berries[:,:3]])])
 
         return final_state
-
-           
+      
     def makeStateTransitions(self, skip_trajectory, state, action, nextState):
         """ get the state-transitions - these are already computed in the
         makeState function when mode = 'train'. All inputs to  makeStateTransitions
         are ignored."""
+        # compute the sum of reward in the skip-trajectory
         reward = sum([r for o,i,r,d in skip_trajectory])
         reward += self._reward_patch_discovery(skip_trajectory) if self.reward_patch_discovery else 0
         done = skip_trajectory[-1][-1]
-        transition = [[state, action, reward, nextState, done]]
-        return transition
 
-    
+        # update dequeue
+        self.state_deque.append([state, action, reward + self.state_deque[-1][-1]])    
+        transitions = []
+
+        # transitions for crude nstep TD approximations
+        for n in self.nstep_transitions:
+            if len(self.state_deque) >= n+1:
+                reward0 = self.state_deque[-n-1][-1]
+                oldstate, oldaction, reward1 = self.state_deque[-n]
+                sum_reward = max(min(reward1-reward0,2),-2) # clipping so that this doesnot wreck priority buffer
+                transition = [oldstate, oldaction, sum_reward, nextState, done]
+                transitions.append(transition)
+        return transitions
+
     def getNet(self, TORCH_DEVICE, debug=False,
             feedforward = dict(linearsDim = [16,8], lreluslope=0.1),
             memory_conv = dict(channels = [8,16,16], kernels = [4,3,3], 
@@ -350,7 +387,6 @@ class Agent():
         self.built_net = True
         print('total-params: ', sum(p.numel() for p in self.nnet.parameters() if p.requires_grad))
         return self.nnet
-
 
     def showDebug(self, nnet:Union[nn.Module,None]=None, debugDir = None, f=20, gif=False):
         
