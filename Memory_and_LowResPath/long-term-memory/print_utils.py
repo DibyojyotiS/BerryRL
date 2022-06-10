@@ -19,9 +19,12 @@ def Env_print_fn(berry_env:BerryFieldEnv):
         'of', berry_env.get_totalBerries(), '| patches-visited:', visited_patches,
         f'| juice left:{berry_env.total_juice:.2f}')
     
-def my_print_fn(berry_env:BerryFieldEnv, buffer, tstrat, ssize=256):
+def my_print_fn(berry_env:BerryFieldEnv, buffer, tstrat, ddqntraininer):
     tolist = lambda t: t.cpu().numpy().tolist()
     def print_fn():
+        ssize = ddqntraininer.batchSize
+        try: skipsteps = ddqntraininer.skipSteps(ddqntraininer.current_episode)
+        except Exception as e: skipsteps = ddqntraininer.skipSteps
         Env_print_fn(berry_env)
         print('\t| epsilon:', tstrat.epsilon)
         if buffer.buffer is not None:
@@ -31,6 +34,7 @@ def my_print_fn(berry_env:BerryFieldEnv, buffer, tstrat, ssize=256):
             positive_idxsmp = np.argwhere((sample["reward"]>0).cpu().squeeze())
             asmp,countsmp = torch.unique(sample['action'][positive_idxsmp], return_counts=True)
             # print the stuffs!
+            print('\t| skipsteps:', skipsteps)
             print('\t| positive-in-buffer:', positive_idx.shape[-1],
                 f'| amount-filled: {100*len(buffer)/buffer.bufferSize:.2f}%')
             print('\t| action-stats: ', tolist(a), tolist(count))
@@ -60,7 +64,11 @@ def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None, show=Tr
     agentpath = np.array(agentpath[::K])
     ax.plot(agentpath[:,0],agentpath[:,1],linewidth=pathwidth)
 
-    if title: plt.title(title)
+    if title: 
+        path = f'{LOG_DIR}/analytics-berry-field/{episode}/results.txt'
+        with open(path,'r') as f: 
+            nberries = f.readlines()[-1].split(':')[-1].strip()
+        plt.title(str(title) + f'\n{nberries} berries picked')
     if savepth: plt.savefig(savepth)
     if show: plt.show()
     if close: plt.close()
