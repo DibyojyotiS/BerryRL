@@ -3,7 +3,7 @@
 The Latest development is the approach in 
 "<i>Memory_and_LowResPath\long-term-memory</i>".
 
-One needs to install the gym enviromment berry-field by
+One needs to install the gym enviromment "<i>berry-field</i>" by
 
     pip install -e berry-field
 
