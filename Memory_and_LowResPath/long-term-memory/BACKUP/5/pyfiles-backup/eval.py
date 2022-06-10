@@ -1,5 +1,5 @@
 from DRLagents import *
-from get_baby_env import getBabyEnv
+from get_baby_env import getRandomEnv
 from make_net import *
 from Agent import *
 

@@ -1,6 +1,6 @@
 from DRLagents import *
 from torch.optim.rmsprop import RMSprop
-from get_baby_env import getBabyEnv
+from get_baby_env import getRandomEnv
 from make_net import *
 from Agent import *
 
@@ -15,7 +15,7 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if __name__ == '__main__':
 
-    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, #initial_juice=0.1,
+    berry_env = getRandomEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, #initial_juice=0.1,
                             end_on_boundary_hit=False, allow_no_action=False, show=False)
     agent = Agent(berry_env, mode='eval', debug=True, noise=0.01, persistence=0.7, time_memory_delta=0.001)
 

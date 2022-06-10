@@ -3,7 +3,7 @@ import shutil
 from DRLagents import *
 from torch.optim.adam import Adam
 from torch.optim.rmsprop import RMSprop
-from get_baby_env import getBabyEnv
+from get_baby_env import getRandomEnv
 from make_net import *
 from Agent import *
 
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     logger = StdoutLogger(filename=os.path.join(LOG_DIR, 'log.txt'))
 
     # setup env and model
-    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, living_cost=True, initial_juice=0.1)
+    berry_env = getRandomEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, living_cost=True, initial_juice=0.1)
     agent = Agent(berry_env)
     nnet = agent.getNet(TORCH_DEVICE); print(nnet)
     

@@ -6,7 +6,7 @@ from torch.optim.adam import Adam
 from torch.optim.rmsprop import RMSprop
 
 from Agent import *
-from get_baby_env import getBabyEnv
+from get_baby_env import getRandomEnv
 from make_net import *
 from print_utils import my_print_fn
 
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     for file in [f for f in os.listdir('.') if f.endswith('.py')]: shutil.copy2(file, dest)
 
     # setup env and model and training params
-    berry_env = getBabyEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, living_cost=True)
+    berry_env = getRandomEnv(FIELD_SIZE, PATCH_SIZE, N_PATCHES, N_BERRIES, LOG_DIR, living_cost=True)
     agent = Agent(berry_env)
     nnet = agent.getNet(TORCH_DEVICE); print(nnet)
     optim = Adam(nnet.parameters(), lr=0.00001)
