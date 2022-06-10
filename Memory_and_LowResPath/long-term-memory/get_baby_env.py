@@ -175,17 +175,41 @@ def random_baby_berryfield(field_size=(20000,20000), patch_size = (2600,2600),
     return berry_data, initial_position
 
 
-def getBabyEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=10, 
-                seperation=2400, nberries=80, logDir=None, living_cost=True, initial_juice=0.5, 
+def env_step_wrapper(berry_env_step, REWARD_RATE):
+    """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
+    for better gradients..., also rewards are clipped between -2 and 2 """
+    print('with living cost, rewards scaled by 2/(berry_env.REWARD_RATE*MAXSIZE)')
+    print('rewards are clipped between -2 and 2')
+    MAXSIZE = max(BERRY_SIZES)
+    scale = 2/(REWARD_RATE*MAXSIZE)
+    def step(action):
+        state, reward, done, info = berry_env_step(action)
+        reward = min(max(scale*reward, -2), 2)
+        return state, reward, done, info
+    return step
+
+def getRandomEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=10, 
+                seperation=2400, nberries=80, logDir=None, initial_juice=0.5, 
                 end_on_boundary_hit= False, penalize_boundary_hit=False, 
                 initial_pos_around_berry = True, spawn_radius=100, sampling_type=0, 
                 allow_no_action=False, no_action_threshold=0.7, 
                 show=False):
+    """
+    ### Parameters
+    1. spawn_radius: function or int
+            - agent is spawned within spawn_radius distance from a random berry
+            - if function is given, this function should accept the episode number
+            as the first argument and return the spawn_radius
+    """
     printLocals('getBabyEnv', locals())
+
+    spawn_radius_fn = spawn_radius if type(spawn_radius) is not int \
+                    else lambda episode: spawn_radius
+
     # making the berry env
     random_berry_data, random_init_pos = random_baby_berryfield(field_size, patch_size, 
                                             num_patches, nberries, seperation, 
-                                            initial_pos_around_berry, spawn_radius, 
+                                            initial_pos_around_berry, spawn_radius_fn(0), 
                                             sampling_type, show=show)
     berry_env = BerryFieldEnv(noAction_juice_threshold=no_action_threshold,
                                 field_size=field_size,
@@ -200,29 +224,19 @@ def getBabyEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=10,
 
     # redefine the reset function to generate random berry-envs
     def env_reset(berry_env_reset):
+        episode = 0
         def reset(**args):
+            nonlocal episode
             berry_data, initial_pos = random_baby_berryfield(field_size, patch_size, 
                                             num_patches, nberries, seperation, 
-                                            initial_pos_around_berry, spawn_radius, 
+                                            initial_pos_around_berry, spawn_radius_fn(episode), 
                                             sampling_type, show=show) # reset the env  
             x = berry_env_reset(berry_data=berry_data, initial_position=initial_pos)
+            episode += 1
             return x
         return reset
 
-    def env_step(berry_env_step):
-        if living_cost: 
-            print('with living cost, rewards scaled by 1/(berry_env.REWARD_RATE*MAXSIZE)')
-        else: print('no living cost, rewards (except boundary hit) scaled by 1/(berry_env.REWARD_RATE*MAXSIZE)')
-        MAXSIZE = max(BERRY_SIZES)
-        scale = 1/(berry_env.REWARD_RATE*MAXSIZE)
-        def step(action):
-            state, reward, done, info = berry_env_step(action)
-            if living_cost: reward = scale*reward
-            else: reward = (scale*(reward>0) + (reward<=-1))*reward # no living cost
-            return state, reward, done, info
-        return step
-
     berry_env.reset = env_reset(berry_env.reset)
-    berry_env.step = env_step(berry_env.step)
+    berry_env.step = env_step_wrapper(berry_env.step, berry_env.REWARD_RATE)
 
     return berry_env
