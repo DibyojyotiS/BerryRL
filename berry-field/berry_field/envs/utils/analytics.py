@@ -113,39 +113,58 @@ class BerryFieldAnalytics():
         total_central_patch_time = sum([self.central_patch_times[i] for i in range(self.num_patches)])
         berrycollstr = '\n\t'.join([f'{x}:{z}' for x,z in self.collected_berries.items()])
 
+        stats = self._compute_stats()
+
         # print stats
         if self.verbose:
-            # print("preference: ", self.total_preference)
             print(f"berry-collection:\n\t{berrycollstr}")
             print("total peripheral_patch_time: ", total_peripheral_patch_time)
             print("total total_central_patch_time: ", total_central_patch_time)
             print("peripheral_patch_times", self.peripheral_patch_times)
             print("central_patch_times", self.central_patch_times)
             print("total berries collected:", self.total_berries_collected)
+            print("preferences: ",str(stats['preferences']))
 
         # save the results
         with open(os.path.join(self.saveFolder,'results.txt'), 'w') as f:
             f.writelines([
-                # f"preference: {self.total_preference}\n",
                 f"berry-collection: \n\t{berrycollstr}\n"
                 f"total peripheral_patch_time: {total_peripheral_patch_time}\n",
                 f"total total_central_patch_time: {total_central_patch_time}\n",
                 f"peripheral_patch_times: {self.peripheral_patch_times}\n",
                 f"central_patch_times: {self.central_patch_times}\n",
-                f"total berries collected: {self.total_berries_collected}\n"
+                f"total berries collected: {self.total_berries_collected}\n",
+                f"preferences: ", str(stats['preferences'])
             ])
         
         self.closed = True        
 
+    
+    def _compute_preferences(self):
+        """ compute the berry preferences from the logged information """
+        # open berries_along_patch_paths.txt
+        path = os.path.join(self.saveFolder,'berries_along_patch_paths.txt')
+        with open(path,'r') as f:
+            lines = f.readlines()
         
-    def compute_stats(self):
-        """ compute the stats from the logged information """
-        # # compute the relative preference
-        # berry_weight = {size:0 for size in self.unique_berry_sizes}
-        # berry_count = {size:0 for size in self.unique_berry_sizes}
-        # for berry_size, distance in self.berries_along_patch_path: 
-        #     berry_weight[berry_size] += distance
-        #     berry_count[berry_size] += 1
-        # for size in self.unique_berry_sizes:
-        #     if berry_count[size] == 0: continue
-        #     self.total_preference[size] += berry_weight[size]/berry_count[size]
+        # compute the relative preference
+        preferences = {size:0 for size in self.unique_berry_sizes}
+        berry_weight = {size:0 for size in self.unique_berry_sizes}
+        berry_count = {size:0 for size in self.unique_berry_sizes}
+        for line in lines:
+            patch_, data = line.split(':')
+            if patch_ == '-1': continue
+            berries_along_patch_path = eval(data)
+            for size, distance in berries_along_patch_path: 
+                berry_weight[size] += distance
+                berry_count[size] += 1
+            for size in self.unique_berry_sizes:
+                if berry_count[size] <= 5: continue
+                preferences[size] += berry_weight[size]/berry_count[size]    
+
+        return preferences       
+
+    
+    def _compute_stats(self):
+        stats = {'preferences': self._compute_preferences()}
+        return stats
