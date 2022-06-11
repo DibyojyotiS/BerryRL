@@ -42,52 +42,94 @@ class BerryFieldEnv(gym.Env):
                 reward_curiosity = False, reward_curiosity_beta=0.25,
                 reward_grid_size = (100,100), # should divide respective dimention of field_size
 
+                # for analytics
+                enable_analytics = True,
+                analytics_folder = '.temp',
+
                 # announce picked berries with verbose
                 verbose= False,
 
                 # allow no action above this cumilaive reward
-                allow_action_noAction = False, # remove this no-action altogether
+                allow_action_noAction = False,
                 noAction_juice_threshold = -float('inf'),
                 end_on_boundary_hit = False,
                 penalize_boundary_hit = False,
 
-                # for analytics
-                enable_analytics = True,
-                analytics_folder = '.temp'
+                # more stuffs
+                play_till_maxtime = False
                 ):
         '''
-        ## Environment\n
-            all dimentions are in (width, height)\n
-            initial_position: the initial position of the agent \n
-            field_size: the size of field \n
-            agent_size: the size of agent in (r,r) pixels \n
-            observation_space_size: the visible portion \n
-            speed: the speed of agent in pixels/sec \n
-            maxtime: 5 minutes of max time \n
-            reward_rate: berry size is scaled with this for reward \n
-            circular_berries: wether berries are circular or square \n
-            circular_agent: wether agetn is circular or square \n
-            user_berry_data: can specify berries as list of [patch-no, size, x,y]
-                                overrides the original berry data
-
-
-        ## curiosity reward\n
-            reward_curiosity: wether curiosity reward is to be used\n
-            reward_curiosity_beta: the reward is modified as - \n
-                                    actual_reward*beta + curiosity_reward*(1-beta)\n
-            reward_grid_size: break the field into smaller grids, agent gets\n
-                                    rewarded on the first entry\n
+        all dimentions are in (width, height)\n
         
+        ## parameters
 
-        ## misc\n
-            verbose: announce the picked berries in console\n
-            allow_action_noAction: add the no-action (agent doesnot move) action (default False)
-            no_action_r_threshold: doesnot allow action-0 (no-movement) when
-                                    cumilative-reward is below this threshold
-                    cumilative-reward is not incremented by curiosity-reward
-            end_on_boundary_hit: end the episode on hitting the boundary
-            penalize_boundary_hit: reward -1 on hitting the boundary
+        ### ====== environment defaults ======
+        1. initial_position: tupple[int,int] (default (0,0)) 
+                - the initial position of the agent
+        2. field_size: tupple[int,int] (default (20000,20000)) 
+                - the size of field
+        3. agent_size: int (default 10) 
+                - the diameter of agent in pixels
+                - or the edge length if circular_agent is False
+        4. observation_space_size:  tupple[int,int] (default (1920,1080))
+                - the observable portion of the berry field
+        5. speed: int (default 500)
+                - the speed of agent in pixels/sec
+        6. maxtime: int (default 300) 
+                - the maximum game-time in seconds
+                - 5 minutes is default
+        7. reward_rate: float (default 1e-4)
+                - berry size is scaled with this for reward
+        8. circular_berries: bool (default True)
+                - wether berries are circular or square
+        9. circular_agent: bool (default True)
+                - wether agetn is circular or square \n
+        10. user_berry_data: list|np.ndarray (default None)
+                - can specify berries as list of [patch-no, size, x,y]
+                - overrides the original berry data
 
+        ### ====== curiosity reward ======
+        11. reward_curiosity: bool (default False)
+                - wether curiosity reward is to be used
+        12. reward_curiosity_beta: float (default 0.25)
+                - the reward is modified as:
+                actual_reward*beta + curiosity_reward*(1-beta)
+                - Note that the juice is not incremented by 
+                the curiosity-reward
+        13. reward_grid_size: tupple[int,int] (default (100,100)) 
+                - break the field into smaller grids, 
+                - agent gets rewarded on the first entry to any 
+                of the blocks in the grid.
+        
+        ### ====== analytics ======
+        14. enable_analytics: bool (default True)
+                - if true this will start saving the 
+                    - the pickle of BerryFieldEnv instance
+                    - agent position
+                    - where along path berries are collected
+                    - the current patch
+                    - other stats like berry-preference, 
+                    patch-central times, etc.
+        15. analytics_folder: str (default '.temp')
+                - the folder where stuff gets saved
+
+        ### ====== misc ======
+        16. verbose: bool (default False) 
+                - announce the picked berries in console\n
+        17. allow_action_noAction: bool (default False) 
+                - if true, then the "no-action" option is added
+                to the enviroment action space. 
+                - "no-action" means that the agent chooses not to move
+        18. no_action_r_threshold: float (default -inf)
+                - doesnot allow no-action when the juice is below 
+                this threshold. 
+                - Note that juice is not incremented by curiosity-reward
+        19. end_on_boundary_hit: bool (default False) 
+                - end the episode on hitting the boundary
+        20. penalize_boundary_hit: bool (default False) 
+                - reward -1 on hitting the boundary
+        21. play_till_maxtime: bool (default False) 
+                - if true lets the episode run untill maxtime
         '''
         super(BerryFieldEnv, self).__init__()
 
@@ -105,6 +147,7 @@ class BerryFieldEnv(gym.Env):
         self.END_ON_BOUNDARY_HIT = end_on_boundary_hit
         self.PENALIZE_BOUNDARY_HIT = penalize_boundary_hit
         self.INTITAL_JUICE= initial_juice
+        self.PLAY_TILL_MAXTIME= play_till_maxtime
 
 
         # for the step machinary
@@ -481,7 +524,7 @@ class BerryFieldEnv(gym.Env):
 
         # did the episode just end?
         done = True if self.num_steps >= self.MAX_STEPS or \
-                    self.total_juice <= 0 or \
+                    (self.total_juice <= 0 and not self.PLAY_TILL_MAXTIME) or \
                     self.END_ON_BOUNDARY_HIT and self._has_hit_boundary() \
                     else False
         
