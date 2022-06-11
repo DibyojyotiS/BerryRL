@@ -36,7 +36,10 @@ def _IsSeperatedNoOverlap(patch_size, separation, patch_centers_x, patch_centers
 
 
 def _rejection_sample(patch_size, max_berry_size, field_size, 
-                    seperation, num_patches, n_berries):
+                    seperation, num_patches, n_berries,
+                    patch_with_agent_at_center):
+    """ If patch_with_agent_at_center is true, then the patch at center is
+    always at index 0. """
     pw,ph = patch_size
 
     # make random patches that don't overlap and are seperated by atleast seperation
@@ -46,8 +49,11 @@ def _rejection_sample(patch_size, max_berry_size, field_size,
     while True:
         patch_centers_x = np.random.randint(low_x, high_x, num_patches)
         patch_centers_y = np.random.randint(low_y, high_y, num_patches)
-        if _IsSeperatedNoOverlap(num_patches, patch_size, 
-            seperation, patch_centers_x, patch_centers_y):
+        if patch_with_agent_at_center:
+            patch_centers_x[0] = field_size[0]/2
+            patch_centers_y[0] = field_size[0]/2
+        if _IsSeperatedNoOverlap(patch_size, 
+                seperation, patch_centers_x, patch_centers_y):
             break
 
     berry_data = _fill_berries(num_patches, n_berries, 
@@ -57,19 +63,25 @@ def _rejection_sample(patch_size, max_berry_size, field_size,
 
 
 def _incremental_sample(patch_size, max_berry_size, field_size, 
-                    seperation, num_patches, n_berries):
+                    seperation, num_patches, n_berries,
+                    patch_with_agent_at_center):
     """ incrementally build the berry-field. Patch centers are sampled
     one-by-one from a uniform distribution over the field-size, and appeded
     to the patch-list if they do-not overlap and are seperated by seperation. 
-    If incremental construction is stuck then reject and repeat """
+    If incremental construction is stuck then reject and repeat.
+    If patch_with_agent_at_center is true, then the patch at center is
+    always at index 0. """
     pw,ph = patch_size
-    num_tries = 10
+    num_tries = 50
     # make random patches that don't overlap and are seperated by atleast seperation
     offset_x, offset_y = pw/2+max_berry_size, ph/2+max_berry_size
     low_x, high_x = offset_x, field_size[0]-offset_x
     low_y, high_y = offset_y, field_size[1]-offset_y
     patch_centers_x = []; patch_centers_y = []
     while len(patch_centers_x)!=num_patches:
+        if patch_with_agent_at_center and not patch_centers_x:
+            patch_centers_x.append(field_size[0]/2)
+            patch_centers_y.append(field_size[1]/2)
         for i in range(num_tries):
             patch_centers_x.append(np.random.uniform(low_x, high_x))
             patch_centers_y.append(np.random.uniform(low_y, high_y))
@@ -91,11 +103,12 @@ def _incremental_sample(patch_size, max_berry_size, field_size,
     return berry_data, patch_centers_x, patch_centers_y
 
 
-def _random_initial_position_in_a_patch(num_patches, n_berries, patch_size, 
+def _random_initial_position_in_a_patch(num_patches, patch_size, 
                                     berry_data, patch_centers_x, patch_centers_y):
     """ select a random initial_position in a random patch. Agent of 
     AGENT_SIZE at initial_position will not intersect any berry """
     pw,ph = patch_size
+    n_berries = len(berry_data)//num_patches
     dist_to_keep = (berry_data[:,1] + AGENT_SIZE)/2 + 1
     while True:
         patchIdx = np.random.randint(0, num_patches)
@@ -136,7 +149,8 @@ def _random_initial_position_around_a_berry(berry_data, field_size, spawn_radius
 def random_berryfield(field_size=(20000,20000), patch_size = (2600,2600), 
                         num_patches=10, n_berries=80, seperation=2400,
                         initial_pos_around_berry = True, spawn_radius=100, 
-                        sampling_type=0, show=False):
+                        sampling_type=0, patch_with_agent_at_center=False,
+                        show=False):
     """ n_berries: number of berries per patch 
     initial_pos_around_berry: if True agent will start within spawn_radius about a  
                             random berry else at a random position inside a random patch
@@ -148,7 +162,8 @@ def random_berryfield(field_size=(20000,20000), patch_size = (2600,2600),
 
     # make the berry-field
     args = [patch_size, max_berry_size, field_size, 
-            seperation, num_patches, n_berries]
+            seperation, num_patches, n_berries,
+            patch_with_agent_at_center]
 
     if sampling_type == 0:
         berry_data, patch_centers_x, patch_centers_y = _incremental_sample(*args)
@@ -156,12 +171,16 @@ def random_berryfield(field_size=(20000,20000), patch_size = (2600,2600),
         berry_data, patch_centers_x, patch_centers_y = _rejection_sample(*args)
 
     # set the initial position
-    if initial_pos_around_berry:
-        initial_position = _random_initial_position_around_a_berry(berry_data, field_size, spawn_radius)
-    else:
-        initial_position = _random_initial_position_in_a_patch(num_patches,n_berries,
-                                patch_size,berry_data, patch_centers_x, patch_centers_y)    
+    end = n_berries if patch_with_agent_at_center else n_berries*num_patches
 
+    if initial_pos_around_berry:
+        initial_position = _random_initial_position_around_a_berry(
+                    berry_data[:end], field_size, spawn_radius)
+    else:
+        initial_position = _random_initial_position_in_a_patch(
+                    num_patches, patch_size, berry_data[:end], 
+                    patch_centers_x[:end], patch_centers_y[:end])
+                    
     if show:
         fig, ax = plt.subplots()
         for x,y in zip(patch_centers_x-patch_size[0]/2, patch_centers_y-patch_size[1]/2): 
@@ -190,6 +209,7 @@ def env_step_wrapper(berry_env_step, REWARD_RATE):
 
 def getRandomEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=10, 
                 seperation=2400, nberries=80, logDir=None, initial_juice=0.5, 
+                patch_with_agent_at_center = False,
                 end_on_boundary_hit= False, penalize_boundary_hit=False, 
                 initial_pos_around_berry = True, spawn_radius=100, sampling_type=0, 
                 allow_no_action=False, no_action_threshold=0.7, 
@@ -210,7 +230,8 @@ def getRandomEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=1
     random_berry_data, random_init_pos = random_berryfield(field_size, patch_size, 
                                             num_patches, nberries, seperation, 
                                             initial_pos_around_berry, spawn_radius_fn(0), 
-                                            sampling_type, show=show)
+                                            sampling_type, patch_with_agent_at_center, 
+                                            show=show)
     berry_env = BerryFieldEnv(noAction_juice_threshold=no_action_threshold,
                                 field_size=field_size,
                                 initial_position=random_init_pos,
@@ -240,3 +261,7 @@ def getRandomEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=1
     berry_env.step = env_step_wrapper(berry_env.step, berry_env.REWARD_RATE)
 
     return berry_env
+
+if __name__ == "__main__":
+    for i in range(10):
+        x = getRandomEnv(show=True, patch_with_agent_at_center=True)
