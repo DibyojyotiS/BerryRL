@@ -63,7 +63,7 @@ class BerryFieldEnv(gym.Env):
         
         ## parameters
 
-        ### ====== defaults ======
+        ### ====== setup ======
         1. initial_position: tupple[int,int] (default (0,0)) 
                 - the initial position of the agent
         2. field_size: tupple[int,int] (default (20000,20000)) 
