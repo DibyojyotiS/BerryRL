@@ -6,7 +6,7 @@ from torch.optim.adam import Adam
 from torch.optim.rmsprop import RMSprop
 
 from Agent import *
-from get_baby_env import env_step_wrapper, getRandomEnv
+from get_random_env import env_step_wrapper, getRandomEnv
 from make_net import *
 from print_utils import Env_print_fn, my_print_fn
 

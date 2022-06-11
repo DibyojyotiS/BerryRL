@@ -133,7 +133,7 @@ def _random_initial_position_around_a_berry(berry_data, field_size, spawn_radius
     return initial_position
 
 
-def random_baby_berryfield(field_size=(20000,20000), patch_size = (2600,2600), 
+def random_berryfield(field_size=(20000,20000), patch_size = (2600,2600), 
                         num_patches=10, n_berries=80, seperation=2400,
                         initial_pos_around_berry = True, spawn_radius=100, 
                         sampling_type=0, show=False):
@@ -207,7 +207,7 @@ def getRandomEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=1
                     else lambda episode: spawn_radius
 
     # making the berry env
-    random_berry_data, random_init_pos = random_baby_berryfield(field_size, patch_size, 
+    random_berry_data, random_init_pos = random_berryfield(field_size, patch_size, 
                                             num_patches, nberries, seperation, 
                                             initial_pos_around_berry, spawn_radius_fn(0), 
                                             sampling_type, show=show)
@@ -227,7 +227,7 @@ def getRandomEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=1
         episode = 0
         def reset(**args):
             nonlocal episode
-            berry_data, initial_pos = random_baby_berryfield(field_size, patch_size, 
+            berry_data, initial_pos = random_berryfield(field_size, patch_size, 
                                             num_patches, nberries, seperation, 
                                             initial_pos_around_berry, spawn_radius_fn(episode), 
                                             sampling_type, show=show) # reset the env  
