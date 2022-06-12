@@ -244,7 +244,9 @@ class BerryFieldEnv(gym.Env):
         """ observation returns a list of visible berries represented by their their center and sizes 
         make sure that self.position is correct/updated before calling this 
         The centers are reported with origin at agent's positon, and scaled by dividing by 
-        the length of half-diagonal of the observation-space (self.HALFDIAGOBS) """
+        the length of half-diagonal of the observation-space (self.HALFDIAGOBS) 
+        
+        returns : list_of_visible_berries, reward, done, info"""
 
         assert not self.done
 
@@ -271,7 +273,7 @@ class BerryFieldEnv(gym.Env):
 
         # generate the info and observation
         info = self.get_info()
-        observation = self.raw_observation()
+        list_of_visible_berries = self.raw_observation()
 
         # update the analytice
         if self.analysis_enabled: 
@@ -281,7 +283,7 @@ class BerryFieldEnv(gym.Env):
         # close viewer if done
         if done and self.viewer is not None: self.viewer = self.viewer.close()
 
-        return observation, reward, done, info
+        return list_of_visible_berries, reward, done, info
 
 
     def get_info(self):
