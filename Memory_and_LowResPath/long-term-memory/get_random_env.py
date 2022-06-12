@@ -251,7 +251,8 @@ def getRandomEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=1
             berry_data, initial_pos = random_berryfield(field_size, patch_size, 
                                             num_patches, nberries, seperation, 
                                             initial_pos_around_berry, spawn_radius_fn(episode), 
-                                            sampling_type, show=show) # reset the env  
+                                            sampling_type, patch_with_agent_at_center,
+                                            show=show) # reset the env  
             x = berry_env_reset(berry_data=berry_data, initial_position=initial_pos)
             episode += 1
             return x
