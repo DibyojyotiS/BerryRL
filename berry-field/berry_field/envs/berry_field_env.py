@@ -251,8 +251,9 @@ class BerryFieldEnv(gym.Env):
         assert not self.done
 
         # no-action is at index-8
-        if action == 8 and self.noAction_juice_threshold > self.total_juice:
-            action = np.random.randint(0, 9)
+        if self.allow_action_noAction and (action == 8) \
+            and (self.noAction_juice_threshold > self.total_juice):
+            action = np.random.randint(0, self.action_space.n)
 
         self.num_steps+=1
         self.current_action = action # required for render and analitics
