@@ -6,9 +6,8 @@ from torch.optim.adam import Adam
 from torch.optim.rmsprop import RMSprop
 
 from Agent import *
-from random_env import getRandomEnv
-from make_net import *
-from print_utils import Env_print_fn, my_print_fn
+from utils import (getRandomEnv, Env_print_fn, 
+            my_print_fn, copy_files)
 
 # set all seeds
 torch.manual_seed(0)
@@ -36,12 +35,11 @@ def original_train_env(log_dir):
 
 if __name__ == '__main__':
 
-    # copy all files into log-dir and setup logging
     resume_run = os.path.exists(RESUME_DIR)
-    logger = StdoutLogger(filename=os.path.join(LOG_DIR, 'log.txt'))
-    dest = os.path.join(LOG_DIR, 'pyfiles-backup')
-    if not os.path.exists(dest): os.makedirs(dest)
-    for file in [f for f in os.listdir('.') if f.endswith('.py')]: shutil.copy2(file, dest)
+
+    # copy all files into log-dir and setup logging
+    logger = StdoutLogger(filename=f'{LOG_DIR}/log.txt')
+    copy_files('.', f'{LOG_DIR}/pyfiles-backup')
 
     # setup eval and train env
     trainEnv = random_train_env(LOG_DIR)
@@ -54,14 +52,14 @@ if __name__ == '__main__':
     print(nnet)
 
     # training stuffs
-    optim = Adam(nnet.parameters(), lr=0.00001)
+    optim = Adam(nnet.parameters(), lr=0.00002)
     buffer = PrioritizedExperienceRelpayBuffer(int(1E5), alpha=0.9,
                                         beta=0.1, beta_rate=0.9/2000)
     tstrat = epsilonGreedyAction(0.5)
 
-    ddqn_trainer = DDQN(trainEnv, nnet, tstrat, optim, buffer, batchSize=128, 
-                        gamma=0.7, update_freq=5, MaxTrainEpisodes=2000, skipSteps=10,
-                        optimize_every_kth_action=10, num_gradient_steps=10,
+    ddqn_trainer = DDQN(trainEnv, nnet, tstrat, optim, buffer, batchSize=256, 
+                        gamma=0.8, update_freq=5, MaxTrainEpisodes=2000, skipSteps=10,
+                        optimize_every_kth_action=2000, num_gradient_steps=250,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
                         evalFreq=10, printFreq=1, polyak_average=True, polyak_tau=0.1,
                         log_dir=LOG_DIR, resumeable_snapshot=10, device=TORCH_DEVICE)

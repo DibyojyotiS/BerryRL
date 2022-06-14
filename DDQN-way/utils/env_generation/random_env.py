@@ -2,7 +2,7 @@ from berry_field.envs.berry_field_env import BerryFieldEnv
 import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib.patches import Rectangle
-from print_utils import printLocals
+from utils.printing.utils import printLocals
 
 BERRY_SIZES = [10,20,30,40]
 AGENT_SIZE=10

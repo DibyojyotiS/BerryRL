@@ -1,23 +1,23 @@
 import os
 from collections import deque
-from gym.spaces import Discrete
 from typing import Union
-import torchviz
 
 import imageio
 import numpy as np
 import torch
 import torch.nn.functional as F
+import torchviz
 from berry_field.envs.berry_field_env import BerryFieldEnv
 from berry_field.envs.utils.misc import getTrueAngles
+from gym.spaces import Discrete
 from matplotlib import pyplot as plt
 from matplotlib.patches import Circle, Rectangle
 from torch import Tensor, nn
-from exploration_routine import exploration_routine
 
-from make_net import (make_simple_conv1dnet, make_simple_conv2dnet,
-                      make_simple_feedforward)
-from print_utils import printLocals
+from utils import printLocals
+from utils import random_exploration
+from utils.nn_utils import (make_simple_conv1dnet, make_simple_conv2dnet,
+                            make_simple_feedforward)
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8
@@ -28,9 +28,9 @@ class Agent():
     def __init__(self, berryField:BerryFieldEnv, mode='train', 
                 angle = 45, persistence=0.8, worth_offset=0.0, 
                 noise=0.01, nstep_transition=[1], 
-                reward_patch_discovery=True, positive_emphasis=0, 
+                reward_patch_discovery=False, positive_emphasis=0, 
                 add_exploration = True,
-                time_memory_delta=0.05, time_memory_exp=1,
+                time_memory_delta=0.01, time_memory_exp=1,
                 debug=False, debugDir='.temp') -> None:
         """ 
         ### parameters
@@ -118,13 +118,15 @@ class Agent():
         
         MAXSIZE = max(berryField.berry_collision_tree.boxes[:,2])
         scale = 2/(berryField.REWARD_RATE*MAXSIZE)
+        initjuice = berryField.INTITAL_JUICE
+        drain_rate = berryField.DRAIN_RATE
         cur_n = berryField.action_space.n
         berry_env_step = berryField.step
 
         # add the exploration subroutine to env action space
         if self.add_exploration:
             print('Exploration subroutine as an action')
-            exploration_step = exploration_routine(berryField, **kwargs)
+            exploration_step = random_exploration(berryField, **kwargs)
             berryField.action_space = Discrete(cur_n+1)
 
         # some stats to track
@@ -144,6 +146,8 @@ class Agent():
             reward = min(max(reward, 0), 2) # this agent doesnot see negatives
             if self.reward_patch_discovery: 
                 reward += self._reward_patch_discovery(info)
+            if done: # disappointment inversely proportional to num steps
+                reward -= 2*initjuice/(drain_rate*actual_steps)
 
             # update stats
             actual_steps += steps
@@ -333,9 +337,9 @@ class Agent():
         return transitions
 
     def getNet(self, TORCH_DEVICE, debug=False,
-            sector_feed = dict(linearsDim = [16,8], lreluslope=0.1),
-            misc_feed = dict(infeatures=9, linearsDim = [8], lreluslope=0.1),
-            final_stage = dict(infeatures=8, linearsDim = [8], 
+            feedforward = dict(infeatures=41, linearsDim = [32,16], lreluslope=0.1),
+            # misc_feed = dict(infeatures=9, linearsDim = [8], lreluslope=0.1),
+            final_stage = dict(infeatures=16, linearsDim = [8], 
                 lreluslope=0.1), saveVizpath=None):
         """ create and return the model (a duelling net)"""
         num_sectors = self.num_sectors
@@ -346,10 +350,10 @@ class Agent():
                 super(net, self).__init__()
 
                 # build the feed-forward network -> sectors
-                self.sector_feed = make_simple_feedforward(infeatures=4*num_sectors, **sector_feed)
+                self.feedforward = make_simple_feedforward(**feedforward)
                 
                 # edge, patch-relative & time-memory
-                self.misc_feed = make_simple_feedforward(**misc_feed)
+                # self.misc_feed = make_simple_feedforward(**misc_feed)
 
                 # build the final stage
                 self.final_stage = make_simple_feedforward(**final_stage)
@@ -367,18 +371,19 @@ class Agent():
 
                 # split and reshape input
                 if debug: print(input.shape)
-                sector_part = input[:,self.s_part[0]:self.s_part[1]]
-                misc_part = input[:,self.m_part[0]:self.m_part[1]]
+                feedforward_part = input[:,self.s_part[0]:self.m_part[1]]
+                # sector_part = input[:,self.s_part[0]:self.s_part[1]]
+                # misc_part = input[:,self.m_part[0]:self.m_part[1]]
 
                 # process sector_part
-                if debug: print('\nfeedforward_part',sector_part.shape)
-                for layer in self.sector_feed: sector_part = layer(sector_part)     
+                if debug: print('\nfeedforward_part',feedforward_part.shape)
+                for layer in self.feedforward: feedforward_part = layer(feedforward_part)     
 
                 # process misc_part
-                if debug: print('\nmisc_part',misc_part.shape)
-                for layer in self.misc_feed: misc_part = layer(misc_part)         
+                # if debug: print('\nmisc_part',misc_part.shape)
+                # for layer in self.misc_feed: misc_part = layer(misc_part)         
 
-                add = sector_part + misc_part
+                add = feedforward_part #+ misc_part
 
                 # process merged features
                 if debug: print('concat',add.shape)
@@ -393,6 +398,10 @@ class Agent():
         self.nnet = net().to(TORCH_DEVICE)
         self.built_net = True
         print('total-params: ', sum(p.numel() for p in self.nnet.parameters() if p.requires_grad))
+
+        # if debug:
+        #     x = torch.tensor([self.makeState([[None]*4],None)], dtype=torch.float32, device=TORCH_DEVICE)
+        #     net().to(TORCH_DEVICE)(x)
 
         # show the architecture (by backward pass fn)
         if saveVizpath:

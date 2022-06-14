@@ -69,6 +69,3 @@ def make_simple_conv2dnet(inchannel:int, channels:list, kernels:list, strides:li
     if len(maxpkernels) == len(channels): conv.append(nn.MaxPool2d(maxpkernels[-1]))
     conv.append(nn.LeakyReLU(negative_slope=lreluslope))
     return conv
-
-def make_simple_skip_conv2d():
-    pass
