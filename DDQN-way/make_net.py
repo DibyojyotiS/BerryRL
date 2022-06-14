@@ -2,29 +2,73 @@ from torch import nn
 import torch.nn.functional as F
 import torch
 
-def make_net(inDim, outDim, hDim, output_probs=False, TORCH_DEVICE=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
-    class net(nn.Module):
-        def __init__(self, inDim, outDim, hDim, activation = F.relu):
-            super(net, self).__init__()
-            self.outDim = outDim
-            self.inputlayer = nn.Linear(inDim, hDim[0])
-            self.hiddenlayers = nn.ModuleList([nn.Linear(hDim[i], hDim[i+1]) for i in range(len(hDim)-1)])
-            self.outputlayer = nn.Linear(hDim[-1], outDim)
-            self.activation = activation
-            if outDim > 1 and not output_probs:
-                self.actadvs = nn.Linear(hDim[-1], outDim)
-
-        def forward(self, x: torch.Tensor) -> torch.Tensor:
-            t = self.activation(self.inputlayer(x))
-            for layer in self.hiddenlayers:
-                t = self.activation(layer(t))
-            o = self.outputlayer(t) # value or probs
-            if output_probs: o = F.log_softmax(o, -1)
-            elif self.outDim > 1:
-                advs = self.actadvs(t)
-                o = o + (advs - advs.mean())
-            return o
+class CircularPad1d(nn.Module):
+    def __init__(self, padding) -> None:
+        super(CircularPad1d,self).__init__()
+        self.padding = padding
     
-    netw = net(inDim, outDim, hDim)
-    netw.to(TORCH_DEVICE)
-    return netw
+    def __call__(self, x):
+        lpad,rpad = x[:,:,-self.padding:],x[:,:,:self.padding]
+        x = torch.cat([lpad, x, rpad], dim=-1)
+        return x
+
+    def extra_repr(self):
+        return f'padding={self.padding}'
+
+def make_simple_feedforward(infeatures, linearsDim = [32,16], lreluslope=0.1):
+    """ layer -> relu -> layer -> relu"""
+    # build the feed-forward network
+    input_layer = nn.Linear(infeatures, linearsDim[0])
+    ffn = nn.ModuleList([input_layer, nn.LeakyReLU(negative_slope=lreluslope)])
+    for i in range(1,len(linearsDim)):
+        ffn.extend([nn.Linear(linearsDim[i-1], linearsDim[i]), 
+                    nn.LeakyReLU(negative_slope=lreluslope)])
+    return ffn
+
+def make_simple_conv1dnet(inchannel:int, channels:list, kernels:list, strides:list, 
+                        paddings:list, maxpkernels:list, padding_mode='zeros', lreluslope=0.1):
+    """ odd layers are max-pools conv -> [maxpool?,relu,conv] -> maxpool? -> relu}"""
+    if padding_mode=='circular':
+        conv = nn.ModuleList([nn.Conv1d(inchannel, channels[0], kernels[0], strides[0])])
+        if paddings[0]: conv.insert(0, CircularPad1d(paddings[0]))
+    else:
+        conv = nn.ModuleList([nn.Conv1d(inchannel, channels[0], kernels[0], strides[0], 
+                                    paddings[0], padding_mode=padding_mode)])
+    for i in range(1, len(channels)):
+        if len(maxpkernels) > i-1 and maxpkernels[i-1]:
+            conv.append(nn.MaxPool1d(maxpkernels[i-1]))
+        conv.append(nn.LeakyReLU(negative_slope=lreluslope))
+        if padding_mode == 'circular': 
+            if paddings[i]: conv.append(CircularPad1d(paddings[i]))
+            conv.append(nn.Conv1d(channels[i-1], channels[i], kernels[i], strides[i]))
+        else:
+            conv.append(nn.Conv1d(channels[i-1], channels[i], kernels[i], 
+                        strides[i], paddings[i], padding_mode=padding_mode))
+    if len(maxpkernels) == len(channels): conv.append(nn.MaxPool1d(maxpkernels[-1]))
+    conv.append(nn.LeakyReLU(negative_slope=lreluslope))
+    return conv
+
+def make_simple_conv2dnet(inchannel:int, channels:list, kernels:list, strides:list, 
+                        paddings:list, maxpkernels:list, padding_mode='zeros', 
+                        lreluslope=0.1, add_batchnorms=False):
+    """ odd layers are max-pools {conv -> [bn?,maxpool?,relu,conv] -> bn?,maxpool? -> relu]} """
+    conv = nn.ModuleList([])
+    if add_batchnorms: conv.append(nn.BatchNorm2d(num_features=inchannel))
+    conv.append(nn.Conv2d(inchannel, channels[0], kernels[0], 
+                strides[0], paddings[0], padding_mode=padding_mode))
+                
+    for i in range(1, len(channels)):
+        if len(maxpkernels) > i-1 and maxpkernels[i-1]: 
+            conv.append(nn.MaxPool2d(maxpkernels[i-1]))
+        conv.append(nn.LeakyReLU(negative_slope=lreluslope))
+        if add_batchnorms: 
+            conv.append(nn.BatchNorm2d(num_features=channels[i-1]))
+        conv.append(nn.Conv2d(channels[i-1], channels[i], kernels[i], 
+                    strides[i], paddings[i], padding_mode=padding_mode))
+
+    if len(maxpkernels) == len(channels): conv.append(nn.MaxPool2d(maxpkernels[-1]))
+    conv.append(nn.LeakyReLU(negative_slope=lreluslope))
+    return conv
+
+def make_simple_skip_conv2d():
+    pass
