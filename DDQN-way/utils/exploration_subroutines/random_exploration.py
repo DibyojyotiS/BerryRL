@@ -48,7 +48,7 @@ def random_exploration(berryenv:BerryFieldEnv, discount=1.0, render=False):
             # update action_
             act_[p_action]=act_[(p_action+1)%8]=act_[(p_action-1)%8]=0
             if s <= 0: 
-                act_[action]=0.995
+                act_[action]=0.999
                 act_[(action+1)%8]=act_[(action-1)%8]=(1-act_[action])/2
             else: act_[action]=1.0
             p_action = action
@@ -88,7 +88,7 @@ if __name__ == "__main__":
             dx,dy = action_switcher[ac]
             x += dx; y+=dy
             pa[a]=pa[(a-1)%8]=pa[(a+1)%8]=0
-            pa[ac] =  0.995
+            pa[ac] =  0.999
             pa[(ac+1)%8]= pa[(ac-1)%8] = (1-pa[ac])/2
             # pa[ac] = 1/tmep
             # pa[(ac+1)%8]= pa[(ac-1)%8] = 0.1/tmep
@@ -101,7 +101,7 @@ if __name__ == "__main__":
 
     # np.random.seed(0)
 
-    p,ah = x(0,5000)
+    p,ah = x(0,10000)
     p = np.array(p)
     # plt.ylim(0,20000)
     # plt.xlim(0,20000)

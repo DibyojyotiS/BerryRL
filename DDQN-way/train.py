@@ -52,7 +52,7 @@ if __name__ == '__main__':
     print(nnet)
 
     # training stuffs
-    optim = Adam(nnet.parameters(), lr=0.005)
+    optim = Adam(nnet.parameters(), lr=0.0005)
     buffer = PrioritizedExperienceRelpayBuffer(int(6E4), alpha=0.95,
                                         beta=0.1, beta_rate=0.9/2000)
     tstrat = epsilonGreedyAction(0.5)

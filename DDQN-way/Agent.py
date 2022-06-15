@@ -28,10 +28,10 @@ class Agent():
     def __init__(self, berryField:BerryFieldEnv, mode='train', 
                 angle = 45, persistence=0.8, worth_offset=0.0, 
                 noise=0.01, nstep_transition=[1], 
-                reward_patch_discovery=False, positive_emphasis=0, 
+                reward_patch_discovery=True, positive_emphasis=0, 
                 add_exploration = True,
                 time_memory_delta=0.01, time_memory_exp=1,
-                debug=False, debugDir='.temp') -> None:
+                debug=False, debugDir='.temp', **kwargs) -> None:
         """ 
         ### parameters
         - berryField: BerryFieldEnv instance
@@ -64,7 +64,7 @@ class Agent():
         self.num_sectors = 360//angle        
         self.output_shape = self.get_output_shape()
         self._init_memories()
-        self.berryField.step = self.env_step_wrapper(self.berryField)
+        self.berryField.step = self.env_step_wrapper(self.berryField, **kwargs)
 
         self.print_information()
         
@@ -118,8 +118,6 @@ class Agent():
         
         MAXSIZE = max(berryField.berry_collision_tree.boxes[:,2])
         scale = 2/(berryField.REWARD_RATE*MAXSIZE)
-        initjuice = berryField.INTITAL_JUICE
-        drain_rate = berryField.DRAIN_RATE
         cur_n = berryField.action_space.n
         berry_env_step = berryField.step
 
@@ -151,8 +149,6 @@ class Agent():
             if self.reward_patch_discovery: 
                 reward += self._reward_patch_discovery(info)
             
-            # if reward>0: print(reward)
-
             # print stuff and reset stats
             if done: 
                 print(f'\n=== episode:{episode} Env-steps-taken:{actual_steps}')
