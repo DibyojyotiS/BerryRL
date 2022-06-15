@@ -1,0 +1,333 @@
+copied Agent.py to .temp\2022-6-15 11-52-22/pyfiles-backup
+copied ensemble.py to .temp\2022-6-15 11-52-22/pyfiles-backup
+copied eval.py to .temp\2022-6-15 11-52-22/pyfiles-backup
+copied train.py to .temp\2022-6-15 11-52-22/pyfiles-backup
+copied utils.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/copyfiles
+copied __init__.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/copyfiles
+
+copied random_env.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/env_generation
+copied __init__.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/env_generation
+
+copied exploration.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/exploration_subroutines
+copied random_exploration.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/exploration_subroutines
+copied __init__.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/exploration_subroutines
+
+copied make_net.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/nn_utils
+copied __init__.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/nn_utils
+
+copied utils.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/printing
+copied __init__.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/printing
+
+copied env_picture.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/visualization
+copied __init__.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils/visualization
+
+copied __init__.py to .temp\2022-6-15 11-52-22/pyfiles-backup/utils
+
+
+random_train_env
+getBabyEnv :
+	 logDir : .temp\2022-6-15 11-52-22
+	 initial_juice : 0.5
+	 end_on_boundary_hit : False
+	 penalize_boundary_hit : False
+	 allow_no_action : False
+	 no_action_threshold : 0.7
+	 add_exploration : True
+	 field_size : (20000, 20000)
+	 initial_pos_around_berry : True
+	 nberries : 80
+	 num_patches : 10
+	 patch_size : (2600, 2600)
+	 patch_with_agent_at_center : True
+	 sampling_type : 0
+	 seperation : 2400
+	 show : False
+	 spawn_radius : 100
+
+
+Agent :
+	 self : <Agent.Agent object at 0x0000026ED8842C48>
+	 berryField : <BerryFieldEnv instance>
+	 mode : train
+	 angle : 45
+	 persistence : 0.8
+	 worth_offset : 0.0
+	 noise : 0.01
+	 nstep_transition : [1]
+	 reward_patch_discovery : False
+	 positive_emphasis : 0
+	 add_exploration : False
+	 time_memory_delta : 0.01
+	 time_memory_exp : 1
+	 debug : False
+	 debugDir : .temp
+
+
+with living cost, rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)
+The state-transitions being appended 
+            every action will be as [[state, action, sum-reward, nextState, done]] where:
+            state is the one the model has taken action on,
+            sum-reward is the sum of the rewards in the skip-trajectory,
+            nextState is the new state after the action was repeated at most skip-steps times,
+            done is wether the terminal state was reached.
+agent now aware of total-juice
+total-params:  2025
+with living cost, rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)
+net(
+  (feedforward): ModuleList(
+    (0): Linear(in_features=39, out_features=32, bias=True)
+    (1): LeakyReLU(negative_slope=0.1)
+    (2): Linear(in_features=32, out_features=16, bias=True)
+    (3): LeakyReLU(negative_slope=0.1)
+  )
+  (final_stage): ModuleList(
+    (0): Linear(in_features=16, out_features=8, bias=True)
+    (1): LeakyReLU(negative_slope=0.1)
+  )
+  (valueL): Linear(in_features=8, out_features=1, bias=True)
+  (actadvs): Linear(in_features=8, out_features=8, bias=True)
+)
+PrioritizedBuffer of type replace-min
+optim = Adam (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    eps: 1e-08
+    lr: 0.005
+    weight_decay: 0
+), num_gradient_steps= 500
+optimizing the online-model after every 2000 actions
+batch size=512, gamma=0.9, alpha=0.95
+polyak_tau=0.1, update_freq=5
+1.9947916666666667
+1.4947916666666665
+1.4947916666666665
+
+=== episode:0 Env-steps-taken:48960
+action_counts: {0: 13937, 1: 3112, 2: 3003, 3: 15994, 4: 3168, 5: 3168, 6: 3366, 7: 3212}
+episode: 0/2000 -> reward: 4.984375, steps:48960, time-taken: 2.26min, time-elasped: 2.26min
+-> berries picked: 3 of 800 | patches-visited: [0, 4, 5] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 3 | amount-filled: 7.42%
+	| action-stats:  [0, 3] [1, 2]
+	| approx positives in sample 512: 1
+	| approx action-dist in sample 512: [3] [1]
+	Time taken saving stuff: 0.06s
+0.4947916666666667
+0.9947916666666666
+1.9947916666666667
+
+=== episode:0 Env-steps-taken:48672
+action_counts: {0: 0, 1: 0, 2: 616, 3: 12133, 4: 28344, 5: 0, 6: 7304, 7: 275}
+
+==================================================
+eval-episode: 0 -> reward: 3.484375, steps: 48672.0, wall-time: 41.06s
+-> berries picked: 3 of 800 | patches-visited: [0, 1] | juice left:-0.00
+==================================================
+
+1.4947916666666665
+
+=== episode:1 Env-steps-taken:48288
+action_counts: {0: 8107, 1: 5390, 2: 3443, 3: 9889, 4: 5388, 5: 7513, 6: 5797, 7: 2761}
+episode: 1/2000 -> reward: 1.4947916666666665, steps:48288, time-taken: 2.16min, time-elasped: 5.11min
+-> berries picked: 1 of 800 | patches-visited: [0, 1] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 4 | amount-filled: 14.73%
+	| action-stats:  [0, 2, 3] [1, 1, 2]
+	| approx positives in sample 512: 5
+	| approx action-dist in sample 512: [3] [5]
+	Time taken saving stuff: 0.01s
+1.4947916666666665
+1.4947916666666665
+1.9947916666666667
+0.9947916666666666
+1.4947916666666665
+0.4947916666666667
+0.4947916666666667
+1.9947916666666667
+1.9947916666666667
+1.9947916666666667
+1.9947916666666667
+1.4947916666666665
+1.4947916666666665
+
+=== episode:2 Env-steps-taken:51744
+action_counts: {0: 4521, 1: 6479, 2: 5357, 3: 7172, 4: 8008, 5: 9999, 6: 4554, 7: 5654}
+episode: 2/2000 -> reward: 19.432291666666668, steps:51744, time-taken: 2.39min, time-elasped: 7.51min
+-> berries picked: 13 of 800 | patches-visited: [0, 7] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 17 | amount-filled: 22.57%
+	| action-stats:  [0, 2, 3, 4, 7] [1, 5, 7, 2, 2]
+	| approx positives in sample 512: 1
+	| approx action-dist in sample 512: [3] [1]
+	Time taken saving stuff: 0.01s
+0.4947916666666667
+1.9947916666666667
+0.9947916666666666
+1.4947916666666665
+
+=== episode:3 Env-steps-taken:48960
+action_counts: {0: 3366, 1: 5863, 2: 3960, 3: 22395, 4: 3091, 5: 3289, 6: 2948, 7: 4048}
+episode: 3/2000 -> reward: 4.979166666666666, steps:48960, time-taken: 1.95min, time-elasped: 9.46min
+-> berries picked: 4 of 800 | patches-visited: [0, 6] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 21 | amount-filled: 29.99%
+	| action-stats:  [0, 2, 3, 4, 7] [3, 7, 7, 2, 2]
+	| approx positives in sample 512: 2
+	| approx action-dist in sample 512: [0, 7] [1, 1]
+	Time taken saving stuff: 0.01s
+1.4947916666666665
+
+=== episode:4 Env-steps-taken:48288
+action_counts: {0: 3696, 1: 3696, 2: 3630, 3: 5104, 4: 9744, 5: 14630, 6: 3102, 7: 4686}
+episode: 4/2000 -> reward: 1.4947916666666665, steps:48288, time-taken: 2.04min, time-elasped: 11.50min
+-> berries picked: 1 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 22 | amount-filled: 37.31%
+	| action-stats:  [0, 2, 3, 4, 7] [3, 7, 7, 2, 3]
+	| approx positives in sample 512: 4
+	| approx action-dist in sample 512: [3, 4, 7] [2, 1, 1]
+	Time taken saving stuff: 0.01s
+0.4947916666666667
+0.9947916666666666
+
+=== episode:5 Env-steps-taken:48288
+action_counts: {0: 14267, 1: 4323, 2: 5126, 3: 3300, 4: 9922, 5: 5181, 6: 2836, 7: 3333}
+episode: 5/2000 -> reward: 1.4895833333333333, steps:48288, time-taken: 1.94min, time-elasped: 13.45min
+-> berries picked: 2 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 24 | amount-filled: 44.63%
+	| action-stats:  [0, 2, 3, 4, 7] [3, 9, 7, 2, 3]
+	| approx positives in sample 512: 3
+	| approx action-dist in sample 512: [0, 2] [1, 2]
+	Time taken saving stuff: 0.01s
+1.9947916666666667
+1.9947916666666667
+1.4947916666666665
+0.9947916666666666
+0.9947916666666666
+0.9947916666666666
+0.4947916666666667
+
+=== episode:6 Env-steps-taken:49728
+action_counts: {0: 4609, 1: 4719, 2: 16621, 3: 3696, 4: 6226, 5: 3212, 6: 7345, 7: 3300}
+episode: 6/2000 -> reward: 8.963541666666666, steps:49728, time-taken: 2.07min, time-elasped: 15.52min
+-> berries picked: 7 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 31 | amount-filled: 52.16%
+	| action-stats:  [0, 2, 3, 4, 6, 7] [3, 12, 8, 4, 1, 3]
+	| approx positives in sample 512: 3
+	| approx action-dist in sample 512: [0, 2, 3] [1, 1, 1]
+	Time taken saving stuff: 0.01s
+0.9947916666666666
+1.4947916666666665
+0.9947916666666666
+0.4947916666666667
+
+=== episode:7 Env-steps-taken:48768
+action_counts: {0: 6226, 1: 6006, 2: 4653, 3: 3344, 4: 14058, 5: 3663, 6: 5142, 7: 5676}
+episode: 7/2000 -> reward: 3.979166666666666, steps:48768, time-taken: 2.09min, time-elasped: 17.61min
+-> berries picked: 4 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 35 | amount-filled: 59.55%
+	| action-stats:  [0, 2, 3, 4, 6, 7] [4, 13, 8, 5, 1, 4]
+	| approx positives in sample 512: 9
+	| approx action-dist in sample 512: [0, 2, 3, 4] [4, 3, 1, 1]
+	Time taken saving stuff: 0.00s
+1.4947916666666665
+1.4947916666666665
+1.4947916666666665
+0.9947916666666666
+1.9947916666666667
+1.4947916666666665
+0.9947916666666666
+0.4947916666666667
+1.4947916666666665
+1.4947916666666665
+1.9947916666666667
+0.4947916666666667
+0.4947916666666667
+0.9947916666666666
+
+=== episode:8 Env-steps-taken:51360
+action_counts: {0: 8151, 1: 5314, 2: 5225, 3: 5291, 4: 9724, 5: 3289, 6: 6424, 7: 7942}
+episode: 8/2000 -> reward: 17.427083333333332, steps:51360, time-taken: 2.35min, time-elasped: 19.96min
+-> berries picked: 14 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 49 | amount-filled: 67.33%
+	| action-stats:  [0, 2, 3, 4, 5, 6, 7] [10, 14, 9, 6, 1, 3, 6]
+	| approx positives in sample 512: 7
+	| approx action-dist in sample 512: [0, 2, 5, 6] [3, 2, 1, 1]
+	Time taken saving stuff: 0.01s
+0.4947916666666667
+1.9947916666666667
+1.9947916666666667
+1.4947916666666665
+1.4947916666666665
+1.9947916666666667
+0.4947916666666667
+1.4947916666666665
+
+=== episode:9 Env-steps-taken:50208
+action_counts: {0: 5214, 1: 3795, 2: 12705, 3: 3751, 4: 3564, 5: 6747, 6: 8767, 7: 5665}
+episode: 9/2000 -> reward: 11.45833333333333, steps:50208, time-taken: 2.35min, time-elasped: 22.32min
+-> berries picked: 8 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 57 | amount-filled: 74.94%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7] [14, 1, 14, 9, 6, 1, 5, 7]
+	| approx positives in sample 512: 8
+	| approx action-dist in sample 512: [0, 2, 6, 7] [3, 1, 1, 3]
+	Time taken saving stuff: 0.01s
+1.4947916666666665
+1.9947916666666667
+1.4947916666666665
+1.9947916666666667
+
+=== episode:10 Env-steps-taken:49344
+action_counts: {0: 4961, 1: 3003, 2: 13178, 3: 6048, 4: 3278, 5: 2893, 6: 3179, 7: 12804}
+episode: 10/2000 -> reward: 6.979166666666667, steps:49344, time-taken: 2.19min, time-elasped: 24.51min
+-> berries picked: 4 of 800 | patches-visited: [0, 1] | juice left:-0.00
+	| epsilon: 0.5
+	| skipsteps: 10
+	| positive-in-buffer: 61 | amount-filled: 82.42%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7] [14, 1, 15, 10, 7, 1, 6, 7]
+	| approx positives in sample 512: 3
+	| approx action-dist in sample 512: [3, 6] [1, 2]
+	Time taken saving stuff: 0.05s
+0.4947916666666667
+0.9947916666666666
+0.9947916666666666
+1.4947916666666665
+
+=== episode:1 Env-steps-taken:48768
+action_counts: {0: 12221, 1: 0, 2: 5285, 3: 14630, 4: 0, 5: 2893, 6: 13739, 7: 0}
+
+==================================================
+eval-episode: 10 -> reward: 3.9791666666666665, steps: 48768.0, wall-time: 45.39s
+-> berries picked: 4 of 800 | patches-visited: [1] | juice left:-0.00
+==================================================
+
+0.4947916666666667
+1.9947916666666667
+1.9947916666666667
+0.9947916666666666
+1.9947916666666667
+0.9947916666666666
+0.9947916666666666
+1.4947916666666665
+1.9947916666666667
+0.4947916666666667
+1.9947916666666667
+1.9947916666666667
+1.9947916666666667
+1.4947916666666665

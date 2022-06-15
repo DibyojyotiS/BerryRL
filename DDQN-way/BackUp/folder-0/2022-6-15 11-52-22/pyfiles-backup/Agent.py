@@ -29,7 +29,7 @@ class Agent():
                 angle = 45, persistence=0.8, worth_offset=0.0, 
                 noise=0.01, nstep_transition=[1], 
                 reward_patch_discovery=False, positive_emphasis=0, 
-                add_exploration = True,
+                add_exploration = False,
                 time_memory_delta=0.01, time_memory_exp=1,
                 debug=False, debugDir='.temp') -> None:
         """ 
@@ -114,7 +114,7 @@ class Agent():
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
         for better gradients..., also rewards are clipped between 0 and 2 """
         print('with living cost, rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)')
-        print('rewards are clipped between 0 and 2')
+        # print('rewards are clipped between -2 and 2')
         
         MAXSIZE = max(berryField.berry_collision_tree.boxes[:,2])
         scale = 2/(berryField.REWARD_RATE*MAXSIZE)
@@ -151,13 +151,12 @@ class Agent():
             if self.reward_patch_discovery: 
                 reward += self._reward_patch_discovery(info)
             
-            # if reward>0: print(reward)
+            if reward>0: print(reward)
 
             # print stuff and reset stats
             if done: 
                 print(f'\n=== episode:{episode} Env-steps-taken:{actual_steps}')
                 print('action_counts:',action_counts)
-                print('picked: ', berryField.get_numBerriesPicked())
                 actual_steps = 0
                 episode+=1
                 for k in action_counts:action_counts[k]=0
@@ -174,6 +173,7 @@ class Agent():
         self.visited_patches = set() 
 
         # for persistence
+        # self.prev_stats = None
         self.prev_sectorized_state = np.zeros((4,self.num_sectors))
 
         # for time memory
@@ -249,11 +249,10 @@ class Agent():
         mem_x, mem_y = self.time_memory_data.shape
         x = int(x//(self.berryField.FIELD_SIZE[0]//mem_x))
         y = int(y//(self.berryField.FIELD_SIZE[1]//mem_y))
+        # index = int(x + y*mem_x)
         self.time_memory_data *= 1-self.time_memory_delta
         self.time_memory_data[x][y] += self.time_memory_delta
-        current_time = min(1,self.time_memory_data[x][y])**self.time_memory_exp
-        self.time_memory = self.time_memory*self.persistence +\
-                            (1-self.persistence)*current_time
+        self.time_memory = min(1,self.time_memory_data[x][y])**self.time_memory_exp
         return
 
     def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
@@ -274,11 +273,16 @@ class Agent():
         edge_dist = info['scaled_dist_from_edge']
         patch_relative = info['patch-relative']
         total_juice = info['total_juice']
-        # rel_p = info['relative_coordinates']
+        rel_p = info['relative_coordinates']
 
         # make the state by concatenating sectorized_states and memories
-        state = np.concatenate([*sectorized_states, edge_dist, patch_relative, 
-                                [total_juice], [self.time_memory]])
+        stats = np.concatenate([edge_dist, patch_relative, [total_juice]])        
+        state = np.concatenate([*sectorized_states, stats, [self.time_memory]])
+
+        # # apply persistence
+        # if self.prev_stats is not None: 
+        #     state = self.prev_stats * self.persistence + (1-self.persistence)*stats
+        # self.prev_stats = stats
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
