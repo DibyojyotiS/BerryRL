@@ -166,7 +166,7 @@ class Agent():
         if avg_worth <= 1e-2:
             tmp1 = self.edge_mem**2
             self.edge_mem = np.where(self.edge_mem > tmp1, tmp1, tmp2)
-            print(self.edge_mem)
+            # print(self.edge_mem)
         else: self.edge_mem = tmp2
         return
 
