@@ -4,7 +4,6 @@
 import os
 from collections import deque
 from typing import Union
-import torchviz
 
 import imageio
 import numpy as np
@@ -30,8 +29,7 @@ class Agent():
                 angle = 45, persistence=0.8, worth_offset=0.0, 
                 noise=0.01, field_grid_size=(40,40), memory_alpha=0.9965, 
                 time_memory_delta=0.005, time_memory_exp=1, nstep_transition=[1], 
-                reward_patch_discovery=False, positive_emphasis=0, 
-                debug=False, debugDir='.temp') -> None:
+                reward_patch_discovery=False, debug=False, debugDir='.temp') -> None:
         """ 
         ### parameters
         - berryField: BerryFieldEnv instance
@@ -62,7 +60,6 @@ class Agent():
         self.time_memory_exp = time_memory_exp
         self.nstep_transitions = nstep_transition # for approx n-step TD effect
         self.reward_patch_discovery = reward_patch_discovery
-        self.positive_emphasis = positive_emphasis
 
         # init memories and other stuff
         self.num_sectors = 360//angle        
@@ -95,6 +92,24 @@ class Agent():
             print("Rewarding the agent for discovering new patches")
         print('agent now aware of total-juice')
 
+    def berry_worth_function(self, sizes, distances):
+        """ the reward that can be gained by pursuing a berry of given size and distance
+        we note that the distances are scaled to be in range 0 to 1 by dividing by half-diag
+        of observation space """
+        # for computation of berry worth, can help to change 
+        # the agent's preference of different sizes of berries. 
+        rr, dr = self.berryField.REWARD_RATE, self.berryField.DRAIN_RATE
+        worth = rr * sizes - dr * distances * self.berryField.HALFDIAGOBS
+        
+        # scale worth to 0 - 1 range
+        min_worth, max_worth = rr * 10 - dr * self.berryField.HALFDIAGOBS, rr * 50
+        worth = (worth - min_worth)/(max_worth - min_worth)
+
+        # incorporate offset
+        worth = (worth + self.worth_offset)/(1 + self.worth_offset)
+
+        return worth
+
     def _init_memories(self):
         memory_grid_size = self.field_grid_size[0]*self.field_grid_size[1]
 
@@ -113,25 +128,47 @@ class Agent():
 
         # for persistence
         self.prev_sectorized_state = np.zeros((4,self.num_sectors))
+
+        # a memory for seeing the edge
+        self.edge_mem = np.ones(4)
         return
 
-    def berry_worth_function(self, sizes, distances):
-        """ the reward that can be gained by pursuing a berry of given size and distance
-        we note that the distances are scaled to be in range 0 to 1 by dividing by half-diag
-        of observation space """
-        # for computation of berry worth, can help to change 
-        # the agent's preference of different sizes of berries. 
-        rr, dr = self.berryField.REWARD_RATE, self.berryField.DRAIN_RATE
-        worth = rr * sizes - dr * distances * self.berryField.HALFDIAGOBS
+    def _update_memories(self, info, avg_worth):
+        """ update the path-memory and berry memory """
+        x,y = info['position']
+        edges = info['scaled_dist_from_edge']
+
+        # if agent touches the top/left edge of field, this will cause
+        # an Index error. Subtract a small amount to avoid this
+        if x == self.berryField.FIELD_SIZE[0]: x -= EPSILON
+        if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
+
+        # find the corresponding index in memory
+        x //= self.divLenX
+        y //= self.divLenY
+        index = x + y*self.field_grid_size[0]
+        index = int(index)
+
+        # decay the path memory and updaate
+        self.path_memory *= self.memory_alpha 
+        self.path_memory[index] = 1
         
-        # scale worth to 0 - 1 range
-        min_worth, max_worth = rr * 10 - dr * self.berryField.HALFDIAGOBS, rr * 50
-        worth = (worth - min_worth)/(max_worth - min_worth)
+        # update berry memory
+        self.berry_memory[index] = 0.2*avg_worth + 0.8*self.berry_memory[index]
 
-        # incorporate offset
-        worth = (worth + self.worth_offset)/(1 + self.worth_offset)
+        # decay time memory and update time_memory
+        self.time_memory_data *= 1-self.time_memory_delta
+        self.time_memory_data[index] += self.time_memory_delta
+        self.time_memory = min(1,self.time_memory_data[index])**self.time_memory_exp
 
-        return worth
+        # update edge memories
+        tmp2 = 0.9*self.edge_mem + 0.1*np.array(edges)
+        if avg_worth <= 1e-2:
+            tmp1 = self.edge_mem**2
+            self.edge_mem = np.where(self.edge_mem > tmp1, tmp1, tmp2)
+            print(self.edge_mem)
+        else: self.edge_mem = tmp2
+        return
 
     def _reward_patch_discovery(self, skip_transitions):
         # skip_transitions -> [[observation, info, reward, done]]
@@ -194,34 +231,6 @@ class Agent():
 
         self.prev_sectorized_state = np.array([a1,a2,a3,a4])
         return [a1,a2,a3,a4], avg_worth
-
-    def _update_memories(self, info, avg_worth):
-        """ update the path-memory and berry memory """
-        x,y = info['position']
-
-        # if agent touches the top/left edge of field, this will cause
-        # an Index error. Subtract a small amount to avoid this
-        if x == self.berryField.FIELD_SIZE[0]: x -= EPSILON
-        if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
-
-        # find the corresponding index in memory
-        x //= self.divLenX
-        y //= self.divLenY
-        index = x + y*self.field_grid_size[0]
-        index = int(index)
-
-        # decay the path memory and updaate
-        self.path_memory *= self.memory_alpha 
-        self.path_memory[index] = 1
-        
-        # update berry memory
-        self.berry_memory[index] = 0.2*avg_worth + 0.8*self.berry_memory[index]
-
-        # decay time memory and update time_memory
-        self.time_memory_data *= 1-self.time_memory_delta
-        self.time_memory_data[index] += self.time_memory_delta
-        self.time_memory = min(1,self.time_memory_data[index])**self.time_memory_exp
-        return
 
     def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
@@ -297,133 +306,115 @@ class Agent():
             if len(self.state_deque) >= n+1:
                 reward0 = self.state_deque[-n-1][-1]
                 oldstate, oldaction, reward1 = self.state_deque[-n]
-                sum_reward = reward1-reward0
-                # sum_reward = max(min(reward1-reward0,2),-2) # clipping so that this doesnot wreck priority buffer
+                sum_reward = max(min(reward1-reward0,2),-2) # clipping so that this doesnot wreck priority buffer
                 transition = [oldstate, oldaction, sum_reward, nextState, done]
-                if self.positive_emphasis and sum_reward > 0:
-                    transitions.extend([transition]*self.positive_emphasis)
-                else: transitions.append(transition)
+                transitions.append(transition)
         return transitions
 
     def getNet(self, TORCH_DEVICE, debug=False,
-            sector_feed = dict(linearsDim = [16,8], lreluslope=0.1),
-            misc_feed = dict(linearsDim = [8], lreluslope=0.1),
+            feedforward = dict(linearsDim = [16,8], lreluslope=0.1),
             memory_conv = dict(channels = [8,16,16], kernels = [4,3,3], 
                 strides = [2,2,2], paddings = [3,2,1], maxpkernels = [2,0,2],
                 padding_mode='zeros', lreluslope=0.1, add_batchnorms=False),
-            conv_feed = dict(infeatures=64, linearsDim = [8], lreluslope=0.1),
-            final_stage = dict(infeatures=8, linearsDim = [8], 
-                lreluslope=0.1), saveVizpath=None):
+            final_stage = dict(infeatures=136, linearsDim = [16,16], 
+                lreluslope=0.1)):
         """ create and return the model (a duelling net)"""
         num_sectors = self.num_sectors
         memory_shape = self.field_grid_size
         memory_size = memory_shape[0]*memory_shape[1]
         outDims = self.berryField.action_space.n
 
-        class net(nn.Module):
-            def __init__(self):
-                super(net, self).__init__()
+        print("USING INHIBITION AT EVALUATION (i.e iff mode='eval')")
+        def apply_inhibitions(x):
+            l,r,t,b = self.edge_mem
+            x[:,0] *= 0.2*l + 0.6*t + 0.2*r
+            x[:,1] *= 0.5*t + 0.5*r
+            x[:,2] *= 0.2*t + 0.6*r + 0.2*b
+            x[:,3] *= 0.5*r + 0.5*b
+            x[:,4] *= 0.2*l + 0.6*b + 0.2*r
+            x[:,5] *= 0.5*b + 0.5*l
+            x[:,6] *= 0.2*b + 0.6*l + 0.2*t
+            x[:,7] *= 0.5*l + 0.5*t
+            return x
 
-                # build the feed-forward network -> sectors
-                self.sector_feed = make_simple_feedforward(infeatures=4*num_sectors, **sector_feed)
-                
-                # edge, patch-relative & time-memory
-                self.misc_feed = make_simple_feedforward(infeatures=7, **misc_feed)
+        class net(nn.Module):
+            def __init__(self2):
+                super(net, self2).__init__()
+
+                # build the feed-forward network -> sectors, edge, patch-relative & time-memory
+                self2.feedforward = make_simple_feedforward(infeatures=4*num_sectors+7, **feedforward)
 
                 # build the conv-networks
-                self.memory_conv = make_simple_conv2dnet(inchannel=2, **memory_conv)
-                
-                # process conv
-                self.conv_feed = make_simple_feedforward(**conv_feed)
+                self2.memory_conv1 = make_simple_conv2dnet(inchannel=1, **memory_conv)
+                self2.memory_conv2 = make_simple_conv2dnet(inchannel=1, **memory_conv)
 
                 # build the final stage
-                self.final_stage = make_simple_feedforward(**final_stage)
+                self2.final_stage = make_simple_feedforward(**final_stage)
                 
                 # for action advantage estimates
-                self.valueL = nn.Linear(final_stage['linearsDim'][-1], 1)
-                self.actadvs = nn.Linear(final_stage['linearsDim'][-1], outDims)
+                self2.valueL = nn.Linear(final_stage['linearsDim'][-1], 1)
+                self2.actadvs = nn.Linear(final_stage['linearsDim'][-1], outDims)
 
                 # indices to split at
-                self.s_part = (0, 4*num_sectors)
-                self.m_part = (4*num_sectors,4*num_sectors+7)
-                self.mempart = (self.m_part[1], self.m_part[1]+2*memory_shape[0]*memory_shape[1])
+                self2.ffpart = (0, 4*num_sectors+7)
+                self2.mempart = (self2.ffpart[1], self2.ffpart[1]+2*memory_shape[0]*memory_shape[1])
 
                 print('seperate conv-nets for berry and path memory')
 
-            def forward(self, input:Tensor):
+            def forward(self2, input:Tensor):
 
                 # split and reshape input
                 if debug: print(input.shape)
-                sector_part = input[:,self.s_part[0]:self.s_part[1]]
-                misc_part = input[:,self.m_part[0]:self.m_part[1]]
-                memory_part = input[:,self.mempart[0]:self.mempart[1]]
+                feedforward_part = input[:,self2.ffpart[0]:self2.ffpart[1]]
+                memory_part = input[:,self2.mempart[0]:self2.mempart[1]]
 
                 # conv2d requires 4d inputs
                 if debug: print('memory_part:', memory_part.shape)
                 bery_memory = memory_part[:,:memory_size].reshape((-1,1,*memory_shape))
                 path_memory = memory_part[:,memory_size:].reshape((-1,1,*memory_shape))
-                memory = torch.cat([bery_memory, path_memory], dim=1)
 
-                # process sector_part
-                if debug: print('\nfeedforward_part',sector_part.shape)
-                for layer in self.sector_feed: sector_part = layer(sector_part)     
+                # process feedforward_part
+                if debug: print('\nfeedforward_part',feedforward_part.shape)
+                for layer in self2.feedforward:
+                    feedforward_part = layer(feedforward_part)        
 
-                # process misc_part
-                if debug: print('\nmisc_part',misc_part.shape)
-                for layer in self.misc_feed: misc_part = layer(misc_part)         
+                # process path_memory
+                if debug: print('\npath_memory', path_memory.shape)
+                for i, layer in enumerate(self2.memory_conv1):
+                    path_memory = layer(path_memory)
+                    if debug: print(layer.__class__.__name__,i,path_memory.shape)
 
-                # process memory
-                if debug: print('\nmemory', memory.shape)
-                for i, layer in enumerate(self.memory_conv):
-                    memory = layer(memory)
-                    if debug: print(layer.__class__.__name__,i,memory.shape)
-
-                # merge features
-                memory = torch.flatten(memory, start_dim=1)
-                for layer in self.conv_feed: memory = layer(memory)
-                concat = memory + sector_part + misc_part
-
-                # # process path_memory
-                # if debug: print('\npath_memory', path_memory.shape)
-                # for i, layer in enumerate(self.memory_conv):
-                #     path_memory = layer(path_memory)
-                #     if debug: print(layer.__class__.__name__,i,path_memory.shape)
-
-                # # process bery_memory
-                # if debug: print('\nberry_memory', bery_memory.shape)
-                # for i, layer in enumerate(self.memory_conv2):
-                #     bery_memory = layer(bery_memory)
-                #     if debug: print(layer.__class__.__name__,i,bery_memory.shape)
+                # process bery_memory
+                if debug: print('\nberry_memory', bery_memory.shape)
+                for i, layer in enumerate(self2.memory_conv2):
+                    bery_memory = layer(bery_memory)
+                    if debug: print(layer.__class__.__name__,i,bery_memory.shape)
 
                 # merge all
-                # path_memory = torch.flatten(path_memory, start_dim=1)
-                # bery_memory = torch.flatten(bery_memory, start_dim=1)
-                # if debug: print('\nfor concat',feedforward_part.shape, 
-                #                 bery_memory.shape, path_memory.shape)
-                # concat = torch.cat([feedforward_part, bery_memory, path_memory], dim=1)
+                path_memory = torch.flatten(path_memory, start_dim=1)
+                bery_memory = torch.flatten(bery_memory, start_dim=1)
+                if debug: print('\nfor concat',feedforward_part.shape, 
+                                bery_memory.shape, path_memory.shape)
 
                 # process merged features
+                concat = torch.cat([feedforward_part, bery_memory, path_memory], dim=1)
                 if debug: print('concat',concat.shape)
-                for layer in self.final_stage:
+                for layer in self2.final_stage:
                     concat = layer(concat)
 
-                value = self.valueL(concat)
-                advs = self.actadvs(concat)
+                value = self2.valueL(concat)
+                advs = self2.actadvs(concat)
                 qvalues = value + (advs - advs.mean())
                 
+                # apply inhibition to qvalues
+                if not self.istraining:
+                    qvalues = apply_inhibitions(qvalues)
+
                 return qvalues
         
         self.nnet = net().to(TORCH_DEVICE)
         self.built_net = True
         print('total-params: ', sum(p.numel() for p in self.nnet.parameters() if p.requires_grad))
-
-        # show the architecture (by backward pass fn)
-        if saveVizpath:
-            head = os.path.split(saveVizpath)[0]
-            if not os.path.exists(head): os.makedirs(head)
-            x = torch.tensor([self.makeState([[None]*4],None)], dtype=torch.float32, device=TORCH_DEVICE)
-            viz= torchviz.make_dot(self.nnet(x), params=dict(list(self.nnet.named_parameters())))
-            viz.render(saveVizpath, format='png')
         return self.nnet
 
     def showDebug(self, nnet:Union[nn.Module,None]=None, debugDir = None, f=20, gif=False):

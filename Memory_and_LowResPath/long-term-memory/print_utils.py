@@ -67,7 +67,7 @@ def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None, show=Tr
     if title: 
         path = f'{LOG_DIR}/analytics-berry-field/{episode}/results.txt'
         with open(path,'r') as f: 
-            nberries = f.readlines()[-2].split(':')[-1].strip()
+            nberries = f.readlines()[-1].split(':')[-1].strip()
         plt.title(str(title) + f'\n{nberries} berries picked')
     if savepth: plt.savefig(savepth)
     if show: plt.show()

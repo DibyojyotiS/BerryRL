@@ -6,11 +6,12 @@ from torch.optim.adam import Adam
 from torch.optim.rmsprop import RMSprop
 
 from Agent import *
-from get_random_env import env_step_wrapper, getRandomEnv
+from get_baby_env import env_step_wrapper, getRandomEnv
 from make_net import *
 from print_utils import Env_print_fn, my_print_fn
 
 LOG_DIR = os.path.join('.temp' , '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
+# LOG_DIR = '.temp/2022-6-10 5-10-29'
 RESUME_DIR= LOG_DIR
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -23,8 +24,7 @@ def random_train_env():
     trainEnv = getRandomEnv(field_size=(20000,20000), 
         patch_size=(2600,2600), num_patches=10, seperation=2400, 
         nberries=80, logDir=LOG_DIR, spawn_radius=100, 
-        patch_with_agent_at_center=True,
-        penalize_boundary_hit=True)
+        penalize_boundary_hit=False)
     return trainEnv
 
 def original_train_env():
@@ -50,27 +50,25 @@ if __name__ == '__main__':
     # trainEnv = original_train_env() # uncomment to train on the original env
     
     # make the agent and network
-    agent = Agent(trainEnv, positive_emphasis=50, nstep_transition=[1,50,100,200,300,400])
-    nnet = agent.getNet(TORCH_DEVICE, saveVizpath=f"{LOG_DIR}/modelViz")
-    print(nnet)
+    agent = Agent(trainEnv, nstep_transition=[1,30,60])
+    nnet = agent.getNet(TORCH_DEVICE); print(nnet)
 
     # training stuffs
-    optim = Adam(nnet.parameters(), lr=0.00005)
-    buffer = PrioritizedExperienceRelpayBuffer(int(1E5), alpha=0.9,
-                beta=0.1, beta_rate=0.9/2000, bufferType='circular')
+    optim = Adam(nnet.parameters(), lr=0.00002)
+    buffer = PrioritizedExperienceRelpayBuffer(int(6E4), alpha=0.96,
+                                        beta=0.1, beta_rate=0.9/2000)
     tstrat = epsilonGreedyAction(0.5)
 
-    ddqn_trainer = DDQN(trainEnv, nnet, tstrat, optim, buffer, batchSize=64, 
-                        gamma=0.7, update_freq=5, MaxTrainEpisodes=2000, skipSteps=10,
-                        optimize_every_kth_action=-1, num_gradient_steps=1000,
+    print('lr used = 0.00002, num_gradient_steps= 500')
+    print("optimizing the online-model after every 2000 actions")
+    print("batch size=512, gamma=0.8, alpha=0.96")
+    print("polyak_tau=0.1, update_freq=5")
+    ddqn_trainer = DDQN(trainEnv, nnet, tstrat, optim, buffer, batchSize=512, 
+                        gamma=0.8, update_freq=5, MaxTrainEpisodes=2000, skipSteps=10,
+                        optimize_every_kth_action=2000, num_gradient_steps=500,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
                         evalFreq=10, printFreq=1, polyak_average=True, polyak_tau=0.1,
                         log_dir=LOG_DIR, resumeable_snapshot=10, device=TORCH_DEVICE)
-
-    print(f'optim = {ddqn_trainer.optimizer}, num_gradient_steps= {ddqn_trainer.num_gradient_steps}')
-    print(f"optimizing the online-model after every {ddqn_trainer.optimize_every_kth_action} actions")
-    print(f"batch size={ddqn_trainer.batchSize}, gamma={ddqn_trainer.gamma}, alpha={buffer.alpha}")
-    print(f"polyak_tau={ddqn_trainer.tau}, update_freq={ddqn_trainer.update_freq_episode}")
     
     # try to resume training
     if resume_run: ddqn_trainer.attempt_resume(RESUME_DIR)    
