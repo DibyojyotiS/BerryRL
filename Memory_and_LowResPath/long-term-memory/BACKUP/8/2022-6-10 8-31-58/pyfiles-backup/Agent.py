@@ -436,7 +436,9 @@ class Agent():
             giffile = imageio.get_writer(f'{debugDir}/debug.gif')
 
         # move nnet to cpu
-        if nnet: nnet.cpu()
+        if nnet: 
+            nnet.cpu()
+            self._init_memories()
 
         fig, ax = plt.subplots(2,3, figsize=(15, 10))
         plt.tight_layout(pad=5)
