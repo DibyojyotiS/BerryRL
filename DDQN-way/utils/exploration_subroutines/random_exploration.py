@@ -53,7 +53,7 @@ def random_exploration(berryenv:BerryFieldEnv, discount=1.0, render=False, rende
             p_action = action
 
             if not done and render and steps%renderS==0: berryenv.render()
-            if not ((len(listberries) == 0) or current_patch is None): break
+            if not (len(listberries) == 0): break
             if done: break
         
         return steps, listberries, reward_, done, info
