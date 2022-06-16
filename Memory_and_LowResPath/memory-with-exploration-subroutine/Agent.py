@@ -26,12 +26,23 @@ class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv, mode='train', 
+
+                # params controlling the state and state-transitions
                 angle = 45, persistence=0.8, worth_offset=0.0, 
                 noise=0.01, nstep_transition=[1], 
                 reward_patch_discovery=True, positive_emphasis=0, 
                 add_exploration = True,
+
+                # params related to berry & path memory
+                memory_grid_size=(40,40), path_memory_gamma=0.9965, 
+                berry_memory_gamma=0.9999,
+
+                # params related to time memory
                 time_memory_delta=0.01, time_memory_exp=1,
-                debug=False, debugDir='.temp', render=False, renderstep=10) -> None:
+
+                # misc params
+                debug=False, debugDir='.temp', 
+                render=False, renderstep=10) -> None:
         """ 
         ### parameters
         - berryField: BerryFieldEnv instance
@@ -59,6 +70,9 @@ class Agent():
         self.add_exploration= add_exploration
         self.time_memory_delta = time_memory_delta
         self.time_memory_exp = time_memory_exp
+        self.memory_grid_size= memory_grid_size
+        self.path_memory_gamma= path_memory_gamma
+        self.berry_memory_gamma= berry_memory_gamma
         self.render = render
         self.renderstep = renderstep
 
@@ -66,7 +80,7 @@ class Agent():
         self.num_sectors = 360//angle        
         self.output_shape = self.get_output_shape()
         self._init_memories()
-        self.berryField.step = self.env_step_wrapper(self.berryField, render, renderstep)
+        self.berryField.step = self.env_step_wrapper(self.berryField,render,renderstep)
 
         self.print_information()
         
@@ -112,7 +126,7 @@ class Agent():
 
         return worth
 
-    def env_step_wrapper(self, berryField:BerryFieldEnv, render, renderstep):
+    def env_step_wrapper(self, berryField:BerryFieldEnv,render,renderstep):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
         for better gradients..., also rewards are clipped between 0 and 2 """
         print('with living cost, rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)')
@@ -126,7 +140,7 @@ class Agent():
         # add the exploration subroutine to env action space
         if self.add_exploration:
             print('Exploration subroutine as an action')
-            exploration_step = random_exploration(berryField, render, renderstep)
+            exploration_step = random_exploration(berryField,render,renderstep)
             berryField.action_space = Discrete(cur_n+1)
 
         # some stats to track
@@ -159,18 +173,26 @@ class Agent():
                 actual_steps = 0
                 episode+=1
                 for k in action_counts:action_counts[k]=0
-            
+
             # render if asked
             if render and actual_steps%renderstep==0:
                 berryField.render()
-            
+
             return state, reward, done, info
         return step
 
     def _init_memories(self):
+        memory_grid_size = self.memory_grid_size[0]*self.memory_grid_size[1]
+        
         # for the approx n-step TD construct
         self.state_deque = deque(maxlen=max(self.nstep_transitions) + 1)
         self.state_deque.append([None,None,0]) # init deque
+
+        # for path and berry memory
+        self.path_memory = np.zeros(memory_grid_size) # aprox path
+        self.berry_memory = np.zeros(memory_grid_size) # aprox place of sighting a berry
+        self.time_memory = 0 # the time spent at the current block
+        self.time_memory_data = np.zeros_like(self.path_memory)
 
         # needed to reward patch discovery
         self.visited_patches = set() 
@@ -183,6 +205,40 @@ class Agent():
         self.time_memory_data = np.zeros((200,200))
         return
 
+    def _update_memories(self, info, avg_worth):
+        fieldsize = self.berryField.FIELD_SIZE[0]
+        x,y = info['position']
+
+        # if agent touches the top/left edge of field, this will cause
+        # an Index error. Subtract a small amount to avoid this
+        if x == self.berryField.FIELD_SIZE[0]: x -= EPSILON
+        if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
+
+        # find the corresponding index in memory
+        mem_x, mem_y = self.memory_grid_size
+        x1 = int(x//(fieldsize[0]//mem_x))
+        y1 = int(y//(fieldsize[1]//mem_y))
+        i1 = int(x1 + y1*mem_x)
+
+        # decay the path memory and updaate
+        self.path_memory *= self.path_memory_gamma 
+        self.path_memory[i1] = 1
+
+        # update berry memory
+        self.berry_memory *= self.berry_memory_gamma
+        self.berry_memory[i1] = 0.2*avg_worth + 0.8*self.berry_memory[i1]
+
+        # decay time memory and update time_memory (with persistence)
+        mem_x, mem_y = self.time_memory_data.shape
+        x = int(x//(fieldsize[0]//mem_x))
+        y = int(y//(fieldsize[1]//mem_y))
+        self.time_memory_data *= 1-self.time_memory_delta
+        self.time_memory_data[x][y] += self.time_memory_delta
+        current_time = min(1,self.time_memory_data[x][y])**self.time_memory_exp
+        self.time_memory = self.time_memory*self.persistence +\
+                            (1-self.persistence)*current_time
+        return
+
     def _reward_patch_discovery(self, info):
         # info, reward are None at start (spawn)
         reward = 0
@@ -190,8 +246,7 @@ class Agent():
         patch_id = info['current-patch-id']
         if (patch_id is not None) and (patch_id not in self.visited_patches):
             self.visited_patches.add(patch_id)
-            # don't give +ve to spawn patch!!!
-            if len(self.visited_patches) > 1: reward += 1
+            if len(self.visited_patches) > 1: reward += 1 # don't give +ve to spawn patch!!!
         return reward
 
     def _compute_sectorized(self, raw_observation, info):
@@ -242,22 +297,6 @@ class Agent():
         self.prev_sectorized_state = np.array([a1,a2,a3,a4])
         return [a1,a2,a3,a4], avg_worth
 
-    def _update_memories(self, info, avg_worth):
-        x,y = info['position']
-        if x == self.berryField.FIELD_SIZE[0]: x -= EPSILON
-        if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
-
-        # decay time memory and update time_memory
-        mem_x, mem_y = self.time_memory_data.shape
-        x = int(x//(self.berryField.FIELD_SIZE[0]//mem_x))
-        y = int(y//(self.berryField.FIELD_SIZE[1]//mem_y))
-        self.time_memory_data *= 1-self.time_memory_delta
-        self.time_memory_data[x][y] += self.time_memory_delta
-        current_time = min(1,self.time_memory_data[x][y])**self.time_memory_exp
-        self.time_memory = self.time_memory*self.persistence +\
-                            (1-self.persistence)*current_time
-        return
-
     def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
         # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
@@ -280,18 +319,22 @@ class Agent():
 
         # make the state by concatenating sectorized_states and memories
         state = np.concatenate([*sectorized_states, edge_dist, patch_relative, 
-                                [total_juice], [self.time_memory]])
+                                [total_juice], [self.time_memory], self.berry_memory,
+                                self.path_memory])
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
     def state_desc(self):
         """ returns the start and stop+1 indices for various parts of the state """
+        memory_grid_size = self.memory_grid_size[0]*self.memory_grid_size[1]
         state_desc = {
             'sectorized_states': [0, 4*self.num_sectors],
             'edge_dist': [4*self.num_sectors, 4*self.num_sectors+4],
             'patch_relative': [4*self.num_sectors+4, 4*self.num_sectors+4+1],
-            'total_juice': [4*self.num_sectors+4+1, 4*self.num_sectors+4+2],
-            'time_memory': [4*self.num_sectors+4+2, 4*self.num_sectors+4+3],
+            'total_juice': [4*self.num_sectors+5, 4*self.num_sectors+6],
+            'time_memory': [4*self.num_sectors+6, 4*self.num_sectors+7],
+            'berry_memory': [4*self.num_sectors+7, 4*self.num_sectors+memory_grid_size],
+            'path_memory': [4*self.num_sectors+memory_grid_size, 4*self.num_sectors+2*memory_grid_size]
             # 'relative_coordinates':[4*self.num_sectors+7, 4*self.num_sectors+8]
         }
         return state_desc
@@ -339,10 +382,14 @@ class Agent():
 
     def getNet(self, TORCH_DEVICE, debug=False,
             feedforward = dict(infeatures=39, linearsDim = [32,16], lreluslope=0.1),
+            memory_conv = dict(channels = [8,16,16], kernels = [4,3,3], 
+                strides = [2,2,2], paddings = [3,2,1], maxpkernels = [2,0,2],
+                padding_mode='zeros', lreluslope=0.1, add_batchnorms=False),
             final_stage = dict(infeatures=16, linearsDim = [8], 
                 lreluslope=0.1), saveVizpath=None):
         """ create and return the model (a duelling net)"""
         num_sectors = self.num_sectors
+        memory_size = np.dot(*self.memory_grid_size)
         outDims = self.berryField.action_space.n
 
         class net(nn.Module):
@@ -351,6 +398,9 @@ class Agent():
 
                 # build the feed-forward network -> sectors, edge, patch-relative & time-memory
                 self.feedforward = make_simple_feedforward(**feedforward)
+
+                # build the conv-networks
+                self.mem_conv = make_simple_conv2dnet(inchannel=2, **memory_conv)
 
                 # build the final stage
                 self.final_stage = make_simple_feedforward(**final_stage)
@@ -361,6 +411,7 @@ class Agent():
 
                 # indices to split at
                 self.f_part = (0, 4*num_sectors+7)
+                self.mem_part = (self.f_part[-1], self.f_part[-1]+2*memory_size)
 
 
             def forward(self, input:Tensor):
@@ -368,11 +419,16 @@ class Agent():
                 # split and reshape input
                 if debug: print(input.shape)
                 feedforward_part = input[:,self.f_part[0]:self.f_part[1]]
+                mem_part = input[:,self.mem_part[0]:self.mem_part[1]]
 
                 # process feedforward_part
                 if debug: print('\nfeedforward_part',feedforward_part.shape)
                 for layer in self.feedforward: feedforward_part = layer(feedforward_part)         
-
+                
+                # process memories
+                if debug: print('\mem',mem_part.shape)
+                for layer in self.mem_conv: mem_part = layer(mem_part)         
+                
                 # process merged features
                 if debug: print('concat',feedforward_part.shape)
                 for layer in self.final_stage: feedforward_part = layer(feedforward_part)
