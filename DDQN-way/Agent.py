@@ -135,7 +135,7 @@ class Agent():
 
         return worth
 
-    def env_step_wrapper(self, berryField:BerryFieldEnv, render, renderstep):
+    def env_step_wrapper(self, berryField:BerryFieldEnv, render=False, renderstep=10):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
         for better gradients..., also rewards are clipped between 0 and 2 """
         print('with living cost, rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)')
