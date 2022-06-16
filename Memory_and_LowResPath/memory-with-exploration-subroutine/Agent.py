@@ -29,8 +29,8 @@ class Agent():
 
                 # params controlling the state and state-transitions
                 angle = 45, persistence=0.8, worth_offset=0.0, 
-                noise=0.01, nstep_transition=[1], 
-                reward_patch_discovery=True, positive_emphasis=0, 
+                noise=0.01, nstep_transition=[1], positive_emphasis=0,
+                reward_patch_discovery=True,  
                 add_exploration = True,
 
                 # params related to berry & path memory
@@ -38,24 +38,62 @@ class Agent():
                 berry_memory_gamma=0.9999,
 
                 # params related to time memory
-                time_memory_delta=0.01, time_memory_exp=1,
+                time_memory_delta=0.01, time_memory_exp=1.0,
 
                 # misc params
-                debug=False, debugDir='.temp', 
-                render=False, renderstep=10) -> None:
+                render=False, renderstep=10, 
+                debug=False, debugDir='.temp') -> None:
         """ 
         ### parameters
         - berryField: BerryFieldEnv instance
         - mode: 'train' or 'eval'
+
+        #### params controlling the state and state-transitions
         - angle: int (default 45)
                 - the observation space divided into angular sectors
                 - number of sectors is 360/angle
         - persistence: float (default 0.8)
-                - the persistence of vision for the sectorized states 
+                - the persistence of vision for the sectorized states
+                and the time-memory 
         - worth_offset: float (default 0)
                 - the offset in the berry worth function
         - noise: float (default 0.01)
                 - uniform noise between [-noise, noise) is added to state
+        - nstep_transition: list[int] (default [1])
+                - for each int 'k' in the list, a transition is appended
+                such that the state and next state are seperated by
+                'k' actions. The reward is summed.
+        - positive_emphasis: int (default 0)
+                - state transitions with positive reward are 
+                repeatedly output for positive_emphasis number of
+                times in makeStateTransitions
+        - reward_patch_discovery: bool (default True)
+                - add +1 reward on discovering a new patch
+        - add_exploration: bool (default True)
+                - adds exploration-subroutine as an action
+        
+        #### params related to berry & path memory
+        - memory_grid_size: tupple[int,int] (default (40,40))
+                - the size of the memory grid
+        - path_memory_gamma: float (default 0.9965)
+                - decays path memory every by path_memory_gamma
+                every step
+        - berry_memory_gamma: float
+                - decays the berry memory by berry_memory_gamma 
+                every step
+
+        #### params related to time memory
+        - time_memory_delta: float (default 0.01)
+                - increment the time of the current block
+                by time_memory_delta for each step in the block
+        - time_memory_exp: float (default 1.0)
+                - raise the stored time memory for the current block
+                to time_memory_exp and feed to agent's state
+        
+        - render: bool (default False)
+                - wether to render the agent 
+        - renderstep: int (defautl False)
+                - render the agent every renderstep step
          """
         printLocals('Agent', locals())
         self.istraining = mode == 'train'
