@@ -149,7 +149,7 @@ class Agent():
         # add the exploration subroutine to env action space
         if self.add_exploration:
             print('Exploration subroutine as an action')
-            exploration_step = random_exploration(berryField, render, renderstep)
+            exploration_step = random_exploration(berryField, render=render, renderS=renderstep)
             berryField.action_space = Discrete(cur_n+1)
 
         # some stats to track
