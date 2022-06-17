@@ -13,6 +13,9 @@ def random_exploration(berryenv:BerryFieldEnv, discount=1.0, render=False, rende
     p_action = np.random.randint(8)
     berry_env_step= berryenv.step 
 
+    # start only when no berris are visible
+    # stop when we are inside a patch
+
     print('initial p_action:', p_action)
     def subroutine(nsteps=1E10,**kwrgs):
         nonlocal p_action

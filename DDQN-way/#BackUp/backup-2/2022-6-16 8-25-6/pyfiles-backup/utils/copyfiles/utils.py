@@ -21,7 +21,7 @@ import re
 
 # --------------------------------------------------------
 
-def copy_files(frmDir,dest, ignore=['\.', '__pycache__','\#']):
+def copy_files(frmDir,dest, ignore=['\.', '__pycache__','BackUp']):
     def should_ignore(str_):
         for k in ignore:
             if re.match(k,str_): return True
