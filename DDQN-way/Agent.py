@@ -1,10 +1,10 @@
 import numpy as np
 from collections import deque
 from berry_field.envs import BerryFieldEnv
-from gym.spaces import Discrete
 from torch import Tensor, nn, device
-from agent_utils import berry_worth, compute_sectorized, Debugging, PatchDiscoveryReward
-from utils import printLocals, random_exploration, make_simple_feedforward
+from agent_utils import (berry_worth, random_exploration_v2, 
+    compute_sectorized, Debugging, PatchDiscoveryReward, skip_steps)
+from utils import printLocals, make_simple_feedforward
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8
@@ -17,14 +17,14 @@ class Agent():
                 # params controlling the state and state-transitions
                 angle = 45, persistence=0.8, worth_offset=0.0, 
                 noise=0.01, nstep_transition=[1], positive_emphasis=0,
-                reward_patch_discovery=True, 
+                skipStep=10, reward_patch_discovery=True, 
                 add_exploration = True,
 
                 # params related to time memory
                 time_memory_delta=0.01, time_memory_exp=1.0,
 
                 # other params
-                render=False, renderstep=10, 
+                render=False, 
                 debug=False, debugDir='.temp',
                 device=device('cpu')) -> None:
         """ 
@@ -51,6 +51,8 @@ class Agent():
                 - state transitions with positive reward are 
                 repeatedly output for positive_emphasis number of
                 times in makeStateTransitions
+        - skipStep: int (default 10)
+                - action is repeated for next skipStep steps
         - reward_patch_discovery: bool (default True)
                 - add +1 reward on discovering a new patch
         - add_exploration: bool (default True)
@@ -66,8 +68,6 @@ class Agent():
         
         - render: bool (default False)
                 - wether to render the agent 
-        - renderstep: int (defautl False)
-                - render the agent every renderstep step
          """
         printLocals('Agent', locals())
         self.istraining = mode == 'train'
@@ -83,80 +83,78 @@ class Agent():
         self.time_memory_delta = time_memory_delta
         self.time_memory_exp = time_memory_exp
         self.render = render
-        self.renderstep = renderstep
+        self.skipSteps = skipStep
         self.device = device
 
         # init memories and other stuff
         self._init_memories()
-        self.print_information()
-        self.nnet = self.makeNet(TORCH_DEVICE=device, debug=debug)
-        self.berryField.step = self.env_step_wrapper(self.berryField, render, renderstep)
+        self.nnet = self.makeNet(TORCH_DEVICE=device)
+        self.berryField.step = self.env_step_wrapper(self.berryField, render)
 
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
             OBSERVATION_SPACE_SIZE=self.berryField.OBSERVATION_SPACE_SIZE,
             BERRY_FIELD_SIZE=self.berryField.FIELD_SIZE) if debug else None
 
-    def print_information(self):
-        if not self.istraining: print('eval mode'); return
-        if self.reward_patch_discovery: print("Rewarding patch discovery")
-        if self.add_exploration: print("Exploration subroutine added")
-        print('agent aware of total-juice')
-
-    def env_step_wrapper(self, berryField:BerryFieldEnv, render=False, renderstep=10):
+    def env_step_wrapper(self, berryField:BerryFieldEnv, render=False):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
         for better gradients..., also rewards are clipped between 0 and 2 """
-        print('with living cost, rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)')
+        print('rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)')
         print('rewards are clipped between 0 and 2')
         
         MAXSIZE = max(berryField.berry_collision_tree.boxes[:,2])
         scale = 2/(berryField.REWARD_RATE*MAXSIZE)
-        cur_n = berryField.action_space.n
+        nactions = berryField.action_space.n
         berry_env_step = berryField.step
-        patch_discovery_reward = PatchDiscoveryReward(reward_value=1)
 
         # add the exploration subroutine to env action space
         if self.add_exploration:
             print('Exploration subroutine as an action')
-            exploration_step = random_exploration(berryField, render=render, renderS=renderstep)
-            berryField.action_space = Discrete(cur_n+1)
+            exploration_step = random_exploration_v2(berryField, 
+                model=self.nnet, makeState=self.makeState, 
+                hasInternalMemory=False, skipSteps=self.skipSteps,
+                device=self.device, render=render)
+            nactions+=1
+
+        if self.reward_patch_discovery:
+            print("Rewarding patch discovery")
+            patch_discovery_reward = PatchDiscoveryReward(reward_value=1)
 
         # some stats to track
         actual_steps = 0
         episode = 0
-        action_counts = {i:0 for i in range(berryField.action_space.n)}
+        action_counts = {i:0 for i in range(nactions)}
+
         def step(action):
             nonlocal actual_steps, episode
 
             # execute the action
-            steps, state, reward, done, info = exploration_step() \
-                if self.add_exploration and action == cur_n else \
-                    (1, *berry_env_step(action))
+            if self.add_exploration and action == nactions-1:
+                sum_reward, skip_trajectory, steps = exploration_step()
+            else:
+                if render: berryField.render()
+                sum_reward, skip_trajectory, steps = skip_steps(action=action, 
+                    skipSteps= self.skipSteps, berryenv_step= berry_env_step)
+            listOfBerries, info, _, done = skip_trajectory[-1]
 
             # update stats
             actual_steps += steps
             action_counts[action] += 1
 
             # modify reward
-            reward = scale*reward
+            reward = scale*sum_reward
             reward = min(max(reward, 0), 2)
             if self.reward_patch_discovery: 
-                reward += self.patch_discovery_reward(info)
+                reward += patch_discovery_reward(info)
             
-            # print stuff and reset stats
+            # print stuff and reset stats and patch-discovery-reward
             if done: 
-                print(f'\n=== episode:{episode} Env-steps-taken:{actual_steps}')
-                print('action_counts:',action_counts)
-                print('picked: ', berryField.get_numBerriesPicked())
-                actual_steps = 0
-                episode+=1
+                print(f'\n=== episode:{episode} Env-steps-taken:{actual_steps}\n',
+                '\tpicked:',berryField.get_numBerriesPicked(),'|actions:',action_counts)
+                actual_steps = 0; episode+=1; patch_discovery_reward(info=None)
                 for k in action_counts:action_counts[k]=0
             
-            # render if asked
-            if render and actual_steps%renderstep==0:
-                berryField.render()
-            
-            return state, reward, done, info
+            return listOfBerries, reward, done, info
         return step
 
     def _init_memories(self):
@@ -188,6 +186,13 @@ class Agent():
                             (1-self.persistence)*current_time
         return
 
+    def berry_worth_func(self, sizes, dists):
+        return berry_worth(sizes, dists, 
+            REWARD_RATE=self.berryField.REWARD_RATE, 
+            DRAIN_RATE=self.berryField.DRAIN_RATE, 
+            HALFDIAGOBS=self.berryField.HALFDIAGOBS, 
+            WORTH_OFFSET=self.worth_offset)
+
     def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
         # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
@@ -198,7 +203,7 @@ class Agent():
 
         # the total-worth is also representative of the percived goodness of observation
         sectorized_states, avg_worth = compute_sectorized(raw_observation=raw_observation, 
-                info=info, berry_worth_function=berry_worth)
+                info=info, berry_worth_function=self.berry_worth_func)
         self.prev_sectorized_state = sectorized_states
 
         # update memories
@@ -216,7 +221,7 @@ class Agent():
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
     def makeState(self, skip_trajectory, action_taken):
-        """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
+        """ skip trajectory is a sequence of [[next-observation, reward, done, info],...] """
         final_state = self._computeState(*skip_trajectory[-1])
         if self.debugger: self.debugger.record(final_state)
         return final_state
@@ -253,6 +258,7 @@ class Agent():
         note: calling this multiple times will re-make the model"""
         num_sectors = 360//self.angle
         outDims = self.berryField.action_space.n
+        if self.add_exploration: outDims+=1
 
         class net(nn.Module):
             def __init__(self):

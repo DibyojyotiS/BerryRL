@@ -4,6 +4,7 @@ class PatchDiscoveryReward:
         self.visited_patches = set()
     
     def __call__(self, info)->float:
+        """ call with info=None to reset """
         # None means the start of new episode
         # reset the visited_patches to empty set
         if info is None: 

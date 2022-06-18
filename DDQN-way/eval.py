@@ -14,8 +14,8 @@ if __name__ == '__main__':
 
     berry_env = BerryFieldEnv()
     agent = Agent(berry_env, mode='eval', debug=True, noise=0.03,
-                persistence=0.9, time_memory_delta=0.01, render=True,
-                device=TORCH_DEVICE)
+                persistence=0.9, time_memory_delta=0.01, skipStep=10, 
+                render=True, device=TORCH_DEVICE)
 
     nnet = agent.getNet()
     nnet.load_state_dict(torch.load('..\\trainLogs\models\episode-160\\onlinemodel_statedict.pt'))
@@ -24,8 +24,9 @@ if __name__ == '__main__':
     buffer = None; optim = None; tstrat = None
     estrat = greedyAction()
 
-    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, skipSteps=10,
-                        make_state=agent.makeState, log_dir=LOG_DIR, device=TORCH_DEVICE)
+    ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer,
+                        make_state=agent.makeState, log_dir=LOG_DIR, 
+                        device=TORCH_DEVICE)
     
     try:ddqn_trainer.evaluate(estrat)
     except KeyboardInterrupt as ex: pass
