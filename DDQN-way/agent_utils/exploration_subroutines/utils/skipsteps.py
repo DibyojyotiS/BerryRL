@@ -18,4 +18,4 @@ def skip_steps(action, skipSteps, berryenv_step):
         sum_reward += reward
         skip_trajectory.append([listberries, info, reward, done])
         if done: break
-    return sum_reward, skip_trajectory, steps
+    return sum_reward, skip_trajectory, steps+1
