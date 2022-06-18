@@ -16,7 +16,7 @@ class Agent():
 
                 # params controlling the state and state-transitions
                 angle = 45, persistence=0.8, worth_offset=0.0, 
-                noise=0.01, nstep_transition=[1], positive_emphasis=0,
+                noise=0.03, nstep_transition=[1], positive_emphasis=0,
                 skipStep=10, reward_patch_discovery=True, 
                 add_exploration = True,
 
@@ -227,9 +227,10 @@ class Agent():
         return final_state
       
     def makeStateTransitions(self, skip_trajectory, state, action, nextState):
-        """ get the state-transitions - these are already computed in the
-        makeState function when mode = 'train'. All inputs to  makeStateTransitions
-        are ignored."""
+        """ Makes the state-transitions using the given inputs and also makes
+        n-step transitions according to the argument nstep_transitions in the 
+        agent's init. The reward for the n-step transition is a simple summation
+        of the rewards from the individual transitions. """
         # compute the sum of reward in the skip-trajectory
         reward = sum([r for o,i,r,d in skip_trajectory])
         done = skip_trajectory[-1][-1]

@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     ddqn_trainer = DDQN(trainEnv, nnet, tstrat, optim, buffer, batchSize=512, 
                         gamma=0.9, update_freq=5, MaxTrainEpisodes=2000,
-                        optimize_every_kth_action=100, num_gradient_steps=50,
+                        optimize_every_kth_action=100, num_gradient_steps=25,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
                         evalFreq=10, printFreq=1, polyak_average=True, polyak_tau=0.1,
                         log_dir=LOG_DIR, resumeable_snapshot=10, device=TORCH_DEVICE)
