@@ -37,9 +37,12 @@ def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None, show=Tr
     ax.axes.set_aspect('equal')
 
     if title: 
-        path = f'{LOG_DIR}/analytics-berry-field/{episode}/results.txt'
-        with open(path,'r') as f: 
-            nberries = f.readlines()[-2].split(':')[-1].strip()
+        nberries = ''
+        try:
+            path = f'{LOG_DIR}/analytics-berry-field/{episode}/results.txt'
+            with open(path,'r') as f: 
+                nberries = f.readlines()[-2].split(':')[-1].strip()
+        except FileNotFoundError as ex: print('results.txt not there!')
         plt.title(str(title) + f'\n{nberries} berries picked')
     if savepth: plt.savefig(savepth)
     if show: plt.show()

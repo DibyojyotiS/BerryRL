@@ -105,8 +105,9 @@ class Agent():
             berryField=self.berryField) if debug else None
         
         # some stuff that i need
-        plot_time_mem_curves(self.time_memory_factor, 
-            self.time_memory_sizes, self.berryField.FIELD_SIZE[0])
+        if mode == 'train':
+            plot_time_mem_curves(self.time_memory_factor, 
+                self.time_memory_sizes, self.berryField.FIELD_SIZE[0])
 
     def env_step_wrapper(self, berryField:BerryFieldEnv, render=False):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
@@ -341,13 +342,15 @@ class Agent():
             edge_dist = state[4*num_sectors: 4*num_sectors+4]
             patch_relative = state[4*num_sectors+4]
             total_juice = state[4*num_sectors+4+1]
-            time_mem = state[4*num_sectors+4+2]
+            time_mem = state[4*num_sectors+4+2:]
             axs[0][0].imshow(sectorized_states)
-            axs[0][1].bar([0,1,2],[total_juice, patch_relative, time_mem], [1,1,1])
+            axs[0][1].bar([*range(2+len(time_mem))],[total_juice, 
+                    patch_relative, *time_mem], [1]*(2+len(time_mem)))
             axs[1][0].bar([*range(4)],edge_dist)
             axs[0][0].set_title('sectorized states')
             axs[0][1].set_title('measure of patch-center-dist')
-            axs[0][1].set_xticklabels(["","","total-juice","","patch-rel","","time-mem"]) 
+            axs[0][1].set_xticklabels(["", "total-juice","patch-rel",
+                *[f"time-mem-{x}" for x in self.time_memory_sizes]]) 
             axs[1][0].set_title('measure of dist-from-edge')
             axs[1][0].set_xticklabels(["","","left","right","top","bottom"]) 
             axs[0][1].set_ylim(top=1)
