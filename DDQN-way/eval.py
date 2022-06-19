@@ -3,9 +3,10 @@ from Agent import *
 from utils import picture_episode
 
 # set all seeds
-torch.manual_seed(0)
-np.random.seed(0)
-random.seed(0)
+seed=10
+torch.manual_seed(seed)
+np.random.seed(seed)
+random.seed(seed)
 
 LOG_DIR = None
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
