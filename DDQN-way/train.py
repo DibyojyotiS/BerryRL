@@ -6,7 +6,7 @@ from torch.optim.rmsprop import RMSprop
 
 from Agent import *
 from utils import (getRandomEnv, Env_print_fn, 
-            my_print_fn, copy_files)
+        my_print_fn, copy_files, plot_berries_picked)
 
 # set all seeds
 torch.manual_seed(0)
@@ -83,3 +83,5 @@ if __name__ == '__main__':
     ddqn_trainer.evaluate(evalEnv=evalEnv, render=True)
     evalPrintFn()
     logger.close()
+
+    plot_berries_picked(LOG_DIR)
