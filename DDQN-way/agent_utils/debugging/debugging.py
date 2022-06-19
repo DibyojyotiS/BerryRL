@@ -71,7 +71,7 @@ class Debugging:
                 self.OBSERVATION_SPACE_SIZE, self.BERRY_FIELD_SIZE)
 
             # draw the other plots
-            for plotfn in plotfns: plotfn(axs, state, envdt)
+            for plotfn in plotfns[1:]: plotfn(axs, state, envdt)
             
             # append to gif and clear plots
             if giffile: self._append_to_gif_file(giffile,fig)
