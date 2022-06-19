@@ -15,7 +15,7 @@ class Agent():
     def __init__(self, berryField:BerryFieldEnv, mode='train', 
 
                 # params controlling the state and state-transitions
-                angle = 45, persistence=0.8, worth_offset=0.0, 
+                angle = 45, persistence=0.8, worth_offset=0.05, 
                 noise=0.01, nstep_transition=[1], positive_emphasis=0,
                 skipStep=10, reward_patch_discovery=True, 
                 add_exploration = True,
