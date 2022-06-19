@@ -16,7 +16,7 @@ class Agent():
 
                 # params controlling the state and state-transitions
                 angle = 45, persistence=0.8, worth_offset=0.0, 
-                noise=0.03, nstep_transition=[1], positive_emphasis=0,
+                noise=0.01, nstep_transition=[1], positive_emphasis=0,
                 skipStep=10, reward_patch_discovery=True, 
                 add_exploration = True,
 
@@ -93,8 +93,7 @@ class Agent():
 
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
-            OBSERVATION_SPACE_SIZE=self.berryField.OBSERVATION_SPACE_SIZE,
-            BERRY_FIELD_SIZE=self.berryField.FIELD_SIZE) if debug else None
+            berryField=self.berryField) if debug else None
 
     def env_step_wrapper(self, berryField:BerryFieldEnv, render=False):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
