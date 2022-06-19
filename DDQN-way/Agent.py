@@ -1,7 +1,7 @@
 import numpy as np
 from collections import deque
 from berry_field.envs import BerryFieldEnv
-from torch import Tensor, nn, device
+from torch import Tensor, float32, nn, device, tensor
 from agent_utils import (berry_worth, random_exploration_v2, 
     compute_sectorized, Debugging, PatchDiscoveryReward, 
     skip_steps, make_simple_feedforward, printLocals)
@@ -117,7 +117,7 @@ class Agent():
 
         if self.reward_patch_discovery:
             print("Rewarding patch discovery")
-            patch_discovery_reward = PatchDiscoveryReward(reward_value=1)
+            patch_discovery_reward = PatchDiscoveryReward(reward_value=0.1)
 
         # some stats to track
         actual_steps = 0
@@ -165,8 +165,11 @@ class Agent():
         self.prev_sectorized_state = None
 
         # for time memory
-        self.time_memory = 0 # the time spent at the current block
-        self.time_memory_data = np.zeros((200,200))
+        self.time_mem_mats = [
+            np.zeros((L,L)) for L in [50,100,200]
+        ]
+        self.time_memories = np.zeros(len(self.time_mem_mats))
+
         return
 
     def _update_memories(self, info, avg_worth):
@@ -175,14 +178,16 @@ class Agent():
         if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
 
         # decay time memory and update time_memory
-        mem_x, mem_y = self.time_memory_data.shape
-        x = int(x//(self.berryField.FIELD_SIZE[0]//mem_x))
-        y = int(y//(self.berryField.FIELD_SIZE[1]//mem_y))
-        self.time_memory_data *= 1-self.time_memory_delta
-        self.time_memory_data[x][y] += self.time_memory_delta
-        current_time = min(1,self.time_memory_data[x][y])**self.time_memory_exp
-        self.time_memory = self.time_memory*self.persistence +\
-                            (1-self.persistence)*current_time
+        current_time = np.zeros_like(self.time_memories)
+        for i in range(len(self.time_mem_mats)):
+            mem_x, mem_y = self.time_mem_mats[i].shape
+            x_ = int(x//(self.berryField.FIELD_SIZE[0]//mem_x))
+            y_ = int(y//(self.berryField.FIELD_SIZE[1]//mem_y))
+            self.time_mem_mats[i] *= 1-self.time_memory_delta
+            self.time_mem_mats[i][x_][y_] += self.time_memory_delta
+            current_time[i] = min(1,self.time_mem_mats[i][x_][y_])
+        self.time_memories = self.time_memories*self.persistence +\
+                            (1-self.persistence)*(current_time**self.time_memory_exp)
         return
 
     def berry_worth_func(self, sizes, dists):
@@ -217,7 +222,7 @@ class Agent():
 
         # make the state by concatenating sectorized_states and memories
         state = np.concatenate([*sectorized_states, edge_dist, patch_relative, 
-                                [total_juice], [self.time_memory]])
+                                [total_juice], self.time_memories])
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
@@ -260,6 +265,7 @@ class Agent():
         note: calling this multiple times will re-make the model"""
         num_sectors = 360//self.angle
         outDims = self.berryField.action_space.n
+        ntimemems = len(self.time_memories)
         if self.add_exploration: outDims+=1
 
         class net(nn.Module):
@@ -277,7 +283,7 @@ class Agent():
                 self.actadvs = nn.Linear(final_stage['linearsDim'][-1], outDims)
 
                 # indices to split at
-                self.f_part = (0, 4*num_sectors+7)
+                self.f_part = (0, 4*num_sectors+6+ntimemems)
 
             def forward(self, input:Tensor, debug=False):
 
@@ -303,8 +309,11 @@ class Agent():
         print('total-params: ', sum(p.numel() for p in self.nnet.parameters() if p.requires_grad))
         return self.nnet
 
-    def getNet(self)->nn.Module:
+    def getNet(self,debug=False)->nn.Module:
         """ return the agent's brain (a duelling net)"""
+        if debug:
+            self.nnet(tensor([self.makeState([[None]*4],None)],
+                dtype=float32,device=self.device),debug=debug)
         return self.nnet
 
     def showDebug(self, gif=False, f=20, figsize=(15,10)):
