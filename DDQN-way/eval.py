@@ -35,6 +35,6 @@ if __name__ == '__main__':
     print(berry_env.get_numBerriesPicked(), 
         [x for x,v in berry_env.patch_visited.items() if v > 0])
 
-    picture_episode('.temp',0)
+    picture_episode('.temp',0,title='eval')
 
     agent.showDebug(nnet,f=1)

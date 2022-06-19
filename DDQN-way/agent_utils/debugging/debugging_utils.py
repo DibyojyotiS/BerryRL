@@ -41,11 +41,12 @@ def draw_Q_values(ax:Axes, agentpos, state, model, device=None, action_names=Non
     - ax: a plt.Axes scalar object
     - model: an nn.Module called on the state
     """
+    originalqvals = model(tensor([state], dtype=float32, 
+                         device=device)).detach()[0].cpu().numpy()
+
     maxidx = np.argmax(originalqvals)
     ax.text(agentpos[0]+20, agentpos[1]+20, 
         f'q:{originalqvals[maxidx]:.2f}:{action_names[maxidx]}')
-    originalqvals = model(tensor([state], float32, 
-                                device)).detach()[0].numpy()
 
     # add action-advs circles
     colorqs = originalqvals[:8]

@@ -47,7 +47,7 @@ def compute_sectorized(raw_observation, info,
     - avg_worth: float, the average worth so seen"""
 
     # apply persistence if prev_sectorized_state is given
-    if prev_sectorized_state:
+    if prev_sectorized_state is not None:
         a1,a2,a3,a4 = prev_sectorized_state * persistence
     else:
         num_sectors = 360//angle
