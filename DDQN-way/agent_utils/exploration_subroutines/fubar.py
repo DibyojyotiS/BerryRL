@@ -31,7 +31,7 @@ if __name__ == "__main__":
                 dx,dy = action_switcher[ac]
                 x += dx; y+=dy
             pa[a]=pa[(a-1)%8]=pa[(a+1)%8]=0
-            pa[ac] =  0.99
+            pa[ac] =  0.994
             pa[(ac+1)%8]= pa[(ac-1)%8] = (1-pa[ac])/2
             # pa[ac] = 1/tmep
             # pa[(ac+1)%8]= pa[(ac-1)%8] = 0.1/tmep

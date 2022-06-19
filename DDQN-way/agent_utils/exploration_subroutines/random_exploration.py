@@ -36,7 +36,7 @@ def random_exploration_v2(berryenv:BerryFieldEnv, model:nn.Module,
             transfered to before calling model with inputs
     6. render: bool (default False) renders the env after frameskipping""" 
 
-    pmx = 0.99
+    pmx = 0.994
     nactions = 8
     berryenv_step= berryenv.step
 
