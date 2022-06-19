@@ -4,7 +4,7 @@ from berry_field.envs import BerryFieldEnv
 from torch import Tensor, float32, nn, device, tensor
 from agent_utils import (berry_worth, random_exploration_v2, 
     compute_sectorized, Debugging, PatchDiscoveryReward, 
-    skip_steps, make_simple_feedforward, printLocals)
+    skip_steps, make_simple_feedforward, printLocals, plot_time_mem_curves)
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8
@@ -21,7 +21,8 @@ class Agent():
                 add_exploration = True,
 
                 # params related to time memory
-                time_memory_delta=0.01, time_memory_exp=1.0,
+                time_memory_factor=0.5, time_memory_exp=1.0,
+                time_memory_sizes= [50,100,200],
 
                 # other params
                 render=False, 
@@ -59,12 +60,19 @@ class Agent():
                 - adds exploration-subroutine as an action
 
         #### params related to time memory
-        - time_memory_delta: float (default 0.01)
+        - time_memory_factor: float (default 0.01)
                 - increment the time of the current block
-                by time_memory_delta for each step in the block
+                by delta for each step in the block
+                as an exponential average with (1-delta)
+                where delta = time_memory_factor/resolution
+                and resolution = berry-field-size/time_memory_sizes
         - time_memory_exp: float (default 1.0)
                 - raise the stored time memory for the current block
                 to time_memory_exp and feed to agent's state
+        - time_memory_sizes: list[int]
+                - (L,L) matrices are alloted to represent the 
+                time spent in a square of size berry-field-size/L
+                so its important that L must divide berry-field-size
         
         - render: bool (default False)
                 - wether to render the agent 
@@ -80,8 +88,9 @@ class Agent():
         self.reward_patch_discovery = reward_patch_discovery
         self.positive_emphasis = positive_emphasis
         self.add_exploration= add_exploration
-        self.time_memory_delta = time_memory_delta
+        self.time_memory_factor = time_memory_factor
         self.time_memory_exp = time_memory_exp
+        self.time_memory_sizes = time_memory_sizes
         self.render = render
         self.skipSteps = skipStep
         self.device = device
@@ -94,6 +103,10 @@ class Agent():
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
             berryField=self.berryField) if debug else None
+        
+        # some stuff that i need
+        plot_time_mem_curves(self.time_memory_factor, 
+            self.time_memory_sizes, self.berryField.FIELD_SIZE[0])
 
     def env_step_wrapper(self, berryField:BerryFieldEnv, render=False):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
@@ -166,7 +179,7 @@ class Agent():
 
         # for time memory
         self.time_mem_mats = [
-            np.zeros((L,L)) for L in [50,100,200]
+            np.zeros((L,L)) for L in self.time_memory_sizes
         ]
         self.time_memories = np.zeros(len(self.time_mem_mats))
 
@@ -179,12 +192,13 @@ class Agent():
 
         # decay time memory and update time_memory
         current_time = np.zeros_like(self.time_memories)
-        for i in range(len(self.time_mem_mats)):
+        for i,L in enumerate(self.time_memory_sizes):
             mem_x, mem_y = self.time_mem_mats[i].shape
             x_ = int(x//(self.berryField.FIELD_SIZE[0]//mem_x))
             y_ = int(y//(self.berryField.FIELD_SIZE[1]//mem_y))
-            self.time_mem_mats[i] *= 1-self.time_memory_delta
-            self.time_mem_mats[i][x_][y_] += self.time_memory_delta
+            delta = self.time_memory_factor*L/self.berryField.FIELD_SIZE[0]
+            self.time_mem_mats[i] *= 1-delta
+            self.time_mem_mats[i][x_][y_] += delta
             current_time[i] = min(1,self.time_mem_mats[i][x_][y_])
         self.time_memories = self.time_memories*self.persistence +\
                             (1-self.persistence)*(current_time**self.time_memory_exp)
@@ -258,7 +272,7 @@ class Agent():
         return transitions
 
     def makeNet(self, TORCH_DEVICE,
-            feedforward = dict(infeatures=39, linearsDim = [32,16], lreluslope=0.1),
+            feedforward = dict(infeatures=41, linearsDim = [32,16], lreluslope=0.1),
             final_stage = dict(infeatures=16, linearsDim = [8], 
                 lreluslope=0.1)):
         """ create and return the model (a duelling net)

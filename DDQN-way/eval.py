@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     berry_env = BerryFieldEnv()
     agent = Agent(berry_env, mode='eval', debug=True, noise=0.03,
-                persistence=0.9, time_memory_delta=0.01, skipStep=10, 
+                persistence=0.9, time_memory_factor=0.5, skipStep=10, 
                 render=True, device=TORCH_DEVICE)
 
     nnet = agent.getNet()
