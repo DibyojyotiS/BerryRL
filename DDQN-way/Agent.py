@@ -3,8 +3,8 @@ from collections import deque
 from berry_field.envs import BerryFieldEnv
 from torch import Tensor, nn, device
 from agent_utils import (berry_worth, random_exploration_v2, 
-    compute_sectorized, Debugging, PatchDiscoveryReward, skip_steps)
-from utils import printLocals, make_simple_feedforward
+    compute_sectorized, Debugging, PatchDiscoveryReward, 
+    skip_steps, make_simple_feedforward, printLocals)
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8

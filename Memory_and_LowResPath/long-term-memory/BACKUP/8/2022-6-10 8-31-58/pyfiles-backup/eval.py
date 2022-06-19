@@ -35,7 +35,7 @@ if __name__ == '__main__':
     ddqn_trainer = DDQN(berry_env, nnet, tstrat, optim, buffer, skipSteps=10,
                         make_state=agent.makeState, log_dir=LOG_DIR, device=TORCH_DEVICE)
     
-    try:ddqn_trainer.evaluate(estrat, render=1)
+    try:ddqn_trainer.evaluate(estrat, render=0)
     except KeyboardInterrupt as ex: pass
 
     print(berry_env.get_numBerriesPicked(), 

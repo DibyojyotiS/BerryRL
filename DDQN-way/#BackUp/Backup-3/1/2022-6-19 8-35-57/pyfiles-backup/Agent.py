@@ -20,10 +20,6 @@ class Agent():
                 skipStep=10, reward_patch_discovery=True, 
                 add_exploration = True,
 
-                # params related to berry & path memory
-                memory_grid_size=(40,40), path_memory_gamma=0.9965, 
-                berry_memory_gamma=0.9999,
-
                 # params related to time memory
                 time_memory_delta=0.01, time_memory_exp=1.0,
 
@@ -62,16 +58,6 @@ class Agent():
         - add_exploration: bool (default True)
                 - adds exploration-subroutine as an action
 
-        #### params related to berry & path memory
-        - memory_grid_size: tupple[int,int] (default (40,40))
-                - the size of the memory grid
-        - path_memory_gamma: float (default 0.9965)
-                - decays path memory every by path_memory_gamma
-                every step
-        - berry_memory_gamma: float (default 0.9999)
-                - decays the berry memory by berry_memory_gamma 
-                every step
-
         #### params related to time memory
         - time_memory_delta: float (default 0.01)
                 - increment the time of the current block
@@ -80,6 +66,7 @@ class Agent():
                 - raise the stored time memory for the current block
                 to time_memory_exp and feed to agent's state
         
+        ### misc
         - render: bool (default False)
                 - wether to render the agent 
          """
@@ -96,9 +83,6 @@ class Agent():
         self.add_exploration= add_exploration
         self.time_memory_delta = time_memory_delta
         self.time_memory_exp = time_memory_exp
-        self.memory_grid_size= memory_grid_size
-        self.path_memory_gamma= path_memory_gamma
-        self.berry_memory_gamma= berry_memory_gamma
         self.render = render
         self.skipSteps = skipStep
         self.device = device
@@ -128,7 +112,7 @@ class Agent():
             print('Exploration subroutine as an action')
             exploration_step = random_exploration_v2(berryField, 
                 model=self.nnet, makeState=self.makeState, 
-                hasInternalMemory=True, skipSteps=self.skipSteps,
+                hasInternalMemory=False, skipSteps=self.skipSteps,
                 device=self.device, render=render)
             nactions+=1
 
@@ -184,13 +168,6 @@ class Agent():
         # for time memory
         self.time_memory = 0 # the time spent at the current block
         self.time_memory_data = np.zeros((200,200))
-
-        # for path and berry memory
-        memory_grid_size = self.memory_grid_size[0]*self.memory_grid_size[1]
-        self.path_memory = np.zeros(memory_grid_size) # aprox path
-        self.berry_memory = np.zeros(memory_grid_size) # aprox place of sighting a berry
-        self.time_memory = 0 # the time spent at the current block
-        self.time_memory_data = np.zeros_like(self.path_memory)
         return
 
     def _update_memories(self, info, avg_worth):
