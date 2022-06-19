@@ -62,7 +62,8 @@ class Debugging:
             
             # retrive the state and stuff from record
             state, envdt = line2arr(statel), line2arr(envdtl).reshape(-1,3)
-            state = state[1+state[0]:].reshape(state[1:1+state[0]])
+            state = state[1+state[0].astype(int):].reshape(
+                        state[1:1+state[0].astype(int)].astype(int))
             agentpos, berries = envdt[0], envdt[1:]
 
             # draw the berry-field
