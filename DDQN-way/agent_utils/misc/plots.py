@@ -8,6 +8,6 @@ def plot_time_mem_curves(factor,sizes,berryfieldside=20000,n=1000):
             delta = factor*l/berryfieldside
             arr[j][i+1] = arr[j][i]*(1-delta) + delta
     for j in range(len(sizes)):
-        plt.plot(arr[j], label=f'{sizes[j]}->{berryfieldside//l}')
+        plt.plot(arr[j], label=f'{sizes[j]}->{berryfieldside//sizes[j]}')
     plt.legend()
     plt.show()
