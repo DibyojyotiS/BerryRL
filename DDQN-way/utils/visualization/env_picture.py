@@ -85,7 +85,7 @@ def picture_episodes(fname, LOG_DIR, episodes, K=10, figsize=(10,10), titlefmt='
 # if __name__ == "__main__":
 #     class foo:
 #         def __init__(self,*args):
-#             self.f = "Trained for {} on random env\nEvaluation on fixed env\nEval-episode: {}"
+#             self.f = "Trained for {} episodes on random env\nEvaluation on fixed env\nEval-episode: {}"
 #         def format(self,i,*args):
 #             return self.f.format(10*i,i)
 #     picture_episodes('evals.mp4','../eval',range(26),nparallel=12,titlefmt=foo())
