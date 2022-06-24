@@ -131,7 +131,7 @@ class Agent():
 
         if self.reward_patch_discovery:
             print("Rewarding patch discovery")
-            patch_discovery_reward = PatchDiscoveryReward(reward_value=0.5)
+            patch_discovery_reward = PatchDiscoveryReward(reward_value=0.25)
 
         # some stats to track
         actual_steps = 0
@@ -236,9 +236,8 @@ class Agent():
         total_juice = info['total_juice']
 
         # make the state by concatenating sectorized_states and memories
-        y = np.random.randint(len(self.time_memories))
         state = np.concatenate([*sectorized_states, edge_dist, patch_relative, 
-                                [total_juice], [self.time_memories[y]]])
+                                [total_juice], self.time_memories])
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
@@ -274,14 +273,14 @@ class Agent():
         return transitions
 
     def makeNet(self, TORCH_DEVICE,
-            feedforward = dict(infeatures=39, linearsDim = [32,16], lreluslope=0.1),
+            feedforward = dict(infeatures=41, linearsDim = [32,16], lreluslope=0.1),
             final_stage = dict(infeatures=16, linearsDim = [8], 
                 lreluslope=0.1)):
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
         num_sectors = 360//self.angle
         outDims = self.berryField.action_space.n
-        ntimemems = 1 # len(self.time_memories)
+        ntimemems = len(self.time_memories)
         if self.add_exploration: outDims+=1
 
         class net(nn.Module):

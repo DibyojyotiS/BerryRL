@@ -1,0 +1,1 @@
+multi resoluyion time memories and patch reward reduced to 0.25
