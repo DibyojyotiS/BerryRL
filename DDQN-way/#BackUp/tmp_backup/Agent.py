@@ -1,22 +1,10 @@
-import os
-from collections import deque
-from typing import Union
-
-import imageio
 import numpy as np
-import torch
-import torch.nn.functional as F
-from berry_field.envs.berry_field_env import BerryFieldEnv
-from berry_field.envs.utils.misc import getTrueAngles
-from gym.spaces import Discrete
-from matplotlib import pyplot as plt
-from matplotlib.patches import Circle, Rectangle
-from torch import Tensor, nn
-
-from utils import printLocals
-from utils import random_exploration
-from utils.nn_utils import (make_simple_conv1dnet, make_simple_conv2dnet,
-                            make_simple_feedforward)
+from collections import deque
+from berry_field.envs import BerryFieldEnv
+from torch import Tensor, float32, nn, device, tensor
+from agent_utils import (berry_worth, random_exploration_v2, 
+    compute_sectorized, Debugging, PatchDiscoveryReward, 
+    skip_steps, make_simple_feedforward, printLocals, plot_time_mem_curves)
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8
@@ -27,18 +15,19 @@ class Agent():
     def __init__(self, berryField:BerryFieldEnv, mode='train', 
 
                 # params controlling the state and state-transitions
-                angle = 45, persistence=0.8, worth_offset=0.0, 
+                angle = 45, persistence=0.8, worth_offset=0.05, 
                 noise=0.01, nstep_transition=[1], positive_emphasis=0,
-                reward_patch_discovery=True, 
+                skipStep=10, reward_patch_discovery=True, 
                 add_exploration = True,
 
                 # params related to time memory
-                time_memory_delta=0.01, time_memory_exp=1.0,
+                time_memory_factor=0.5, time_memory_exp=1.0,
+                time_memory_sizes= [50,100,200],
 
                 # other params
-                render=False, renderstep=10, 
+                render=False, 
                 debug=False, debugDir='.temp',
-                device=torch.device('cpu')) -> None:
+                device=device('cpu')) -> None:
         """ 
         ### parameters
         - berryField: BerryFieldEnv instance
@@ -63,23 +52,30 @@ class Agent():
                 - state transitions with positive reward are 
                 repeatedly output for positive_emphasis number of
                 times in makeStateTransitions
+        - skipStep: int (default 10)
+                - action is repeated for next skipStep steps
         - reward_patch_discovery: bool (default True)
                 - add +1 reward on discovering a new patch
         - add_exploration: bool (default True)
                 - adds exploration-subroutine as an action
 
         #### params related to time memory
-        - time_memory_delta: float (default 0.01)
+        - time_memory_factor: float (default 0.01)
                 - increment the time of the current block
-                by time_memory_delta for each step in the block
+                by delta for each step in the block
+                as an exponential average with (1-delta)
+                where delta = time_memory_factor/resolution
+                and resolution = berry-field-size/time_memory_sizes
         - time_memory_exp: float (default 1.0)
                 - raise the stored time memory for the current block
                 to time_memory_exp and feed to agent's state
+        - time_memory_sizes: list[int]
+                - (L,L) matrices are alloted to represent the 
+                time spent in a square of size berry-field-size/L
+                so its important that L must divide berry-field-size
         
         - render: bool (default False)
                 - wether to render the agent 
-        - renderstep: int (defautl False)
-                - render the agent every renderstep step
          """
         printLocals('Agent', locals())
         self.istraining = mode == 'train'
@@ -92,114 +88,86 @@ class Agent():
         self.reward_patch_discovery = reward_patch_discovery
         self.positive_emphasis = positive_emphasis
         self.add_exploration= add_exploration
-        self.time_memory_delta = time_memory_delta
+        self.time_memory_factor = time_memory_factor
         self.time_memory_exp = time_memory_exp
+        self.time_memory_sizes = time_memory_sizes
         self.render = render
-        self.renderstep = renderstep
+        self.skipSteps = skipStep
+        self.device = device
 
         # init memories and other stuff
-        self.num_sectors = 360//angle        
-        self.output_shape = self.get_output_shape()
         self._init_memories()
-        self.print_information()
-        self.nnet = self.makeNet(TORCH_DEVICE=device, debug=debug)
-        self.berryField.step = self.env_step_wrapper(self.berryField, render, renderstep)
+        self.nnet = self.makeNet(TORCH_DEVICE=device)
+        self.berryField.step = self.env_step_wrapper(self.berryField, render)
 
         # setup debug
-        self.debugDir = debugDir
-        self.debug = debug
-        self.built_net = False
-        if debug:
-            self.debugDir = os.path.join(debugDir, 'stMakerdebug')
-            if not os.path.exists(self.debugDir): os.makedirs(self.debugDir)
-            self.state_debugfile = open(os.path.join(self.debugDir, 'stMakerdebugstate.txt'), 'w', 1)
-            self.env_recordfile = open(os.path.join(self.debugDir, 'stMakerrecordenv.txt'), 'w', 1)
-
-    def print_information(self):
-        if not self.istraining: print('eval mode'); return
-        print("""The state-transitions being appended 
-            every action will be as [[state, action, sum-reward, nextState, done]] where:
-            state is the one the model has taken action on,
-            sum-reward is the sum of the rewards in the skip-trajectory,
-            nextState is the new state after the action was repeated at most skip-steps times,
-            done is wether the terminal state was reached.""")
-        if self.reward_patch_discovery:
-            print("Rewarding the agent for discovering new patches")
-        if self.add_exploration:
-            print("Exploration subroutine added")
-        print('agent now aware of total-juice')
-
-    def berry_worth_function(self, sizes, distances):
-        """ the reward that can be gained by pursuing a berry of given size and distance
-        we note that the distances are scaled to be in range 0 to 1 by dividing by half-diag
-        of observation space """
-        # for computation of berry worth, can help to change 
-        # the agent's preference of different sizes of berries. 
-        rr, dr = self.berryField.REWARD_RATE, self.berryField.DRAIN_RATE
-        worth = rr * sizes - dr * distances * self.berryField.HALFDIAGOBS
+        self.debugger = Debugging(debugDir=debugDir, 
+            berryField=self.berryField) if debug else None
         
-        # scale worth to 0 - 1 range
-        min_worth, max_worth = rr * 10 - dr * self.berryField.HALFDIAGOBS, rr * 50
-        worth = (worth - min_worth)/(max_worth - min_worth)
+        # some stuff that i need
+        if mode == 'train':
+            plot_time_mem_curves(self.time_memory_factor, 
+                self.time_memory_sizes, self.berryField.FIELD_SIZE[0])
 
-        # incorporate offset
-        worth = (worth + self.worth_offset)/(1 + self.worth_offset)
-
-        return worth
-
-    def env_step_wrapper(self, berryField:BerryFieldEnv, render=False, renderstep=10):
+    def env_step_wrapper(self, berryField:BerryFieldEnv, render=False):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
         for better gradients..., also rewards are clipped between 0 and 2 """
-        print('with living cost, rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)')
+        print('rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)')
         print('rewards are clipped between 0 and 2')
         
         MAXSIZE = max(berryField.berry_collision_tree.boxes[:,2])
         scale = 2/(berryField.REWARD_RATE*MAXSIZE)
-        cur_n = berryField.action_space.n
+        nactions = berryField.action_space.n
         berry_env_step = berryField.step
 
         # add the exploration subroutine to env action space
         if self.add_exploration:
             print('Exploration subroutine as an action')
-            exploration_step = random_exploration(berryField, render=render, renderS=renderstep)
-            berryField.action_space = Discrete(cur_n+1)
+            exploration_step = random_exploration_v2(berryField, 
+                model=self.nnet, makeState=self.makeState, 
+                hasInternalMemory=False, skipSteps=self.skipSteps,
+                device=self.device, render=render)
+            nactions+=1
+
+        if self.reward_patch_discovery:
+            print("Rewarding patch discovery")
+            patch_discovery_reward = PatchDiscoveryReward(reward_value=0.5)
 
         # some stats to track
         actual_steps = 0
         episode = 0
-        action_counts = {i:0 for i in range(berryField.action_space.n)}
+        action_counts = {i:0 for i in range(nactions)}
+
         def step(action):
             nonlocal actual_steps, episode
 
             # execute the action
-            steps, state, reward, done, info = exploration_step() \
-                if self.add_exploration and action == cur_n else \
-                    (1, *berry_env_step(action))
+            if self.add_exploration and action == nactions-1:
+                sum_reward, skip_trajectory, steps = exploration_step()
+            else:
+                if render: berryField.render()
+                sum_reward, skip_trajectory, steps = skip_steps(action=action, 
+                    skipSteps= self.skipSteps, berryenv_step= berry_env_step)
+            listOfBerries, info, _, done = skip_trajectory[-1]
 
             # update stats
             actual_steps += steps
             action_counts[action] += 1
 
             # modify reward
-            reward = scale*reward
+            reward = scale*sum_reward
             reward = min(max(reward, 0), 2)
             if self.reward_patch_discovery: 
-                reward += self._reward_patch_discovery(info)
+                reward += patch_discovery_reward(info)
             
-            # print stuff and reset stats
+            # print stuff and reset stats and patch-discovery-reward
             if done: 
-                print(f'\n=== episode:{episode} Env-steps-taken:{actual_steps}')
-                print('action_counts:',action_counts)
-                print('picked: ', berryField.get_numBerriesPicked())
-                actual_steps = 0
-                episode+=1
+                print(f'\n=== episode:{episode} Env-steps-taken:{actual_steps}\n',
+                '\tpicked:',berryField.get_numBerriesPicked(),'|actions:',action_counts)
+                actual_steps = 0; episode+=1; patch_discovery_reward(info=None)
                 for k in action_counts:action_counts[k]=0
             
-            # render if asked
-            if render and actual_steps%renderstep==0:
-                berryField.render()
-            
-            return state, reward, done, info
+            return listOfBerries, reward, done, info
         return step
 
     def _init_memories(self):
@@ -207,75 +175,16 @@ class Agent():
         self.state_deque = deque(maxlen=max(self.nstep_transitions) + 1)
         self.state_deque.append([None,None,0]) # init deque
 
-        # needed to reward patch discovery
-        self.visited_patches = set() 
-
         # for persistence
-        self.prev_sectorized_state = np.zeros((4,self.num_sectors))
+        self.prev_sectorized_state = None
 
         # for time memory
-        self.time_memory = 0 # the time spent at the current block
-        self.time_memory_data = np.zeros((200,200))
+        self.time_mem_mats = [
+            np.zeros((L,L)) for L in self.time_memory_sizes
+        ]
+        self.time_memories = np.zeros(len(self.time_mem_mats))
+
         return
-
-    def _reward_patch_discovery(self, info):
-        # info, reward are None at start (spawn)
-        reward = 0
-        if info is None: return reward
-        patch_id = info['current-patch-id']
-        if (patch_id is not None) and (patch_id not in self.visited_patches):
-            self.visited_patches.add(patch_id)
-            # don't give +ve to spawn patch!!!
-            if len(self.visited_patches) > 1: reward += 1
-        return reward
-
-    def _compute_sectorized(self, raw_observation, info):
-        """  """
-        # a1 = np.zeros(self.num_sectors) # max-worth of each sector
-        # a2 = np.zeros(self.num_sectors) # stores avg-worth of each sector
-        # a3 = np.zeros(self.num_sectors) # indicates the sector with the max worthy berry
-        # a4 = np.zeros(self.num_sectors) # a mesure of distance to max worthy in each sector
-
-        # apply persistence
-        a1,a2,a3,a4 = self.prev_sectorized_state * self.persistence
-        total_worth = 0
-
-        if len(raw_observation) > 0:
-            sizes = raw_observation[:,2]
-            dist = np.linalg.norm(raw_observation[:,:2], axis=1) + EPSILON
-            directions = raw_observation[:,:2]/dist[:,None]
-            angles = getTrueAngles(directions)
-            
-            dist = ROOT_2_INV*dist # range in 0 to 1
-            maxworth = float('-inf')
-            maxworth_idx = -1
-            for x in range(0,360,self.angle):
-                sectorL, sectorR = (x-self.angle/2)%360, (x+self.angle/2)
-                if sectorL < sectorR:
-                    args = np.argwhere((angles>=sectorL)&(angles<=sectorR))
-                else:
-                    args = np.argwhere((angles>=sectorL)|(angles<=sectorR))
-                
-                if args.shape[0] > 0: 
-                    idx = x//self.angle
-                    _sizes = sizes[args]
-                    _dists = dist[args]
-                    # max worthy
-                    worthinesses= self.berry_worth_function(_sizes,_dists)
-                    maxworthyness_idx = np.argmax(worthinesses)
-                    a1[idx] = worthyness = worthinesses[maxworthyness_idx]
-                    a2[idx] = np.average(worthinesses)
-                    a4[idx] = 1 - _dists[maxworthyness_idx]
-                    total_worth += sum(worthinesses)
-                    if worthyness > maxworth:
-                        maxworth_idx = idx
-                        maxworth = worthyness    
-            if maxworth_idx > -1: a3[maxworth_idx]=1 
-        
-        avg_worth = total_worth/len(raw_observation) if len(raw_observation) > 0 else 0
-
-        self.prev_sectorized_state = np.array([a1,a2,a3,a4])
-        return [a1,a2,a3,a4], avg_worth
 
     def _update_memories(self, info, avg_worth):
         x,y = info['position']
@@ -283,15 +192,25 @@ class Agent():
         if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
 
         # decay time memory and update time_memory
-        mem_x, mem_y = self.time_memory_data.shape
-        x = int(x//(self.berryField.FIELD_SIZE[0]//mem_x))
-        y = int(y//(self.berryField.FIELD_SIZE[1]//mem_y))
-        self.time_memory_data *= 1-self.time_memory_delta
-        self.time_memory_data[x][y] += self.time_memory_delta
-        current_time = min(1,self.time_memory_data[x][y])**self.time_memory_exp
-        self.time_memory = self.time_memory*self.persistence +\
-                            (1-self.persistence)*current_time
+        current_time = np.zeros_like(self.time_memories)
+        for i,L in enumerate(self.time_memory_sizes):
+            mem_x, mem_y = self.time_mem_mats[i].shape
+            x_ = int(x//(self.berryField.FIELD_SIZE[0]//mem_x))
+            y_ = int(y//(self.berryField.FIELD_SIZE[1]//mem_y))
+            delta = self.time_memory_factor*L/self.berryField.FIELD_SIZE[0]
+            self.time_mem_mats[i] *= 1-delta
+            self.time_mem_mats[i][x_][y_] += delta
+            current_time[i] = min(1,self.time_mem_mats[i][x_][y_])
+        self.time_memories = self.time_memories*self.persistence +\
+                            (1-self.persistence)*(current_time**self.time_memory_exp)
         return
+
+    def berry_worth_func(self, sizes, dists):
+        return berry_worth(sizes, dists, 
+            REWARD_RATE=self.berryField.REWARD_RATE, 
+            DRAIN_RATE=self.berryField.DRAIN_RATE, 
+            HALFDIAGOBS=self.berryField.HALFDIAGOBS, 
+            WORTH_OFFSET=self.worth_offset)
 
     def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
@@ -302,7 +221,11 @@ class Agent():
             info = self.berryField.get_info()
 
         # the total-worth is also representative of the percived goodness of observation
-        sectorized_states, avg_worth = self._compute_sectorized(raw_observation, info)
+        sectorized_states, avg_worth = compute_sectorized(raw_observation=raw_observation, 
+                info=info, berry_worth_function=self.berry_worth_func, 
+                prev_sectorized_state=self.prev_sectorized_state, 
+                persistence=self.persistence, angle=self.angle)
+        self.prev_sectorized_state = sectorized_states
 
         # update memories
         self._update_memories(info, avg_worth)
@@ -311,46 +234,24 @@ class Agent():
         edge_dist = info['scaled_dist_from_edge']
         patch_relative = info['patch-relative']
         total_juice = info['total_juice']
-        # rel_p = info['relative_coordinates']
 
         # make the state by concatenating sectorized_states and memories
         state = np.concatenate([*sectorized_states, edge_dist, patch_relative, 
-                                [total_juice], [self.time_memory]])
+                                [total_juice], self.time_memories])
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
-    def state_desc(self):
-        """ returns the start and stop+1 indices for various parts of the state """
-        state_desc = {
-            'sectorized_states': [0, 4*self.num_sectors],
-            'edge_dist': [4*self.num_sectors, 4*self.num_sectors+4],
-            'patch_relative': [4*self.num_sectors+4, 4*self.num_sectors+4+1],
-            'total_juice': [4*self.num_sectors+4+1, 4*self.num_sectors+4+2],
-            'time_memory': [4*self.num_sectors+4+2, 4*self.num_sectors+4+3],
-            # 'relative_coordinates':[4*self.num_sectors+7, 4*self.num_sectors+8]
-        }
-        return state_desc
-
-    def get_output_shape(self):
-        try: return self.output_shape
-        except: self._computeState(None, None, None, None).shape
-
     def makeState(self, skip_trajectory, action_taken):
-        """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
+        """ skip trajectory is a sequence of [[next-observation, reward, done, info],...] """
         final_state = self._computeState(*skip_trajectory[-1])
-
-        # debug
-        if self.debug: 
-            agent, berries = self.berryField.get_human_observation()
-            np.savetxt(self.state_debugfile, [final_state])
-            np.savetxt(self.env_recordfile, [np.concatenate([agent, *berries[:,:3]])])
-
+        if self.debugger: self.debugger.record(final_state)
         return final_state
       
     def makeStateTransitions(self, skip_trajectory, state, action, nextState):
-        """ get the state-transitions - these are already computed in the
-        makeState function when mode = 'train'. All inputs to  makeStateTransitions
-        are ignored."""
+        """ Makes the state-transitions using the given inputs and also makes
+        n-step transitions according to the argument nstep_transitions in the 
+        agent's init. The reward for the n-step transition is a simple summation
+        of the rewards from the individual transitions. """
         # compute the sum of reward in the skip-trajectory
         reward = sum([r for o,i,r,d in skip_trajectory])
         done = skip_trajectory[-1][-1]
@@ -365,21 +266,22 @@ class Agent():
                 reward0 = self.state_deque[-n-1][-1]
                 oldstate, oldaction, reward1 = self.state_deque[-n]
                 sum_reward = reward1-reward0
-                # sum_reward = max(min(reward1-reward0,2),-2) # clipping so that this doesnot wreck priority buffer
                 transition = [oldstate, oldaction, sum_reward, nextState, done]
                 if self.positive_emphasis and sum_reward > 0:
                     transitions.extend([transition]*self.positive_emphasis)
                 else: transitions.append(transition)
         return transitions
 
-    def makeNet(self, TORCH_DEVICE, debug=False,
-            feedforward = dict(infeatures=39, linearsDim = [32,16], lreluslope=0.1),
+    def makeNet(self, TORCH_DEVICE,
+            feedforward = dict(infeatures=41, linearsDim = [32,16], lreluslope=0.1),
             final_stage = dict(infeatures=16, linearsDim = [8], 
                 lreluslope=0.1)):
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
-        num_sectors = self.num_sectors
+        num_sectors = 360//self.angle
         outDims = self.berryField.action_space.n
+        ntimemems = len(self.time_memories)
+        if self.add_exploration: outDims+=1
 
         class net(nn.Module):
             def __init__(self):
@@ -396,9 +298,9 @@ class Agent():
                 self.actadvs = nn.Linear(final_stage['linearsDim'][-1], outDims)
 
                 # indices to split at
-                self.f_part = (0, 4*num_sectors+7)
+                self.f_part = (0, 4*num_sectors+6+ntimemems)
 
-            def forward(self, input:Tensor):
+            def forward(self, input:Tensor, debug=False):
 
                 # split and reshape input
                 if debug: print(input.shape)
@@ -418,123 +320,42 @@ class Agent():
                 
                 return qvalues
 
-        if debug:
-            net().to(TORCH_DEVICE)(
-                torch.tensor([self.makeState([[None]*4],None)], 
-                    dtype=torch.float32, device=TORCH_DEVICE))
-
         self.nnet = net().to(TORCH_DEVICE)
-        self.built_net = True
         print('total-params: ', sum(p.numel() for p in self.nnet.parameters() if p.requires_grad))
         return self.nnet
 
-    def getNet(self)->nn.Module:
+    def getNet(self,debug=False)->nn.Module:
         """ return the agent's brain (a duelling net)"""
+        if debug:
+            self.nnet(tensor([self.makeState([[None]*4],None)],
+                dtype=float32,device=self.device),debug=debug)
         return self.nnet
 
-    def showDebug(self, nnet:Union[nn.Module,None]=None, debugDir = None, f=20, gif=False):
+    def showDebug(self, gif=False, f=20, figsize=(15,10)):
         
-        # close the log files if not already closed
-        if self.debug and not self.state_debugfile.closed:
-            self.state_debugfile.write('end')
-            self.state_debugfile.close()
-        if self.debug and not self.env_recordfile.closed:
-            self.env_recordfile.write('end')
-            self.env_recordfile.close()
-        
-        # init the debug directory
-        if not debugDir: debugDir = self.debugDir
-        else: debugDir = os.path.join(debugDir, 'stMakerdebug')
+        num_sectors = 360//self.angle
+        actions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 
+                    'W', 'NW', 'EX']
 
-        # init the gif file
-        if gif:
-            giffile = imageio.get_writer(f'{debugDir}/debug.gif')
+        def plotfn(axs, state, *args):
+            sectorized_states = state[:4*num_sectors].reshape(4,num_sectors)
+            edge_dist = state[4*num_sectors: 4*num_sectors+4]
+            patch_relative = state[4*num_sectors+4]
+            total_juice = state[4*num_sectors+4+1]
+            time_mem = state[4*num_sectors+4+2:]
+            axs[0][0].imshow(sectorized_states)
+            axs[0][1].bar([*range(2+len(time_mem))],[total_juice, 
+                    patch_relative, *time_mem], [1]*(2+len(time_mem)))
+            axs[1][0].bar([*range(4)],edge_dist)
+            axs[0][0].set_title('sectorized states')
+            axs[0][1].set_title('measure of patch-center-dist')
+            axs[0][1].set_xticklabels(["", "total-juice","patch-rel",
+                *[f"time-mem-{x}" for x in self.time_memory_sizes]]) 
+            axs[1][0].set_title('measure of dist-from-edge')
+            axs[1][0].set_xticklabels(["","","left","right","top","bottom"]) 
+            axs[0][1].set_ylim(top=1)
 
-        # move nnet to cpu
-        if nnet: nnet.cpu()
-
-        fig, ax = plt.subplots(2,2, figsize=(15, 10))
-        plt.tight_layout(pad=5)
-        staterecord = open(os.path.join(debugDir, 'stMakerdebugstate.txt'), 'r')
-        envrecord = open(os.path.join(debugDir, 'stMakerrecordenv.txt'), 'r')
-        action_names = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW', 'EX']
-        
-        itter = -1
-        while True:
-            line = staterecord.readline()
-            line2 = envrecord.readline()
-            if line == 'end': break
-            itter += 1
-            if itter % f != 0: continue
-
-            state = np.array(eval('[' + line[:-1].replace(' ', ',') + ']'), dtype=float)
-            agent_and_berries = np.array(eval('[' + line2[:-1].replace(' ', ',') + ']'), dtype=float).reshape(-1,3)
-
-            sectorized_states = state[:4*self.num_sectors].reshape(4,self.num_sectors)
-            edge_dist = state[4*self.num_sectors: 4*self.num_sectors+4]
-            patch_relative = state[4*self.num_sectors+4]
-            total_juice = state[4*self.num_sectors+4+1]
-            time_mem = state[4*self.num_sectors+4+2]
-
-            berries = agent_and_berries[1:]
-            agent = agent_and_berries[0]
-            w,h = self.berryField.OBSERVATION_SPACE_SIZE
-            W, H = self.berryField.FIELD_SIZE
-
-            ax[0][0].imshow(sectorized_states)
-            ax[0][1].bar([0,1,2],[total_juice, patch_relative, time_mem], [1,1,1])
-            ax[1][0].bar([*range(4)],edge_dist)
-
-            # draw the berry-field
-            ax[1][1].add_patch(Rectangle((agent[0]-w/2, agent[1]-h/2), w,h, fill=False))
-            ax[1][1].add_patch(Rectangle((agent[0]-w/2-30,agent[1]-h/2-30), w+60,h+60, fill=False))
-            ax[1][1].scatter(x=berries[:,0], y=berries[:,1], s=berries[:,2], c='r')
-            ax[1][1].scatter(x=agent[0], y=agent[1], s=agent[2], c='black')
-            if agent[0]-w/2 < 0: ax[1][1].add_patch(Rectangle((0, agent[1] - h/2), 1, h, color='blue'))
-            if agent[1]-h/2 < 0: ax[1][1].add_patch(Rectangle((agent[0] - w/2, 0), w, 1, color='blue'))
-            if W-agent[0]-w/2<0: ax[1][1].add_patch(Rectangle((W, agent[1] - h/2), 1, h, color='blue'))
-            if H-agent[1]-h/2<0: ax[1][1].add_patch(Rectangle((agent[0] - w/2, H), w, 1, color='blue'))
-
-            # compute q-values and plot qvals
-            if nnet: 
-                originalqvals = nnet(torch.tensor([state], dtype=torch.float32)).detach()[0].numpy()
-                maxidx = np.argmax(originalqvals)
-                ax[1][1].text(agent[0]+20, agent[1]+20, f'q:{originalqvals[maxidx]:.2f}:{action_names[maxidx]}')
-
-                # add action-advs circles
-                colorqs = originalqvals[:8]
-                colors = (colorqs-min(colorqs))/(max(colorqs)-min(colorqs)+EPSILON)
-                for angle in range(0, 360, self.angle):
-                    rad = 2*np.pi * (angle/360)
-                    x,y = 100*np.sin(rad), 100*np.cos(rad)
-                    c = colors[angle//self.angle]
-                    ax[1][1].add_patch(Circle((agent[0]+x, agent[1]+y), 20, color=(c,c,0,1)))
-
-                # set title
-                str_qvals = [f"{np.round(x,2):.2f}" for x in originalqvals.tolist()]
-                meanings = [action_names[i]+' '*(len(qv)-len(action_names[i])) for i,qv in enumerate(str_qvals)]
-                ax[1][1].set_title(f'env-record with q-vals plot\nqvals: {" ".join(str_qvals)}\n       {" ".join(meanings)}')
-
-            # titles and ticks
-            ax[0][0].set_title('sectorized states')
-            ax[0][1].set_title('measure of patch-center-dist')
-            ax[0][1].set_xticklabels(["","","total-juice","","patch-rel","","time-mem"]) 
-            ax[1][0].set_title('measure of dist-from-edge')
-            ax[1][0].set_xticklabels(["","","left","right","top","bottom"]) 
-            ax[0][1].set_ylim(top=1)
-            if not nnet: ax[1][2].set_title(f'env-record')
-
-            if gif: 
-                fig.savefig(f'{debugDir}/tmpimg.png')
-                img = imageio.imread(f'{debugDir}/tmpimg.png')
-                giffile.append_data(img)
-                os.remove(f'{debugDir}/tmpimg.png')
-
-            plt.pause(0.001)
-            
-            for b in ax: 
-                for a in b: a.clear() 
-            
-        plt.show(); plt.close()
-        staterecord.close(); envrecord.close()
-        if gif: giffile.close()
+        plotfns = [(2,2), plotfn]
+        self.debugger.showDebug(plotfns=plotfns, nnet=self.nnet,
+            device=self.device, f=f,action_names=actions, 
+            gif=gif, figsize=figsize)

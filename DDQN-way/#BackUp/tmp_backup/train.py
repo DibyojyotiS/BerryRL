@@ -1,4 +1,3 @@
-import shutil
 import time
 
 from DRLagents import *
@@ -7,7 +6,7 @@ from torch.optim.rmsprop import RMSprop
 
 from Agent import *
 from utils import (getRandomEnv, Env_print_fn, 
-            my_print_fn, copy_files)
+        my_print_fn, copy_files, plot_berries_picked)
 
 # set all seeds
 torch.manual_seed(0)
@@ -46,10 +45,9 @@ if __name__ == '__main__':
     evalEnv = BerryFieldEnv(analytics_folder=f'{LOG_DIR}/eval')
     
     # make the agent and network and wrap evalEnv's step fn
-    agent = Agent(trainEnv, nstep_transition=[1], device=TORCH_DEVICE)
-    nnet = agent.getNet()
+    agent = Agent(trainEnv, skipStep=10, nstep_transition=[1], device=TORCH_DEVICE)
     evalEnv.step = agent.env_step_wrapper(evalEnv)
-    print(nnet)
+    nnet = agent.getNet(); print(nnet)
 
     # training stuffs
     optim = Adam(nnet.parameters(), lr=0.0005)
@@ -58,7 +56,7 @@ if __name__ == '__main__':
     tstrat = epsilonGreedyAction(0.5)
 
     ddqn_trainer = DDQN(trainEnv, nnet, tstrat, optim, buffer, batchSize=512, 
-                        gamma=0.9, update_freq=5, MaxTrainEpisodes=2000, skipSteps=10,
+                        gamma=0.9, update_freq=5, MaxTrainEpisodes=2000,
                         optimize_every_kth_action=100, num_gradient_steps=25,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
                         evalFreq=10, printFreq=1, polyak_average=True, polyak_tau=0.1,
@@ -85,3 +83,5 @@ if __name__ == '__main__':
     ddqn_trainer.evaluate(evalEnv=evalEnv, render=True)
     evalPrintFn()
     logger.close()
+
+    plot_berries_picked(LOG_DIR)
