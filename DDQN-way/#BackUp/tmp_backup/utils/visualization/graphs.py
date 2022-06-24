@@ -27,16 +27,21 @@ def plot_berries_picked(LOG_DIR):
     data2 = get_data_points(f'{LOG_DIR}/eval/analytics-berry-field/')
 
     # plot stuff
-    if data1: 
+    if data1 is not None and data2 is not None:
+        fig, axs = plt.subplots(2,1)
+        axs[0].plot(data1)
+        axs[0].set_title('berries collected during train')
+        axs[1].plot(data2)
+        axs[1].set_title('berries collected during eval')
+    elif data1 is not None: 
         plt.plot(data1)
         plt.title('berries collected during train')
-        plt.show()
-    if data2:
+    elif data2 is not None:
         plt.plot(data2)
         plt.title('berries collected during eval')
-        plt.show()
+    plt.tight_layout()
 
-# if __name__ == "__main__":
-#     LOG_DIR = 'D:\Machine_Learning\RL\Foraging-in-a-field\DDQN-way\BackUp\\backup-1\\2022-6-15 19-44-17' 
-#     LOG_DIR = 'D:\Machine_Learning\RL\Foraging-in-a-field\DDQN-way\.temp\\2022-6-16 8-25-6'
-#     plot_berries_picked(LOG_DIR)
+if __name__ == "__main__":
+    LOG_DIR = 'D:\Machine_Learning\RL\Foraging-in-a-field\DDQN-way\.temp\\2022-6-19 17-52-55'
+    plot_berries_picked(LOG_DIR)
+    plt.show()
