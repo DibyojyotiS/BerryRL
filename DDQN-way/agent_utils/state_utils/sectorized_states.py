@@ -1,4 +1,5 @@
 import numpy as np
+from bisect import bisect_left
 from berry_field.envs import BerryFieldEnv
 
 EPSILON = 1e-8
@@ -20,7 +21,7 @@ def getTrueAngles(directions, referenceVector=[0,1]):
     angles[args0] = 360-angles[args0]
     return angles
 
-def compute_sectorized(raw_observation, info, 
+def compute_sectorized(raw_observation:np.ndarray, info:dict, 
                         berry_worth_function:'function', 
                         prev_sectorized_state=None, 
                         persistence=0.8,angle=45):
@@ -93,3 +94,73 @@ def compute_sectorized(raw_observation, info,
     avg_worth = total_worth/len(raw_observation) \
         if len(raw_observation) > 0 else 0
     return np.array([a1,a2,a3,a4]), avg_worth
+
+def compute_distance_sectorized(raw_observation:np.ndarray, info:dict, 
+    berry_worth_function:'function', spacings:list=[], prev_sectorized_state=None, 
+    persistence=0.8, angle=45, observation_space_size=(1920,1080)):
+    """ Segments the raw-observtion of berries by 
+    distances according to the spacings given. Then
+    computes the sectorized state for each of the
+    segments using compute_sectorized function.
+
+    ### parameters
+    - raw_observation: ndarray
+            - observation returned from BerryFieldEnv.step
+            - a numpy array with rows as [x,y,berry-size]
+    - info: dict[str,Any] 
+            - info returned from BerryFieldEnv.step 
+    - berry_worth_function: function
+            - a function that takes in the sizes (array) 
+            and distances (array) and returns a array
+            denoting the worth of each berry. 
+    - spacings:list (default empty list)
+            - a list containg floats between 0 and 1 in
+            increasing order. 
+            say a and b are two floats in the list, then
+            all the berries that are in distance >= a and 
+            <= b are outputed.
+            - if spacings is an empty list, then it is
+            the same as calling compute_sectorized
+    - prev_sectorized_state: ndarray (default None)
+            - previously computed sectorized state
+            to be used for persistence of vision
+            - if None, then persistence has no effect
+    - persistence: float (default 0.8)
+            - the amount of information from the 
+            prev_sectorized_state that is retained 
+
+    ### returns
+    - sectorized_state: ndarray
+    - avg_worth: float, the average worth so seen
+    """
+
+    compute_sec = lambda raw_obs, info: \
+            compute_sectorized(raw_obs, info, 
+            berry_worth_function=berry_worth_function, 
+            prev_sectorized_state=prev_sectorized_state,
+            persistence=persistence,
+            angle=angle)
+
+    if len(spacings)==0:
+        return compute_sec(raw_observation, info)
+
+    W,H = observation_space_size
+    half_diagonal= ((H**2+W**2)**0.5)/2
+    w = np.abs(raw_observation[:,0]*half_diagonal/(W/2))
+    h = np.abs(raw_observation[:,1]*half_diagonal/(H/2))
+
+    indices = np.max([np.searchsorted(spacings, w),
+            np.searchsorted(spacings, h)], axis=0)
+
+    dist_obs = [[] for _ in range(len(spacings)+1)]
+    for i_, i in enumerate(indices): dist_obs[i].append(i_)
+
+    sectorized = []; avg_worth = 0
+    for obs in dist_obs:
+        sectorized_, avg_worth_ = compute_sec(raw_observation[obs], info)
+        sectorized.append(sectorized_)
+        avg_worth += avg_worth_*len(obs)
+
+    if len(raw_observation) > 0: avg_worth/=len(raw_observation)
+    sectorized = np.concatenate(sectorized, axis=0)
+    return sectorized, avg_worth
