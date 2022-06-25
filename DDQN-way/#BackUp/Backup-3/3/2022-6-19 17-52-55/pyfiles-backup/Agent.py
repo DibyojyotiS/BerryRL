@@ -55,7 +55,7 @@ class Agent():
         - skipStep: int (default 10)
                 - action is repeated for next skipStep steps
         - reward_patch_discovery: bool (default True)
-                - add +1 reward on discovering a new patch
+                - add +0.5 reward on discovering a new patch
         - add_exploration: bool (default True)
                 - adds exploration-subroutine as an action
 
