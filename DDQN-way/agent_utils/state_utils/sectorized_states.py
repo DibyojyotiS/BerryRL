@@ -28,6 +28,7 @@ def compute_sectorized(raw_observation, info,
     ### parameters
     - raw_observation: ndarray
             - observation returned from BerryFieldEnv.step
+            - a numpy array with rows as [x,y,berry-size]
     - info: dict[str,Any] 
             - info returned from BerryFieldEnv.step 
     - berry_worth_function: function
@@ -63,7 +64,7 @@ def compute_sectorized(raw_observation, info,
         directions = raw_observation[:,:2]/dist[:,None]
         angles = getTrueAngles(directions)
         
-        dist = ROOT_2_INV*dist # range in 0 to 1
+        # dist = ROOT_2_INV*dist # range in 0 to 1 ## oops! this is a bug!!
         maxworth = float('-inf')
         maxworth_idx = -1
         for x in range(0,360,angle):
