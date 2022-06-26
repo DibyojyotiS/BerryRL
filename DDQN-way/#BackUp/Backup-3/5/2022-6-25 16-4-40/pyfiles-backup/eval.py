@@ -3,7 +3,7 @@ from Agent import *
 from utils import picture_episode
 
 # set all seeds
-seed=0
+seed=10
 torch.manual_seed(seed)
 np.random.seed(seed)
 random.seed(seed)
