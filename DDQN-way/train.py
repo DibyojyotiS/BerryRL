@@ -51,7 +51,7 @@ if __name__ == '__main__':
     nnet = agent.getNet(); print(nnet)
 
     # training stuffs
-    optim = Adam(nnet.parameters(), lr=0.01, weight_decay=0.05)
+    optim = Adam(nnet.parameters(), lr=0.005, weight_decay=0.05)
     schdl = MultiStepLR(optim,[50*i for i in range(1,21)],gamma=0.5)
     buffer = PrioritizedExperienceRelpayBuffer(int(6E4), alpha=0.95,
                                         beta=0.1, beta_rate=0.9/2000)

@@ -10,7 +10,7 @@ def plot_berries_picked(LOG_DIR):
         if not os.path.exists(path): return
         data_nberries = []
         episodes = list(map(int,
-            [x for x in os.listdir(path) 
+            [x for x in sorted(os.listdir(path)) 
             if os.path.isfile(f'{path}/{x}/results.txt')]))
         for i in sorted(episodes):
             pt = f'{path}/{i}/results.txt'
