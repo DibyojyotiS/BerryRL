@@ -1,3 +1,4 @@
+from matplotlib.axes import Axes
 import numpy as np
 from collections import deque
 from berry_field.envs import BerryFieldEnv
@@ -192,6 +193,9 @@ class Agent():
         ]
         self.time_memories = np.zeros(len(self.time_mem_mats))
 
+        # a different kind of berry-memory
+        self.berry_memory = {}
+
         return
 
     def _update_memories(self, info, avg_worth):
@@ -211,6 +215,18 @@ class Agent():
             current_time[i] = min(1,self.time_mem_mats[i][x_][y_])
         self.time_memories = self.time_memories*self.persistence +\
                             (1-self.persistence)*(current_time**self.time_memory_exp)
+
+        # update the berry memory
+        mem_size = 40
+        _x = int(x/(self.berryField.FIELD_SIZE[0]/mem_size))
+        _y = int(y/(self.berryField.FIELD_SIZE[1]/mem_size))
+        key = (_x,_y)
+        avg_size = avg_worth*50 # since worth function is in 0-1 range
+        if avg_worth < 10: self.berry_memory.pop(key, 0)
+        else: self.berry_memory[key] = (
+            _x*self.berryField.FIELD_SIZE[0]/mem_size + mem_size/2,
+            _y*self.berryField.FIELD_SIZE[1]/mem_size + mem_size/2,
+            max(avg_size, self.berry_memory.get(key,(0,0,0))[-1]))
         return
 
     def berry_worth_func(self, sizes, dists):
@@ -218,7 +234,8 @@ class Agent():
             REWARD_RATE=self.berryField.REWARD_RATE, 
             DRAIN_RATE=self.berryField.DRAIN_RATE, 
             HALFDIAGOBS=self.berryField.HALFDIAGOBS, 
-            WORTH_OFFSET=self.worth_offset)
+            WORTH_OFFSET=self.worth_offset,
+            min_berry_size=10, max_berry_size=40)
 
     def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
@@ -229,10 +246,24 @@ class Agent():
             info = self.berryField.get_info()
 
         # the total-worth is also representative of the percived goodness of observation
-        sectorized_states, avg_worth = compute_distance_sectorized(raw_observation=raw_observation, 
+        prev_sectorized_state1 = None if self.prev_sectorized_state is None \
+            else self.prev_sectorized_state[:4*(len(self.spacings)+1)]
+        sectorized_states1, avg_worth = compute_distance_sectorized(raw_observation=raw_observation, 
                 info=info, berry_worth_function=self.berry_worth_func, spacings=self.spacings, 
-                prev_sectorized_state=self.prev_sectorized_state, 
+                prev_sectorized_state=prev_sectorized_state1, 
                 persistence=self.persistence, angle=self.angle)
+
+        # for the berry-memory part
+        cx,cy = info['position']
+        observation = np.array([[x-cx,y-cy,s] for x,y,s in self.berry_memory.values()])
+        prev_sectorized_state2 = None if self.prev_sectorized_state is None \
+            else self.prev_sectorized_state[4*(len(self.spacings)+1):]
+        sectorized_states2, _ = compute_distance_sectorized(raw_observation=observation, 
+                info=None, berry_worth_function=self.berry_worth_func, spacings=self.spacings, 
+                prev_sectorized_state=prev_sectorized_state2, 
+                persistence=self.persistence, angle=self.angle)
+
+        sectorized_states = np.concatenate([sectorized_states1,sectorized_states2])
         self.prev_sectorized_state = sectorized_states
 
         # update memories
@@ -244,7 +275,8 @@ class Agent():
         total_juice = info['total_juice']
 
         # make the state by concatenating sectorized_states and memories
-        state = np.concatenate([*sectorized_states, edge_dist, patch_relative, 
+        state = np.concatenate([*sectorized_states, 
+                                edge_dist, patch_relative, 
                                 [total_juice], self.time_memories])
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
@@ -284,7 +316,7 @@ class Agent():
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
         outDims = self.berryField.action_space.n
-        n_sectorized = (1+len(self.spacings))*4*(360//self.angle)
+        n_sectorized = 2*(1+len(self.spacings))*4*(360//self.angle)
         if self.add_exploration: outDims+=1
         
         # define the layers
@@ -336,7 +368,7 @@ class Agent():
         actions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 
                     'W', 'NW', 'EX']
 
-        def plotfn(axs, state, *args):
+        def plotfn(axs:Axes, state:np.ndarray, *args):
             sectorized_states = state[:length].reshape(x,y)
             edge_dist = state[length: length+4]
             patch_relative = state[length+4]

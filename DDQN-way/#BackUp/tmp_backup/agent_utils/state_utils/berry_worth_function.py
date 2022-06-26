@@ -1,5 +1,6 @@
 def berry_worth(sizes, distances, 
-            REWARD_RATE, DRAIN_RATE, HALFDIAGOBS, WORTH_OFFSET=0):
+            REWARD_RATE, DRAIN_RATE, HALFDIAGOBS, WORTH_OFFSET=0,
+            min_berry_size=10, max_berry_size=40):
     """ the reward that can be gained by pursuing a berry of given size and distance
     we note that the distances are scaled to be in range 0 to 1 by dividing by half-diag
     of observation space.
@@ -12,7 +13,8 @@ def berry_worth(sizes, distances,
     worth = rr * sizes - dr * distances * HALFDIAGOBS
     
     # scale worth to 0 - 1 range
-    min_worth, max_worth = rr * 10 - dr * HALFDIAGOBS, rr * 50
+    min_worth = rr * min_berry_size - dr * HALFDIAGOBS
+    max_worth = rr * max_berry_size
     worth = (worth - min_worth)/(max_worth - min_worth)
 
     # incorporate offset
