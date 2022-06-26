@@ -1,0 +1,1504 @@
+copied Agent.py to .temp\2022-6-25 16-4-40/pyfiles-backup
+copied debugging.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/debugging
+copied debugging_utils.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/debugging
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/debugging
+
+copied fubar.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/exploration_subroutines
+copied random_exploration.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/exploration_subroutines
+copied random_exploration_v1.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/exploration_subroutines
+copied skipsteps.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/exploration_subroutines/utils
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/exploration_subroutines/utils
+
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/exploration_subroutines
+
+copied patch_discovery.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/intrinsic_rewards
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/intrinsic_rewards
+
+copied ensemble.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/misc
+copied plots.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/misc
+copied printing.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/misc
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/misc
+
+copied make_net.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/nn_utils
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/nn_utils
+
+copied berry_worth_function.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/state_utils
+copied sectorized_states.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/state_utils
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils/state_utils
+
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/agent_utils
+
+copied eval.py to .temp\2022-6-25 16-4-40/pyfiles-backup
+copied summary.py to .temp\2022-6-25 16-4-40/pyfiles-backup
+copied train.py to .temp\2022-6-25 16-4-40/pyfiles-backup
+copied utils.py to .temp\2022-6-25 16-4-40/pyfiles-backup/utils/copyfiles
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/utils/copyfiles
+
+copied random_env.py to .temp\2022-6-25 16-4-40/pyfiles-backup/utils/env_generation
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/utils/env_generation
+
+copied utils.py to .temp\2022-6-25 16-4-40/pyfiles-backup/utils/printing
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/utils/printing
+
+copied env_picture.py to .temp\2022-6-25 16-4-40/pyfiles-backup/utils/visualization
+copied graphs.py to .temp\2022-6-25 16-4-40/pyfiles-backup/utils/visualization
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/utils/visualization
+
+copied __init__.py to .temp\2022-6-25 16-4-40/pyfiles-backup/utils
+
+
+random_train_env
+getBabyEnv :
+	 logDir : .temp\2022-6-25 16-4-40
+	 initial_juice : 0.5
+	 end_on_boundary_hit : False
+	 penalize_boundary_hit : False
+	 allow_no_action : False
+	 no_action_threshold : 0.7
+	 add_exploration : True
+	 field_size : (20000, 20000)
+	 initial_pos_around_berry : True
+	 nberries : 80
+	 num_patches : 10
+	 patch_size : (2600, 2600)
+	 patch_with_agent_at_center : True
+	 sampling_type : 0
+	 seperation : 2400
+	 show : False
+	 spawn_radius : 100
+
+
+Agent :
+	 self : <Agent.Agent object at 0x0000020D965B9088>
+	 berryField : <BerryFieldEnv instance>
+	 mode : train
+	 angle : 45
+	 persistence : 0.8
+	 worth_offset : 0.05
+	 noise : 0.01
+	 nstep_transition : [1]
+	 positive_emphasis : 0
+	 skipStep : 10
+	 reward_patch_discovery : True
+	 add_exploration : True
+	 spacings : []
+	 time_memory_factor : 0.6
+	 time_memory_exp : 1.0
+	 time_memory_sizes : [20, 50, 100, 200, 400]
+	 render : False
+	 debug : False
+	 debugDir : .temp
+	 device : cuda
+
+
+total-params:  2162
+rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)
+rewards are clipped between 0 and 2
+Exploration subroutine as an action
+p_action: 7
+Rewarding patch discovery
+rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)
+rewards are clipped between 0 and 2
+Exploration subroutine as an action
+p_action: 5
+Rewarding patch discovery
+net(
+  (feedforward): ModuleList(
+    (0): Linear(in_features=43, out_features=32, bias=True)
+    (1): LeakyReLU(negative_slope=0.1)
+    (2): Linear(in_features=32, out_features=16, bias=True)
+    (3): LeakyReLU(negative_slope=0.1)
+    (4): Linear(in_features=16, out_features=8, bias=True)
+    (5): LeakyReLU(negative_slope=0.1)
+  )
+  (valueL): Linear(in_features=8, out_features=1, bias=True)
+  (actadvs): Linear(in_features=8, out_features=9, bias=True)
+)
+PrioritizedBuffer of type replace-min
+optim = Adam (
+Parameter Group 0
+    amsgrad: False
+    betas: (0.9, 0.999)
+    eps: 1e-08
+    lr: 0.0001
+    weight_decay: 0
+), num_gradient_steps= 25
+optimizing the online-model after every 100 actions
+batch size=512, gamma=0.9, alpha=0.95
+polyak_tau=0.1, update_freq=5
+
+=== episode:0 Env-steps-taken:49248
+ 	picked: 4 |actions: {0: 76, 1: 62, 2: 73, 3: 65, 4: 77, 5: 76, 6: 65, 7: 677, 8: 69}
+episode: 0/2000 -> reward: 6.770833333333335, steps:1240, time-taken: 0.84min, time-elasped: 0.84min
+-> berries picked: 4 of 800 | patches-visited: [0, 6] | juice left:-0.00
+	| epsilon: 0.4997
+	| skipsteps: 0
+	| positive-in-buffer: 5 | amount-filled: 2.07%
+	| action-stats:  [0, 7, 8] [1, 3, 1]
+	| approx positives in sample 512: 13
+	| approx action-dist in sample 512: [0, 7, 8] [2, 10, 1]
+	Time taken saving stuff: 0.07s
+
+=== episode:0 Env-steps-taken:48384
+ 	picked: 1 |actions: {0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 4399, 8: 0}
+
+==================================================
+eval-episode: 0 -> reward: 2.442708333333334, steps: 4399.0, wall-time: 36.75s
+-> berries picked: 1 of 800 | patches-visited: [1, 5] | juice left:-0.00
+==================================================
+
+
+=== episode:1 Env-steps-taken:48000
+ 	picked: 0 |actions: {0: 45, 1: 47, 2: 50, 3: 49, 4: 47, 5: 44, 6: 50, 7: 357, 8: 117}
+episode: 1/2000 -> reward: 0.5, steps:806, time-taken: 0.83min, time-elasped: 2.29min
+-> berries picked: 0 of 800 | patches-visited: [0, 9] | juice left:-0.00
+	| epsilon: 0.4994
+	| skipsteps: 0
+	| positive-in-buffer: 6 | amount-filled: 3.41%
+	| action-stats:  [0, 7, 8] [1, 3, 2]
+	| approx positives in sample 512: 14
+	| approx action-dist in sample 512: [0, 7, 8] [1, 12, 1]
+	Time taken saving stuff: 0.00s
+
+=== episode:2 Env-steps-taken:48192
+ 	picked: 1 |actions: {0: 36, 1: 24, 2: 39, 3: 35, 4: 48, 5: 28, 6: 40, 7: 206, 8: 214}
+episode: 2/2000 -> reward: 1.4427083333333333, steps:670, time-taken: 0.76min, time-elasped: 3.05min
+-> berries picked: 1 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.4991
+	| skipsteps: 0
+	| positive-in-buffer: 8 | amount-filled: 4.53%
+	| action-stats:  [0, 7, 8] [1, 3, 4]
+	| approx positives in sample 512: 12
+	| approx action-dist in sample 512: [7, 8] [8, 4]
+	Time taken saving stuff: 0.01s
+
+=== episode:3 Env-steps-taken:52224
+ 	picked: 15 |actions: {0: 96, 1: 101, 2: 97, 3: 79, 4: 99, 5: 91, 6: 113, 7: 497, 8: 545}
+episode: 3/2000 -> reward: 21.640625, steps:1718, time-taken: 1.26min, time-elasped: 4.32min
+-> berries picked: 15 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.4988
+	| skipsteps: 0
+	| positive-in-buffer: 24 | amount-filled: 7.39%
+	| action-stats:  [0, 1, 3, 5, 7, 8] [1, 2, 1, 1, 10, 9]
+	| approx positives in sample 512: 39
+	| approx action-dist in sample 512: [0, 1, 3, 5, 7, 8] [1, 5, 2, 1, 17, 13]
+	Time taken saving stuff: 0.01s
+
+=== episode:4 Env-steps-taken:51072
+ 	picked: 13 |actions: {0: 220, 1: 657, 2: 296, 3: 919, 4: 349, 5: 233, 6: 218, 7: 561, 8: 663}
+episode: 4/2000 -> reward: 15.755208333333334, steps:4116, time-taken: 2.25min, time-elasped: 6.58min
+-> berries picked: 13 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.4985
+	| skipsteps: 0
+	| positive-in-buffer: 38 | amount-filled: 14.25%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 7, 8] [1, 4, 3, 5, 1, 1, 11, 12]
+	| approx positives in sample 512: 42
+	| approx action-dist in sample 512: [1, 2, 3, 4, 5, 7, 8] [6, 3, 5, 1, 2, 13, 12]
+	Time taken saving stuff: 0.01s
+
+=== episode:5 Env-steps-taken:48192
+ 	picked: 1 |actions: {0: 56, 1: 162, 2: 73, 3: 303, 4: 65, 5: 50, 6: 63, 7: 141, 8: 191}
+episode: 5/2000 -> reward: 0.9427083333333334, steps:1104, time-taken: 1.09min, time-elasped: 7.67min
+-> berries picked: 1 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4982
+	| skipsteps: 0
+	| positive-in-buffer: 39 | amount-filled: 16.09%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 7, 8] [1, 4, 3, 5, 1, 1, 11, 13]
+	| approx positives in sample 512: 40
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 7, 8] [1, 1, 2, 4, 2, 1, 13, 16]
+	Time taken saving stuff: 0.01s
+
+=== episode:6 Env-steps-taken:56640
+ 	picked: 31 |actions: {0: 251, 1: 552, 2: 270, 3: 481, 4: 351, 5: 187, 6: 168, 7: 505, 8: 732}
+episode: 6/2000 -> reward: 41.395833333333336, steps:3497, time-taken: 2.14min, time-elasped: 9.82min
+-> berries picked: 31 of 800 | patches-visited: [0, 4, 7] | juice left:-0.00
+	| epsilon: 0.4979
+	| skipsteps: 0
+	| positive-in-buffer: 70 | amount-filled: 21.92%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 7, 4, 6, 5, 1, 1, 20, 24]
+	| approx positives in sample 512: 31
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 6, 7, 8] [2, 4, 2, 2, 1, 1, 11, 8]
+	Time taken saving stuff: 0.01s
+
+=== episode:7 Env-steps-taken:52704
+ 	picked: 15 |actions: {0: 173, 1: 550, 2: 333, 3: 394, 4: 469, 5: 192, 6: 187, 7: 397, 8: 496}
+episode: 7/2000 -> reward: 24.140625000000004, steps:3191, time-taken: 1.89min, time-elasped: 11.71min
+-> berries picked: 15 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.4976
+	| skipsteps: 0
+	| positive-in-buffer: 86 | amount-filled: 27.24%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 7, 5, 6, 8, 1, 2, 26, 29]
+	| approx positives in sample 512: 28
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 6, 7, 8] [1, 2, 2, 2, 5, 1, 8, 7]
+	Time taken saving stuff: 0.00s
+
+=== episode:8 Env-steps-taken:48672
+ 	picked: 3 |actions: {0: 20, 1: 91, 2: 26, 3: 37, 4: 31, 5: 21, 6: 16, 7: 20, 8: 92}
+episode: 8/2000 -> reward: 3.328124999999999, steps:354, time-taken: 0.65min, time-elasped: 12.36min
+-> berries picked: 3 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4973
+	| skipsteps: 0
+	| positive-in-buffer: 89 | amount-filled: 27.83%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 7, 5, 7, 9, 1, 2, 26, 30]
+	| approx positives in sample 512: 39
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 7, 8] [2, 3, 1, 2, 4, 13, 14]
+	Time taken saving stuff: 0.00s
+
+=== episode:9 Env-steps-taken:48768
+ 	picked: 4 |actions: {0: 74, 1: 347, 2: 216, 3: 176, 4: 112, 5: 97, 6: 88, 7: 106, 8: 277}
+episode: 9/2000 -> reward: 4.270833333333332, steps:1493, time-taken: 1.09min, time-elasped: 13.46min
+-> berries picked: 4 of 800 | patches-visited: [0, 3] | juice left:-0.00
+	| epsilon: 0.497
+	| skipsteps: 0
+	| positive-in-buffer: 94 | amount-filled: 30.32%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 7, 8, 7, 9, 1, 2, 27, 31]
+	| approx positives in sample 512: 30
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 6, 7, 8] [2, 3, 1, 3, 3, 1, 9, 8]
+	Time taken saving stuff: 0.01s
+
+=== episode:10 Env-steps-taken:51648
+ 	picked: 13 |actions: {0: 121, 1: 159, 2: 276, 3: 396, 4: 304, 5: 110, 6: 150, 7: 243, 8: 254}
+episode: 10/2000 -> reward: 18.25520833333333, steps:2013, time-taken: 1.50min, time-elasped: 14.96min
+-> berries picked: 13 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4967
+	| skipsteps: 0
+	| positive-in-buffer: 107 | amount-filled: 33.67%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 7, 9, 7, 17, 2, 3, 29, 31]
+	| approx positives in sample 512: 48
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 6, 7, 8] [1, 4, 8, 1, 8, 3, 12, 11]
+	Time taken saving stuff: 0.07s
+
+=== episode:1 Env-steps-taken:49152
+ 	picked: 4 |actions: {0: 0, 1: 953, 2: 290, 3: 89, 4: 14, 5: 0, 6: 160, 7: 7, 8: 50}
+
+==================================================
+eval-episode: 10 -> reward: 6.270833333333333, steps: 1563.0, wall-time: 32.46s
+-> berries picked: 4 of 800 | patches-visited: [1, 5] | juice left:-0.00
+==================================================
+
+
+=== episode:11 Env-steps-taken:48576
+ 	picked: 2 |actions: {0: 34, 1: 110, 2: 177, 3: 111, 4: 151, 5: 54, 6: 88, 7: 64, 8: 102}
+episode: 11/2000 -> reward: 2.885416666666667, steps:891, time-taken: 0.78min, time-elasped: 16.29min
+-> berries picked: 2 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4964
+	| skipsteps: 0
+	| positive-in-buffer: 109 | amount-filled: 35.16%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 7, 9, 7, 19, 2, 3, 29, 31]
+	| approx positives in sample 512: 29
+	| approx action-dist in sample 512: [2, 3, 4, 7, 8] [3, 1, 5, 11, 9]
+	Time taken saving stuff: 0.01s
+
+=== episode:12 Env-steps-taken:51552
+ 	picked: 13 |actions: {0: 68, 1: 78, 2: 343, 3: 156, 4: 251, 5: 61, 6: 93, 7: 83, 8: 112}
+episode: 12/2000 -> reward: 17.755208333333336, steps:1245, time-taken: 1.32min, time-elasped: 17.61min
+-> berries picked: 13 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4961
+	| skipsteps: 0
+	| positive-in-buffer: 122 | amount-filled: 37.23%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 7, 14, 7, 24, 2, 4, 30, 32]
+	| approx positives in sample 512: 39
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 6, 7, 8] [1, 5, 7, 1, 2, 1, 9, 13]
+	Time taken saving stuff: 0.01s
+
+=== episode:13 Env-steps-taken:49536
+ 	picked: 7 |actions: {0: 98, 1: 129, 2: 335, 3: 174, 4: 140, 5: 83, 6: 185, 7: 96, 8: 108}
+episode: 13/2000 -> reward: 8.098958333333334, steps:1348, time-taken: 1.08min, time-elasped: 18.70min
+-> berries picked: 7 of 800 | patches-visited: [0, 3] | juice left:-0.00
+	| epsilon: 0.4958
+	| skipsteps: 0
+	| positive-in-buffer: 130 | amount-filled: 39.48%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 7, 18, 8, 25, 2, 4, 31, 33]
+	| approx positives in sample 512: 34
+	| approx action-dist in sample 512: [2, 3, 4, 6, 7, 8] [8, 1, 7, 3, 8, 7]
+	Time taken saving stuff: 0.00s
+
+=== episode:14 Env-steps-taken:51840
+ 	picked: 14 |actions: {0: 75, 1: 110, 2: 265, 3: 99, 4: 132, 5: 64, 6: 88, 7: 95, 8: 90}
+episode: 14/2000 -> reward: 19.197916666666664, steps:1018, time-taken: 0.90min, time-elasped: 19.60min
+-> berries picked: 14 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4955
+	| skipsteps: 0
+	| positive-in-buffer: 144 | amount-filled: 41.17%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 7, 21, 10, 30, 2, 4, 34, 34]
+	| approx positives in sample 512: 41
+	| approx action-dist in sample 512: [1, 2, 3, 4, 6, 7, 8] [2, 8, 3, 6, 1, 12, 9]
+	Time taken saving stuff: 0.00s
+
+=== episode:15 Env-steps-taken:52512
+ 	picked: 18 |actions: {0: 118, 1: 121, 2: 323, 3: 311, 4: 315, 5: 97, 6: 96, 7: 216, 8: 116}
+episode: 15/2000 -> reward: 22.968750000000004, steps:1713, time-taken: 1.65min, time-elasped: 21.25min
+-> berries picked: 18 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.4952
+	| skipsteps: 0
+	| positive-in-buffer: 163 | amount-filled: 44.03%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 7, 26, 11, 33, 2, 4, 41, 37]
+	| approx positives in sample 512: 39
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 7, 8] [1, 3, 5, 3, 7, 11, 9]
+	Time taken saving stuff: 0.01s
+
+=== episode:16 Env-steps-taken:52032
+ 	picked: 12 |actions: {0: 111, 1: 108, 2: 246, 3: 237, 4: 384, 5: 67, 6: 97, 7: 147, 8: 106}
+episode: 16/2000 -> reward: 20.312500000000004, steps:1503, time-taken: 1.78min, time-elasped: 23.04min
+-> berries picked: 12 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4949
+	| skipsteps: 0
+	| positive-in-buffer: 175 | amount-filled: 46.53%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [3, 7, 28, 11, 36, 2, 4, 44, 40]
+	| approx positives in sample 512: 48
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 6, 7, 8] [1, 3, 11, 4, 8, 1, 12, 8]
+	Time taken saving stuff: 0.01s
+
+=== episode:17 Env-steps-taken:55872
+ 	picked: 26 |actions: {0: 120, 1: 168, 2: 315, 3: 296, 4: 348, 5: 153, 6: 164, 7: 305, 8: 263}
+episode: 17/2000 -> reward: 40.01041666666668, steps:2132, time-taken: 2.17min, time-elasped: 25.22min
+-> berries picked: 26 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.4946
+	| skipsteps: 0
+	| positive-in-buffer: 202 | amount-filled: 50.09%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [3, 7, 37, 11, 39, 5, 4, 51, 45]
+	| approx positives in sample 512: 33
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 7, 8] [3, 3, 7, 1, 4, 2, 3, 10]
+	Time taken saving stuff: 0.01s
+
+=== episode:18 Env-steps-taken:55680
+ 	picked: 28 |actions: {0: 208, 1: 314, 2: 415, 3: 343, 4: 553, 5: 214, 6: 170, 7: 350, 8: 363}
+episode: 18/2000 -> reward: 38.89583333333334, steps:2930, time-taken: 2.08min, time-elasped: 27.31min
+-> berries picked: 28 of 800 | patches-visited: [0, 1] | juice left:-0.00
+	| epsilon: 0.4943
+	| skipsteps: 0
+	| positive-in-buffer: 231 | amount-filled: 54.97%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [5, 7, 42, 13, 42, 5, 4, 60, 53]
+	| approx positives in sample 512: 51
+	| approx action-dist in sample 512: [0, 2, 3, 4, 5, 6, 7, 8] [1, 10, 2, 7, 1, 1, 12, 17]
+	Time taken saving stuff: 0.00s
+
+=== episode:19 Env-steps-taken:49536
+ 	picked: 7 |actions: {0: 49, 1: 72, 2: 168, 3: 252, 4: 98, 5: 70, 6: 67, 7: 59, 8: 56}
+episode: 19/2000 -> reward: 8.098958333333334, steps:891, time-taken: 0.87min, time-elasped: 28.18min
+-> berries picked: 7 of 800 | patches-visited: [0, 9] | juice left:-0.00
+	| epsilon: 0.494
+	| skipsteps: 0
+	| positive-in-buffer: 239 | amount-filled: 56.45%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [5, 7, 44, 13, 45, 5, 4, 61, 55]
+	| approx positives in sample 512: 39
+	| approx action-dist in sample 512: [2, 3, 4, 5, 7, 8] [9, 5, 9, 1, 10, 5]
+	Time taken saving stuff: 0.01s
+
+=== episode:20 Env-steps-taken:55200
+ 	picked: 27 |actions: {0: 263, 1: 263, 2: 416, 3: 594, 4: 598, 5: 373, 6: 284, 7: 463, 8: 385}
+episode: 20/2000 -> reward: 36.953125, steps:3639, time-taken: 2.27min, time-elasped: 30.45min
+-> berries picked: 27 of 800 | patches-visited: [0, 3, 4] | juice left:-0.00
+	| epsilon: 0.4937
+	| skipsteps: 0
+	| positive-in-buffer: 268 | amount-filled: 62.52%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [7, 8, 50, 14, 52, 6, 5, 64, 62]
+	| approx positives in sample 512: 62
+	| approx action-dist in sample 512: [2, 3, 4, 6, 7, 8] [19, 5, 11, 1, 13, 13]
+	Time taken saving stuff: 0.07s
+
+=== episode:2 Env-steps-taken:54336
+ 	picked: 22 |actions: {0: 100, 1: 110, 2: 249, 3: 936, 4: 181, 5: 190, 6: 8, 7: 679, 8: 321}
+
+==================================================
+eval-episode: 20 -> reward: 30.354166666666668, steps: 2774.0, wall-time: 46.85s
+-> berries picked: 22 of 800 | patches-visited: [0, 1] | juice left:-0.00
+==================================================
+
+
+=== episode:21 Env-steps-taken:55008
+ 	picked: 27 |actions: {0: 406, 1: 327, 2: 491, 3: 543, 4: 453, 5: 423, 6: 270, 7: 377, 8: 489}
+episode: 21/2000 -> reward: 35.953125, steps:3779, time-taken: 2.20min, time-elasped: 33.44min
+-> berries picked: 27 of 800 | patches-visited: [0, 5, 8] | juice left:-0.00
+	| epsilon: 0.4934
+	| skipsteps: 0
+	| positive-in-buffer: 297 | amount-filled: 68.82%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 9, 58, 16, 60, 7, 5, 68, 64]
+	| approx positives in sample 512: 34
+	| approx action-dist in sample 512: [1, 2, 3, 4, 6, 7, 8] [1, 9, 2, 6, 1, 6, 9]
+	Time taken saving stuff: 0.00s
+
+=== episode:22 Env-steps-taken:53472
+ 	picked: 20 |actions: {0: 194, 1: 241, 2: 276, 3: 288, 4: 638, 5: 364, 6: 163, 7: 180, 8: 373}
+episode: 22/2000 -> reward: 27.35416666666666, steps:2717, time-taken: 1.94min, time-elasped: 35.38min
+-> berries picked: 20 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4931
+	| skipsteps: 0
+	| positive-in-buffer: 317 | amount-filled: 73.35%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 13, 67, 16, 63, 9, 6, 68, 65]
+	| approx positives in sample 512: 42
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [1, 2, 12, 1, 3, 2, 1, 8, 12]
+	Time taken saving stuff: 0.00s
+
+=== episode:23 Env-steps-taken:53472
+ 	picked: 20 |actions: {0: 213, 1: 219, 2: 208, 3: 591, 4: 397, 5: 322, 6: 220, 7: 414, 8: 285}
+episode: 23/2000 -> reward: 27.85416666666666, steps:2869, time-taken: 1.79min, time-elasped: 37.18min
+-> berries picked: 20 of 800 | patches-visited: [0, 3] | juice left:-0.00
+	| epsilon: 0.4928
+	| skipsteps: 0
+	| positive-in-buffer: 338 | amount-filled: 78.13%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 13, 73, 16, 73, 9, 6, 68, 70]
+	| approx positives in sample 512: 52
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 2, 11, 5, 10, 3, 2, 10, 7]
+	Time taken saving stuff: 0.01s
+
+=== episode:24 Env-steps-taken:48576
+ 	picked: 3 |actions: {0: 50, 1: 38, 2: 103, 3: 62, 4: 86, 5: 85, 6: 50, 7: 29, 8: 85}
+episode: 24/2000 -> reward: 2.828125000000001, steps:588, time-taken: 0.80min, time-elasped: 37.98min
+-> berries picked: 3 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4925
+	| skipsteps: 0
+	| positive-in-buffer: 341 | amount-filled: 79.11%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 13, 73, 16, 75, 9, 6, 68, 71]
+	| approx positives in sample 512: 36
+	| approx action-dist in sample 512: [1, 2, 3, 4, 5, 7, 8] [4, 11, 1, 6, 2, 2, 10]
+	Time taken saving stuff: 0.00s
+
+=== episode:25 Env-steps-taken:51840
+ 	picked: 17 |actions: {0: 395, 1: 298, 2: 289, 3: 759, 4: 455, 5: 501, 6: 735, 7: 488, 8: 527}
+episode: 25/2000 -> reward: 19.026041666666668, steps:4447, time-taken: 2.61min, time-elasped: 40.59min
+-> berries picked: 17 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4922
+	| skipsteps: 0
+	| positive-in-buffer: 358 | amount-filled: 86.52%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [12, 13, 76, 17, 84, 9, 7, 69, 71]
+	| approx positives in sample 512: 34
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 6, 7, 8] [2, 2, 10, 2, 7, 1, 3, 7]
+	Time taken saving stuff: 0.01s
+
+=== episode:26 Env-steps-taken:60000
+ 	picked: 46 |actions: {0: 492, 1: 327, 2: 588, 3: 746, 4: 863, 5: 594, 6: 459, 7: 537, 8: 657}
+episode: 26/2000 -> reward: 59.86458333333339, steps:5263, time-taken: 2.99min, time-elasped: 43.58min
+-> berries picked: 46 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4919
+	| skipsteps: 0
+	| positive-in-buffer: 404 | amount-filled: 95.29%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [19, 13, 86, 19, 97, 11, 8, 73, 78]
+	| approx positives in sample 512: 44
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [3, 1, 5, 2, 10, 3, 3, 8, 9]
+	Time taken saving stuff: 0.00s
+
+=== episode:27 Env-steps-taken:58560
+ 	picked: 38 |actions: {0: 649, 1: 233, 2: 453, 3: 659, 4: 534, 5: 392, 6: 471, 7: 546, 8: 511}
+episode: 27/2000 -> reward: 53.3229166666667, steps:4448, time-taken: 2.60min, time-elasped: 46.18min
+-> berries picked: 38 of 800 | patches-visited: [0, 4] | juice left:-0.00
+	| epsilon: 0.4916
+	| skipsteps: 0
+	| positive-in-buffer: 443 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [30, 15, 94, 22, 103, 11, 11, 76, 81]
+	| approx positives in sample 512: 46
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [4, 1, 9, 3, 14, 1, 1, 6, 7]
+	Time taken saving stuff: 0.01s
+
+=== episode:28 Env-steps-taken:59616
+ 	picked: 41 |actions: {0: 754, 1: 261, 2: 590, 3: 916, 4: 597, 5: 353, 6: 442, 7: 832, 8: 343}
+episode: 28/2000 -> reward: 58.65104166666671, steps:5088, time-taken: 2.92min, time-elasped: 49.10min
+-> berries picked: 41 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.4913
+	| skipsteps: 0
+	| positive-in-buffer: 484 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [45, 15, 104, 22, 108, 11, 11, 84, 84]
+	| approx positives in sample 512: 43
+	| approx action-dist in sample 512: [0, 1, 2, 4, 6, 7, 8] [5, 1, 9, 9, 4, 11, 4]
+	Time taken saving stuff: 0.01s
+
+=== episode:29 Env-steps-taken:62208
+ 	picked: 55 |actions: {0: 627, 1: 264, 2: 605, 3: 730, 4: 759, 5: 359, 6: 415, 7: 789, 8: 372}
+episode: 29/2000 -> reward: 71.34895833333337, steps:4920, time-taken: 2.78min, time-elasped: 51.88min
+-> berries picked: 55 of 800 | patches-visited: [0, 4] | juice left:-0.00
+	| epsilon: 0.491
+	| skipsteps: 0
+	| positive-in-buffer: 540 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [58, 17, 117, 23, 118, 15, 15, 89, 88]
+	| approx positives in sample 512: 46
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 7, 8] [6, 1, 15, 2, 7, 1, 9, 5]
+	Time taken saving stuff: 0.01s
+
+=== episode:30 Env-steps-taken:63840
+ 	picked: 56 |actions: {0: 585, 1: 307, 2: 696, 3: 671, 4: 830, 5: 509, 6: 344, 7: 670, 8: 410}
+episode: 30/2000 -> reward: 79.84895833333333, steps:5022, time-taken: 2.99min, time-elasped: 54.87min
+-> berries picked: 56 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.4907
+	| skipsteps: 0
+	| positive-in-buffer: 596 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [64, 18, 133, 25, 127, 16, 18, 100, 95]
+	| approx positives in sample 512: 56
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [8, 3, 16, 2, 8, 1, 1, 8, 9]
+	Time taken saving stuff: 0.06s
+
+=== episode:3 Env-steps-taken:68352
+ 	picked: 79 |actions: {0: 605, 1: 31, 2: 727, 3: 757, 4: 546, 5: 279, 6: 378, 7: 912, 8: 895}
+
+==================================================
+eval-episode: 30 -> reward: 102.47395833333321, steps: 5130.0, wall-time: 58.83s
+-> berries picked: 79 of 800 | patches-visited: [1, 4, 6] | juice left:-0.00
+==================================================
+
+
+=== episode:31 Env-steps-taken:59520
+ 	picked: 44 |actions: {0: 669, 1: 295, 2: 816, 3: 933, 4: 606, 5: 372, 6: 341, 7: 934, 8: 445}
+episode: 31/2000 -> reward: 57.47916666666671, steps:5411, time-taken: 3.26min, time-elasped: 59.12min
+-> berries picked: 44 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4904
+	| skipsteps: 0
+	| positive-in-buffer: 640 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [72, 20, 151, 26, 133, 18, 20, 102, 98]
+	| approx positives in sample 512: 57
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [1, 2, 14, 5, 9, 1, 1, 13, 11]
+	Time taken saving stuff: 0.01s
+
+=== episode:32 Env-steps-taken:48288
+ 	picked: 2 |actions: {0: 46, 1: 41, 2: 75, 3: 142, 4: 60, 5: 61, 6: 85, 7: 221, 8: 83}
+episode: 32/2000 -> reward: 1.3854166666666667, steps:814, time-taken: 0.86min, time-elasped: 59.99min
+-> berries picked: 2 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4901
+	| skipsteps: 0
+	| positive-in-buffer: 642 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [72, 20, 152, 26, 133, 18, 20, 103, 98]
+	| approx positives in sample 512: 70
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [2, 4, 21, 3, 21, 1, 1, 11, 6]
+	Time taken saving stuff: 0.00s
+
+=== episode:33 Env-steps-taken:57504
+ 	picked: 36 |actions: {0: 618, 1: 194, 2: 344, 3: 405, 4: 413, 5: 420, 6: 252, 7: 514, 8: 375}
+episode: 33/2000 -> reward: 47.43750000000002, steps:3535, time-taken: 2.29min, time-elasped: 62.28min
+-> berries picked: 36 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4898
+	| skipsteps: 0
+	| positive-in-buffer: 678 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [79, 21, 160, 27, 134, 22, 25, 112, 98]
+	| approx positives in sample 512: 51
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [8, 2, 6, 3, 10, 2, 1, 10, 9]
+	Time taken saving stuff: 0.00s
+
+=== episode:34 Env-steps-taken:63264
+ 	picked: 60 |actions: {0: 638, 1: 222, 2: 660, 3: 333, 4: 506, 5: 295, 6: 507, 7: 692, 8: 268}
+episode: 34/2000 -> reward: 76.0625, steps:4121, time-taken: 2.67min, time-elasped: 64.95min
+-> berries picked: 60 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4895
+	| skipsteps: 0
+	| positive-in-buffer: 737 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [88, 21, 174, 27, 147, 23, 36, 122, 99]
+	| approx positives in sample 512: 57
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 2, 16, 1, 11, 3, 1, 5, 8]
+	Time taken saving stuff: 0.00s
+
+=== episode:35 Env-steps-taken:64128
+ 	picked: 63 |actions: {0: 627, 1: 267, 2: 554, 3: 621, 4: 609, 5: 351, 6: 588, 7: 718, 8: 331}
+episode: 35/2000 -> reward: 80.39062499999996, steps:4666, time-taken: 2.87min, time-elasped: 67.82min
+-> berries picked: 63 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4892
+	| skipsteps: 0
+	| positive-in-buffer: 795 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [99, 24, 182, 32, 163, 24, 42, 128, 101]
+	| approx positives in sample 512: 51
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [4, 2, 11, 1, 10, 1, 5, 11, 6]
+	Time taken saving stuff: 0.01s
+
+=== episode:36 Env-steps-taken:65088
+ 	picked: 65 |actions: {0: 783, 1: 380, 2: 701, 3: 1170, 4: 569, 5: 427, 6: 508, 7: 1034, 8: 331}
+episode: 36/2000 -> reward: 85.27604166666661, steps:5903, time-taken: 3.31min, time-elasped: 71.14min
+-> berries picked: 65 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4889
+	| skipsteps: 0
+	| positive-in-buffer: 857 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [111, 31, 201, 34, 170, 28, 48, 131, 103]
+	| approx positives in sample 512: 59
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [5, 4, 11, 3, 13, 2, 2, 15, 4]
+	Time taken saving stuff: 0.00s
+
+=== episode:37 Env-steps-taken:70752
+ 	picked: 84 |actions: {0: 762, 1: 428, 2: 582, 3: 947, 4: 766, 5: 491, 6: 624, 7: 964, 8: 366}
+episode: 37/2000 -> reward: 114.18749999999984, steps:5930, time-taken: 3.47min, time-elasped: 74.61min
+-> berries picked: 84 of 800 | patches-visited: [0, 9] | juice left:-0.00
+	| epsilon: 0.4886
+	| skipsteps: 0
+	| positive-in-buffer: 939 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [122, 37, 213, 39, 186, 33, 63, 141, 105]
+	| approx positives in sample 512: 55
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [5, 4, 11, 6, 13, 4, 2, 5, 5]
+	Time taken saving stuff: 0.01s
+
+=== episode:38 Env-steps-taken:65088
+ 	picked: 61 |actions: {0: 664, 1: 375, 2: 544, 3: 718, 4: 780, 5: 444, 6: 624, 7: 701, 8: 296}
+episode: 38/2000 -> reward: 85.50520833333329, steps:5146, time-taken: 3.09min, time-elasped: 77.70min
+-> berries picked: 61 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4883
+	| skipsteps: 0
+	| positive-in-buffer: 999 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [133, 40, 219, 40, 204, 37, 69, 149, 108]
+	| approx positives in sample 512: 51
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [11, 4, 10, 2, 10, 3, 1, 5, 5]
+	Time taken saving stuff: 0.01s
+
+=== episode:39 Env-steps-taken:53280
+ 	picked: 20 |actions: {0: 610, 1: 204, 2: 365, 3: 850, 4: 396, 5: 383, 6: 356, 7: 417, 8: 235}
+episode: 39/2000 -> reward: 26.354166666666664, steps:3816, time-taken: 2.55min, time-elasped: 80.25min
+-> berries picked: 20 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.488
+	| skipsteps: 0
+	| positive-in-buffer: 1017 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [133, 41, 225, 40, 207, 38, 73, 152, 108]
+	| approx positives in sample 512: 72
+	| approx action-dist in sample 512: [0, 2, 3, 4, 5, 6, 7, 8] [16, 14, 2, 13, 6, 10, 9, 2]
+	Time taken saving stuff: 0.01s
+
+=== episode:40 Env-steps-taken:65952
+ 	picked: 68 |actions: {0: 691, 1: 289, 2: 502, 3: 459, 4: 540, 5: 339, 6: 573, 7: 561, 8: 256}
+episode: 40/2000 -> reward: 90.10416666666663, steps:4210, time-taken: 2.59min, time-elasped: 82.84min
+-> berries picked: 68 of 800 | patches-visited: [0, 9] | juice left:-0.00
+	| epsilon: 0.4877
+	| skipsteps: 0
+	| positive-in-buffer: 1083 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [151, 41, 235, 48, 219, 39, 79, 160, 111]
+	| approx positives in sample 512: 78
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [13, 8, 9, 9, 18, 2, 5, 9, 5]
+	Time taken saving stuff: 0.08s
+
+=== episode:4 Env-steps-taken:71808
+ 	picked: 94 |actions: {0: 1193, 1: 219, 2: 416, 3: 1266, 4: 1140, 5: 89, 6: 400, 7: 1156, 8: 190}
+
+==================================================
+eval-episode: 40 -> reward: 119.11458333333317, steps: 6069.0, wall-time: 70.64s
+-> berries picked: 94 of 800 | patches-visited: [0, 1] | juice left:-0.00
+==================================================
+
+
+=== episode:41 Env-steps-taken:67296
+ 	picked: 74 |actions: {0: 811, 1: 533, 2: 612, 3: 955, 4: 480, 5: 560, 6: 712, 7: 1033, 8: 422}
+episode: 41/2000 -> reward: 96.26041666666657, steps:6118, time-taken: 3.75min, time-elasped: 87.78min
+-> berries picked: 74 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4874
+	| skipsteps: 0
+	| positive-in-buffer: 1154 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [169, 47, 242, 50, 224, 46, 94, 168, 114]
+	| approx positives in sample 512: 68
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 1, 18, 2, 12, 2, 5, 11, 7]
+	Time taken saving stuff: 0.01s
+
+=== episode:42 Env-steps-taken:69024
+ 	picked: 81 |actions: {0: 698, 1: 418, 2: 612, 3: 883, 4: 796, 5: 377, 6: 722, 7: 662, 8: 367}
+episode: 42/2000 -> reward: 105.3593749999999, steps:5535, time-taken: 3.29min, time-elasped: 91.07min
+-> berries picked: 81 of 800 | patches-visited: [0, 4] | juice left:-0.00
+	| epsilon: 0.4871
+	| skipsteps: 0
+	| positive-in-buffer: 1229 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [182, 52, 258, 54, 237, 51, 106, 171, 118]
+	| approx positives in sample 512: 72
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 5, 8, 3, 21, 2, 8, 9, 6]
+	Time taken saving stuff: 0.01s
+
+=== episode:43 Env-steps-taken:63840
+ 	picked: 62 |actions: {0: 431, 1: 250, 2: 378, 3: 339, 4: 564, 5: 311, 6: 491, 7: 343, 8: 217}
+episode: 43/2000 -> reward: 79.44791666666664, steps:3324, time-taken: 2.31min, time-elasped: 93.39min
+-> berries picked: 62 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.4868
+	| skipsteps: 0
+	| positive-in-buffer: 1289 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [193, 54, 273, 57, 245, 55, 114, 176, 122]
+	| approx positives in sample 512: 82
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [8, 1, 13, 2, 19, 4, 10, 13, 12]
+	Time taken saving stuff: 0.01s
+
+=== episode:44 Env-steps-taken:71520
+ 	picked: 89 |actions: {0: 695, 1: 613, 2: 726, 3: 805, 4: 543, 5: 535, 6: 1023, 7: 682, 8: 355}
+episode: 44/2000 -> reward: 117.90104166666654, steps:5977, time-taken: 3.57min, time-elasped: 96.97min
+-> berries picked: 89 of 800 | patches-visited: [0, 1] | juice left:-0.00
+	| epsilon: 0.4865
+	| skipsteps: 0
+	| positive-in-buffer: 1375 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [217, 59, 286, 62, 253, 59, 129, 186, 124]
+	| approx positives in sample 512: 77
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [7, 1, 15, 3, 19, 5, 6, 16, 5]
+	Time taken saving stuff: 0.01s
+
+=== episode:45 Env-steps-taken:50112
+ 	picked: 8 |actions: {0: 52, 1: 27, 2: 44, 3: 48, 4: 106, 5: 97, 6: 149, 7: 61, 8: 59}
+episode: 45/2000 -> reward: 10.54166666666667, steps:643, time-taken: 1.12min, time-elasped: 98.09min
+-> berries picked: 8 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4862
+	| skipsteps: 0
+	| positive-in-buffer: 1383 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [217, 59, 287, 62, 255, 61, 131, 187, 124]
+	| approx positives in sample 512: 83
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [7, 2, 20, 7, 22, 1, 6, 11, 7]
+	Time taken saving stuff: 0.01s
+
+=== episode:46 Env-steps-taken:62112
+ 	picked: 48 |actions: {0: 355, 1: 279, 2: 362, 3: 569, 4: 396, 5: 287, 6: 290, 7: 322, 8: 201}
+episode: 46/2000 -> reward: 71.75000000000001, steps:3061, time-taken: 1.96min, time-elasped: 100.05min
+-> berries picked: 48 of 800 | patches-visited: [0, 4, 9] | juice left:-0.00
+	| epsilon: 0.4859
+	| skipsteps: 0
+	| positive-in-buffer: 1430 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [227, 61, 302, 66, 261, 63, 133, 190, 127]
+	| approx positives in sample 512: 104
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [11, 6, 26, 4, 21, 4, 8, 11, 13]
+	Time taken saving stuff: 0.01s
+
+=== episode:47 Env-steps-taken:65760
+ 	picked: 71 |actions: {0: 425, 1: 419, 2: 464, 3: 664, 4: 727, 5: 589, 6: 685, 7: 903, 8: 323}
+episode: 47/2000 -> reward: 88.98958333333327, steps:5199, time-taken: 688.00min, time-elasped: 788.06min
+-> berries picked: 71 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.4856
+	| skipsteps: 0
+	| positive-in-buffer: 1497 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [236, 65, 313, 68, 280, 68, 145, 191, 131]
+	| approx positives in sample 512: 80
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 4, 14, 4, 15, 2, 8, 11, 12]
+	Time taken saving stuff: 0.00s
+
+=== episode:48 Env-steps-taken:59520
+ 	picked: 46 |actions: {0: 289, 1: 235, 2: 298, 3: 313, 4: 310, 5: 204, 6: 227, 7: 209, 8: 160}
+episode: 48/2000 -> reward: 57.86458333333338, steps:2245, time-taken: 1.11min, time-elasped: 789.17min
+-> berries picked: 46 of 800 | patches-visited: [0, 7] | juice left:-0.00
+	| epsilon: 0.4853
+	| skipsteps: 0
+	| positive-in-buffer: 1544 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [245, 70, 321, 70, 292, 69, 150, 194, 133]
+	| approx positives in sample 512: 86
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [17, 2, 24, 2, 14, 5, 9, 6, 7]
+	Time taken saving stuff: 0.01s
+
+=== episode:49 Env-steps-taken:68544
+ 	picked: 83 |actions: {0: 529, 1: 474, 2: 533, 3: 776, 4: 579, 5: 557, 6: 672, 7: 549, 8: 318}
+episode: 49/2000 -> reward: 102.74479166666654, steps:4987, time-taken: 2.15min, time-elasped: 791.33min
+-> berries picked: 83 of 800 | patches-visited: [0, 6] | juice left:-0.00
+	| epsilon: 0.485
+	| skipsteps: 0
+	| positive-in-buffer: 1623 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [256, 81, 330, 74, 309, 76, 158, 202, 137]
+	| approx positives in sample 512: 86
+	| approx action-dist in sample 512: [0, 1, 2, 4, 5, 6, 7, 8] [12, 7, 11, 20, 3, 18, 6, 9]
+	Time taken saving stuff: 0.01s
+
+=== episode:50 Env-steps-taken:70656
+ 	picked: 78 |actions: {0: 472, 1: 534, 2: 572, 3: 564, 4: 658, 5: 700, 6: 645, 7: 541, 8: 304}
+episode: 50/2000 -> reward: 113.20312499999987, steps:4990, time-taken: 2.45min, time-elasped: 793.78min
+-> berries picked: 78 of 800 | patches-visited: [0, 3] | juice left:-0.00
+	| epsilon: 0.4847
+	| skipsteps: 0
+	| positive-in-buffer: 1697 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [265, 88, 347, 74, 326, 81, 169, 206, 141]
+	| approx positives in sample 512: 89
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [8, 8, 17, 2, 19, 4, 9, 17, 5]
+	Time taken saving stuff: 0.05s
+
+=== episode:5 Env-steps-taken:72768
+ 	picked: 96 |actions: {0: 235, 1: 924, 2: 432, 3: 782, 4: 435, 5: 426, 6: 412, 7: 622, 8: 458}
+
+==================================================
+eval-episode: 50 -> reward: 124.11458333333314, steps: 4726.0, wall-time: 55.03s
+-> berries picked: 96 of 800 | patches-visited: [0, 1, 3] | juice left:-0.00
+==================================================
+
+
+=== episode:51 Env-steps-taken:65760
+ 	picked: 72 |actions: {0: 578, 1: 624, 2: 542, 3: 790, 4: 516, 5: 485, 6: 593, 7: 703, 8: 343}
+episode: 51/2000 -> reward: 88.87499999999996, steps:5174, time-taken: 3.50min, time-elasped: 798.21min
+-> berries picked: 72 of 800 | patches-visited: [0, 7] | juice left:-0.00
+	| epsilon: 0.4844
+	| skipsteps: 0
+	| positive-in-buffer: 1760 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [278, 94, 357, 78, 337, 85, 173, 215, 143]
+	| approx positives in sample 512: 92
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [11, 7, 13, 2, 30, 2, 9, 13, 5]
+	Time taken saving stuff: 0.00s
+
+=== episode:52 Env-steps-taken:65376
+ 	picked: 66 |actions: {0: 346, 1: 435, 2: 449, 3: 662, 4: 547, 5: 444, 6: 346, 7: 511, 8: 277}
+episode: 52/2000 -> reward: 87.21874999999996, steps:4017, time-taken: 2.76min, time-elasped: 800.97min
+-> berries picked: 66 of 800 | patches-visited: [0, 1] | juice left:-0.00
+	| epsilon: 0.4841
+	| skipsteps: 0
+	| positive-in-buffer: 1814 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [282, 101, 368, 81, 349, 89, 179, 220, 145]
+	| approx positives in sample 512: 102
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [16, 1, 22, 2, 28, 3, 8, 13, 9]
+	Time taken saving stuff: 0.01s
+
+=== episode:53 Env-steps-taken:70368
+ 	picked: 85 |actions: {0: 499, 1: 510, 2: 666, 3: 985, 4: 759, 5: 543, 6: 600, 7: 609, 8: 394}
+episode: 53/2000 -> reward: 112.13020833333321, steps:5565, time-taken: 3.82min, time-elasped: 804.79min
+-> berries picked: 85 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.4838
+	| skipsteps: 0
+	| positive-in-buffer: 1894 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [293, 112, 387, 85, 363, 92, 186, 227, 149]
+	| approx positives in sample 512: 103
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 6, 20, 8, 25, 7, 7, 11, 9]
+	Time taken saving stuff: 0.01s
+
+=== episode:54 Env-steps-taken:72576
+ 	picked: 89 |actions: {0: 619, 1: 855, 2: 750, 3: 843, 4: 708, 5: 554, 6: 730, 7: 647, 8: 430}
+episode: 54/2000 -> reward: 123.45833333333317, steps:6136, time-taken: 4.64min, time-elasped: 809.43min
+-> berries picked: 89 of 800 | patches-visited: [0, 4] | juice left:-0.00
+	| epsilon: 0.4835
+	| skipsteps: 0
+	| positive-in-buffer: 1974 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [308, 127, 403, 91, 375, 97, 193, 230, 150]
+	| approx positives in sample 512: 102
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [14, 10, 17, 7, 21, 6, 8, 12, 7]
+	Time taken saving stuff: 0.08s
+
+=== episode:55 Env-steps-taken:65088
+ 	picked: 71 |actions: {0: 532, 1: 931, 2: 583, 3: 953, 4: 600, 5: 578, 6: 571, 7: 596, 8: 402}
+episode: 55/2000 -> reward: 84.93229166666666, steps:5746, time-taken: 4.00min, time-elasped: 813.44min
+-> berries picked: 71 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4832
+	| skipsteps: 0
+	| positive-in-buffer: 2042 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [326, 137, 410, 97, 387, 102, 201, 231, 151]
+	| approx positives in sample 512: 97
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [19, 7, 16, 5, 13, 5, 14, 10, 8]
+	Time taken saving stuff: 0.01s
+
+=== episode:56 Env-steps-taken:60768
+ 	picked: 52 |actions: {0: 276, 1: 347, 2: 367, 3: 607, 4: 342, 5: 377, 6: 268, 7: 327, 8: 167}
+episode: 56/2000 -> reward: 63.635416666666714, steps:3078, time-taken: 2.39min, time-elasped: 815.84min
+-> berries picked: 52 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.4829
+	| skipsteps: 0
+	| positive-in-buffer: 2087 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [335, 140, 422, 101, 392, 104, 207, 233, 153]
+	| approx positives in sample 512: 100
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [6, 7, 16, 7, 27, 6, 14, 11, 6]
+	Time taken saving stuff: 0.01s
+
+=== episode:57 Env-steps-taken:64608
+ 	picked: 63 |actions: {0: 405, 1: 532, 2: 491, 3: 582, 4: 462, 5: 423, 6: 470, 7: 577, 8: 233}
+episode: 57/2000 -> reward: 83.39062499999997, steps:4175, time-taken: 3.14min, time-elasped: 818.99min
+-> berries picked: 63 of 800 | patches-visited: [0, 4] | juice left:-0.00
+	| epsilon: 0.48260000000000003
+	| skipsteps: 0
+	| positive-in-buffer: 2142 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [343, 147, 429, 105, 403, 106, 213, 238, 158]
+	| approx positives in sample 512: 99
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [17, 11, 16, 3, 20, 4, 9, 13, 6]
+	Time taken saving stuff: 0.02s
+
+=== episode:58 Env-steps-taken:63360
+ 	picked: 65 |actions: {0: 453, 1: 458, 2: 518, 3: 731, 4: 478, 5: 345, 6: 502, 7: 445, 8: 257}
+episode: 58/2000 -> reward: 76.77604166666667, steps:4187, time-taken: 2.82min, time-elasped: 821.81min
+-> berries picked: 65 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.4823
+	| skipsteps: 0
+	| positive-in-buffer: 2206 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [363, 151, 444, 107, 410, 107, 218, 246, 160]
+	| approx positives in sample 512: 106
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [15, 7, 21, 2, 30, 6, 10, 11, 4]
+	Time taken saving stuff: 0.00s
+
+=== episode:59 Env-steps-taken:66720
+ 	picked: 66 |actions: {0: 397, 1: 555, 2: 519, 3: 673, 4: 540, 5: 433, 6: 522, 7: 564, 8: 294}
+episode: 59/2000 -> reward: 94.71874999999991, steps:4497, time-taken: 3.26min, time-elasped: 825.07min
+-> berries picked: 66 of 800 | patches-visited: [0, 1, 4] | juice left:-0.00
+	| epsilon: 0.482
+	| skipsteps: 0
+	| positive-in-buffer: 2269 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [375, 160, 456, 109, 421, 110, 225, 250, 163]
+	| approx positives in sample 512: 116
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [13, 6, 12, 14, 29, 5, 19, 10, 8]
+	Time taken saving stuff: 0.00s
+
+=== episode:60 Env-steps-taken:62208
+ 	picked: 57 |actions: {0: 316, 1: 325, 2: 386, 3: 626, 4: 318, 5: 386, 6: 516, 7: 350, 8: 231}
+episode: 60/2000 -> reward: 71.23437500000001, steps:3454, time-taken: 2.57min, time-elasped: 827.65min
+-> berries picked: 57 of 800 | patches-visited: [0, 7] | juice left:-0.00
+	| epsilon: 0.4817
+	| skipsteps: 0
+	| positive-in-buffer: 2323 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [384, 165, 466, 109, 429, 114, 232, 256, 168]
+	| approx positives in sample 512: 126
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [19, 6, 20, 4, 31, 10, 14, 14, 8]
+	Time taken saving stuff: 0.09s
+
+=== episode:6 Env-steps-taken:81216
+ 	picked: 130 |actions: {0: 419, 1: 587, 2: 1008, 3: 705, 4: 877, 5: 1063, 6: 876, 7: 542, 8: 7}
+
+==================================================
+eval-episode: 60 -> reward: 164.6666666666668, steps: 6084.0, wall-time: 72.90s
+-> berries picked: 130 of 800 | patches-visited: [0, 1, 9] | juice left:-0.00
+==================================================
+
+
+=== episode:61 Env-steps-taken:64416
+ 	picked: 58 |actions: {0: 403, 1: 408, 2: 565, 3: 745, 4: 512, 5: 501, 6: 505, 7: 398, 8: 239}
+episode: 61/2000 -> reward: 82.67708333333331, steps:4276, time-taken: 3.03min, time-elasped: 831.90min
+-> berries picked: 58 of 800 | patches-visited: [0, 1] | juice left:-0.00
+	| epsilon: 0.4814
+	| skipsteps: 0
+	| positive-in-buffer: 2379 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [398, 173, 480, 113, 436, 118, 233, 257, 171]
+	| approx positives in sample 512: 106
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 5, 22, 3, 23, 8, 12, 15, 8]
+	Time taken saving stuff: 0.01s
+
+=== episode:62 Env-steps-taken:52608
+ 	picked: 19 |actions: {0: 178, 1: 180, 2: 146, 3: 283, 4: 133, 5: 146, 6: 295, 7: 286, 8: 145}
+episode: 62/2000 -> reward: 22.911458333333325, steps:1792, time-taken: 1.54min, time-elasped: 833.44min
+-> berries picked: 19 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4811
+	| skipsteps: 0
+	| positive-in-buffer: 2396 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [402, 173, 487, 113, 436, 119, 235, 260, 171]
+	| approx positives in sample 512: 115
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [17, 8, 27, 3, 23, 5, 13, 11, 8]
+	Time taken saving stuff: 0.00s
+
+=== episode:63 Env-steps-taken:66432
+ 	picked: 71 |actions: {0: 505, 1: 527, 2: 924, 3: 713, 4: 506, 5: 508, 6: 454, 7: 468, 8: 311}
+episode: 63/2000 -> reward: 92.04687499999994, steps:4916, time-taken: 3.26min, time-elasped: 836.71min
+-> berries picked: 71 of 800 | patches-visited: [0, 9] | juice left:-0.00
+	| epsilon: 0.4808
+	| skipsteps: 0
+	| positive-in-buffer: 2464 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [409, 185, 507, 118, 441, 124, 241, 267, 172]
+	| approx positives in sample 512: 101
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [9, 7, 23, 4, 27, 5, 4, 16, 6]
+	Time taken saving stuff: 0.01s
+
+=== episode:64 Env-steps-taken:72576
+ 	picked: 93 |actions: {0: 579, 1: 628, 2: 779, 3: 897, 4: 725, 5: 468, 6: 802, 7: 693, 8: 346}
+episode: 64/2000 -> reward: 123.17187499999986, steps:5917, time-taken: 4.05min, time-elasped: 840.76min
+-> berries picked: 93 of 800 | patches-visited: [0, 7] | juice left:-0.00
+	| epsilon: 0.4805
+	| skipsteps: 0
+	| positive-in-buffer: 2551 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [424, 194, 525, 124, 451, 127, 253, 277, 176]
+	| approx positives in sample 512: 113
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [16, 7, 23, 3, 25, 6, 10, 18, 5]
+	Time taken saving stuff: 0.01s
+
+=== episode:65 Env-steps-taken:58656
+ 	picked: 41 |actions: {0: 289, 1: 293, 2: 417, 3: 306, 4: 340, 5: 229, 6: 241, 7: 212, 8: 146}
+episode: 65/2000 -> reward: 53.15104166666671, steps:2473, time-taken: 1.77min, time-elasped: 842.53min
+-> berries picked: 41 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4802
+	| skipsteps: 0
+	| positive-in-buffer: 2587 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [429, 199, 537, 125, 456, 127, 257, 281, 176]
+	| approx positives in sample 512: 143
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [17, 13, 30, 6, 22, 12, 17, 20, 6]
+	Time taken saving stuff: 0.12s
+
+=== episode:66 Env-steps-taken:69024
+ 	picked: 80 |actions: {0: 521, 1: 458, 2: 546, 3: 685, 4: 378, 5: 276, 6: 487, 7: 482, 8: 254}
+episode: 66/2000 -> reward: 105.91666666666657, steps:4087, time-taken: 2.67min, time-elasped: 845.20min
+-> berries picked: 80 of 800 | patches-visited: [0, 3, 6] | juice left:-0.00
+	| epsilon: 0.4799
+	| skipsteps: 0
+	| positive-in-buffer: 2659 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [445, 206, 551, 128, 459, 130, 265, 293, 182]
+	| approx positives in sample 512: 139
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [22, 8, 29, 5, 29, 9, 14, 9, 14]
+	Time taken saving stuff: 0.01s
+
+=== episode:67 Env-steps-taken:61344
+ 	picked: 50 |actions: {0: 397, 1: 395, 2: 715, 3: 494, 4: 406, 5: 487, 6: 286, 7: 393, 8: 225}
+episode: 67/2000 -> reward: 66.63541666666671, steps:3798, time-taken: 2.48min, time-elasped: 847.68min
+-> berries picked: 50 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4796
+	| skipsteps: 0
+	| positive-in-buffer: 2697 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [455, 210, 562, 136, 461, 132, 264, 296, 181]
+	| approx positives in sample 512: 126
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [15, 6, 28, 7, 20, 16, 12, 11, 11]
+	Time taken saving stuff: 0.01s
+
+=== episode:68 Env-steps-taken:57216
+ 	picked: 40 |actions: {0: 268, 1: 311, 2: 361, 3: 406, 4: 303, 5: 234, 6: 287, 7: 201, 8: 167}
+episode: 68/2000 -> reward: 45.70833333333336, steps:2538, time-taken: 2.09min, time-elasped: 849.78min
+-> berries picked: 40 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4793
+	| skipsteps: 0
+	| positive-in-buffer: 2724 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [460, 211, 566, 138, 467, 136, 266, 297, 183]
+	| approx positives in sample 512: 136
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [18, 5, 33, 10, 28, 11, 10, 12, 9]
+	Time taken saving stuff: 0.02s
+
+=== episode:69 Env-steps-taken:69408
+ 	picked: 80 |actions: {0: 556, 1: 559, 2: 853, 3: 842, 4: 627, 5: 562, 6: 621, 7: 622, 8: 327}
+episode: 69/2000 -> reward: 107.41666666666654, steps:5569, time-taken: 3.53min, time-elasped: 853.31min
+-> berries picked: 80 of 800 | patches-visited: [0, 1] | juice left:-0.00
+	| epsilon: 0.479
+	| skipsteps: 0
+	| positive-in-buffer: 2800 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [473, 217, 580, 147, 478, 144, 271, 304, 186]
+	| approx positives in sample 512: 129
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [14, 10, 19, 8, 29, 8, 18, 9, 14]
+	Time taken saving stuff: 0.10s
+
+=== episode:70 Env-steps-taken:65760
+ 	picked: 66 |actions: {0: 362, 1: 460, 2: 534, 3: 553, 4: 407, 5: 390, 6: 383, 7: 475, 8: 217}
+episode: 70/2000 -> reward: 88.33333333333331, steps:3781, time-taken: 2.92min, time-elasped: 856.24min
+-> berries picked: 66 of 800 | patches-visited: [0, 4] | juice left:-0.00
+	| epsilon: 0.4787
+	| skipsteps: 0
+	| positive-in-buffer: 2856 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [483, 225, 588, 152, 490, 152, 272, 306, 188]
+	| approx positives in sample 512: 136
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [18, 13, 27, 9, 23, 7, 18, 12, 9]
+	Time taken saving stuff: 0.08s
+
+=== episode:7 Env-steps-taken:65376
+ 	picked: 61 |actions: {0: 148, 1: 189, 2: 296, 3: 630, 4: 330, 5: 924, 6: 75, 7: 343, 8: 16}
+
+==================================================
+eval-episode: 70 -> reward: 87.50520833333329, steps: 2951.0, wall-time: 60.70s
+-> berries picked: 61 of 800 | patches-visited: [0, 1] | juice left:-0.00
+==================================================
+
+
+=== episode:71 Env-steps-taken:62592
+ 	picked: 60 |actions: {0: 357, 1: 375, 2: 563, 3: 652, 4: 436, 5: 398, 6: 385, 7: 469, 8: 223}
+episode: 71/2000 -> reward: 72.56250000000001, steps:3858, time-taken: 2.66min, time-elasped: 859.91min
+-> berries picked: 60 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4784
+	| skipsteps: 0
+	| positive-in-buffer: 2890 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [475, 231, 599, 154, 496, 158, 277, 311, 189]
+	| approx positives in sample 512: 121
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [17, 12, 20, 7, 26, 6, 13, 10, 10]
+	Time taken saving stuff: 0.01s
+
+=== episode:72 Env-steps-taken:59424
+ 	picked: 42 |actions: {0: 261, 1: 271, 2: 575, 3: 326, 4: 274, 5: 320, 6: 388, 7: 348, 8: 174}
+episode: 72/2000 -> reward: 57.09375000000005, steps:2937, time-taken: 2.31min, time-elasped: 862.22min
+-> berries picked: 42 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4781
+	| skipsteps: 0
+	| positive-in-buffer: 2929 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [478, 235, 611, 160, 497, 162, 282, 313, 191]
+	| approx positives in sample 512: 112
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [14, 8, 21, 8, 21, 12, 12, 8, 8]
+	Time taken saving stuff: 0.02s
+
+=== episode:73 Env-steps-taken:69312
+ 	picked: 77 |actions: {0: 446, 1: 494, 2: 915, 3: 656, 4: 488, 5: 627, 6: 573, 7: 580, 8: 324}
+episode: 73/2000 -> reward: 107.08854166666657, steps:5103, time-taken: 2.94min, time-elasped: 865.17min
+-> berries picked: 77 of 800 | patches-visited: [0, 4] | juice left:-0.00
+	| epsilon: 0.4778
+	| skipsteps: 0
+	| positive-in-buffer: 2987 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [491, 235, 619, 162, 502, 166, 288, 332, 192]
+	| approx positives in sample 512: 132
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [15, 4, 31, 9, 24, 11, 16, 12, 10]
+	Time taken saving stuff: 0.00s
+
+=== episode:74 Env-steps-taken:66528
+ 	picked: 68 |actions: {0: 427, 1: 521, 2: 636, 3: 522, 4: 542, 5: 518, 6: 466, 7: 543, 8: 251}
+episode: 74/2000 -> reward: 92.6041666666666, steps:4426, time-taken: 2.84min, time-elasped: 868.01min
+-> berries picked: 68 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4775
+	| skipsteps: 0
+	| positive-in-buffer: 3045 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [497, 242, 633, 163, 511, 172, 295, 339, 193]
+	| approx positives in sample 512: 129
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [14, 8, 24, 7, 27, 10, 20, 12, 7]
+	Time taken saving stuff: 0.00s
+
+=== episode:75 Env-steps-taken:57216
+ 	picked: 34 |actions: {0: 159, 1: 241, 2: 494, 3: 263, 4: 323, 5: 284, 6: 196, 7: 182, 8: 142}
+episode: 75/2000 -> reward: 46.55208333333336, steps:2284, time-taken: 1.79min, time-elasped: 869.81min
+-> berries picked: 34 of 800 | patches-visited: [0, 3] | juice left:-0.00
+	| epsilon: 0.4772
+	| skipsteps: 0
+	| positive-in-buffer: 3068 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [499, 244, 641, 164, 515, 174, 299, 337, 195]
+	| approx positives in sample 512: 122
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [9, 9, 29, 8, 20, 10, 19, 8, 10]
+	Time taken saving stuff: 0.10s
+
+=== episode:76 Env-steps-taken:50592
+ 	picked: 9 |actions: {0: 67, 1: 61, 2: 144, 3: 164, 4: 48, 5: 70, 6: 37, 7: 62, 8: 30}
+episode: 76/2000 -> reward: 12.984375, steps:683, time-taken: 0.74min, time-elasped: 870.56min
+-> berries picked: 9 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4769
+	| skipsteps: 0
+	| positive-in-buffer: 3075 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [500, 244, 642, 165, 516, 175, 300, 338, 195]
+	| approx positives in sample 512: 146
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [13, 13, 27, 14, 32, 13, 11, 12, 11]
+	Time taken saving stuff: 0.09s
+
+=== episode:77 Env-steps-taken:59232
+ 	picked: 39 |actions: {0: 187, 1: 176, 2: 460, 3: 345, 4: 309, 5: 231, 6: 208, 7: 188, 8: 142}
+episode: 77/2000 -> reward: 56.76562500000004, steps:2246, time-taken: 1.67min, time-elasped: 872.23min
+-> berries picked: 39 of 800 | patches-visited: [0, 9] | juice left:-0.00
+	| epsilon: 0.4766
+	| skipsteps: 0
+	| positive-in-buffer: 3108 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [503, 250, 653, 169, 525, 175, 301, 337, 195]
+	| approx positives in sample 512: 149
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [16, 8, 24, 8, 29, 15, 28, 11, 10]
+	Time taken saving stuff: 0.01s
+
+=== episode:78 Env-steps-taken:54528
+ 	picked: 23 |actions: {0: 137, 1: 153, 2: 247, 3: 189, 4: 267, 5: 180, 6: 158, 7: 94, 8: 99}
+episode: 78/2000 -> reward: 32.68229166666666, steps:1524, time-taken: 1.07min, time-elasped: 873.31min
+-> berries picked: 23 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4763
+	| skipsteps: 0
+	| positive-in-buffer: 3124 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [502, 254, 657, 171, 528, 177, 305, 334, 196]
+	| approx positives in sample 512: 128
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [21, 5, 24, 8, 25, 14, 15, 14, 2]
+	Time taken saving stuff: 0.01s
+
+=== episode:79 Env-steps-taken:63072
+ 	picked: 52 |actions: {0: 359, 1: 389, 2: 560, 3: 582, 4: 407, 5: 343, 6: 433, 7: 355, 8: 324}
+episode: 79/2000 -> reward: 75.52083333333333, steps:3752, time-taken: 2.16min, time-elasped: 875.48min
+-> berries picked: 52 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.476
+	| skipsteps: 0
+	| positive-in-buffer: 3166 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [506, 258, 671, 174, 533, 179, 311, 337, 197]
+	| approx positives in sample 512: 121
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [19, 8, 18, 9, 24, 11, 15, 12, 5]
+	Time taken saving stuff: 0.01s
+
+=== episode:80 Env-steps-taken:71328
+ 	picked: 86 |actions: {0: 407, 1: 582, 2: 840, 3: 579, 4: 634, 5: 534, 6: 595, 7: 553, 8: 269}
+episode: 80/2000 -> reward: 114.24479166666653, steps:4993, time-taken: 3.79min, time-elasped: 879.27min
+-> berries picked: 86 of 800 | patches-visited: [0, 6] | juice left:-0.00
+	| epsilon: 0.4757
+	| skipsteps: 0
+	| positive-in-buffer: 3235 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [509, 264, 687, 179, 539, 190, 320, 346, 201]
+	| approx positives in sample 512: 130
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 8, 28, 9, 27, 13, 16, 13, 6]
+	Time taken saving stuff: 0.17s
+
+=== episode:8 Env-steps-taken:83808
+ 	picked: 138 |actions: {0: 409, 1: 621, 2: 668, 3: 645, 4: 1009, 5: 360, 6: 415, 7: 807, 8: 54}
+
+==================================================
+eval-episode: 80 -> reward: 179.59375000000014, steps: 4988.0, wall-time: 73.14s
+-> berries picked: 138 of 800 | patches-visited: [1, 3, 9] | juice left:-0.00
+==================================================
+
+
+=== episode:81 Env-steps-taken:62784
+ 	picked: 60 |actions: {0: 465, 1: 546, 2: 751, 3: 741, 4: 721, 5: 468, 6: 520, 7: 440, 8: 336}
+episode: 81/2000 -> reward: 73.56250000000001, steps:4988, time-taken: 2.81min, time-elasped: 883.31min
+-> berries picked: 60 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4754
+	| skipsteps: 0
+	| positive-in-buffer: 3272 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [505, 265, 696, 183, 548, 197, 324, 350, 204]
+	| approx positives in sample 512: 160
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 11, 25, 10, 54, 9, 15, 15, 11]
+	Time taken saving stuff: 0.00s
+
+=== episode:82 Env-steps-taken:62400
+ 	picked: 56 |actions: {0: 252, 1: 415, 2: 518, 3: 287, 4: 491, 5: 374, 6: 331, 7: 373, 8: 182}
+episode: 82/2000 -> reward: 72.29166666666667, steps:3223, time-taken: 2.68min, time-elasped: 885.99min
+-> berries picked: 56 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.4751
+	| skipsteps: 0
+	| positive-in-buffer: 3309 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [502, 267, 703, 188, 554, 201, 330, 357, 207]
+	| approx positives in sample 512: 140
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [11, 9, 32, 7, 34, 12, 16, 12, 7]
+	Time taken saving stuff: 0.11s
+
+=== episode:83 Env-steps-taken:62208
+ 	picked: 52 |actions: {0: 377, 1: 476, 2: 432, 3: 373, 4: 405, 5: 351, 6: 430, 7: 352, 8: 267}
+episode: 83/2000 -> reward: 71.02083333333336, steps:3463, time-taken: 2.12min, time-elasped: 888.11min
+-> berries picked: 52 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4748
+	| skipsteps: 0
+	| positive-in-buffer: 3348 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [505, 270, 708, 192, 561, 209, 337, 360, 206]
+	| approx positives in sample 512: 149
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [8, 8, 33, 11, 39, 11, 16, 17, 6]
+	Time taken saving stuff: 0.01s
+
+=== episode:84 Env-steps-taken:63840
+ 	picked: 63 |actions: {0: 485, 1: 698, 2: 629, 3: 619, 4: 579, 5: 419, 6: 478, 7: 406, 8: 268}
+episode: 84/2000 -> reward: 78.5052083333333, steps:4581, time-taken: 2.51min, time-elasped: 890.62min
+-> berries picked: 63 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4745
+	| skipsteps: 0
+	| positive-in-buffer: 3395 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [507, 274, 713, 198, 572, 211, 343, 369, 208]
+	| approx positives in sample 512: 144
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [13, 6, 27, 7, 41, 7, 22, 15, 6]
+	Time taken saving stuff: 0.02s
+
+=== episode:85 Env-steps-taken:72576
+ 	picked: 96 |actions: {0: 610, 1: 956, 2: 931, 3: 712, 4: 820, 5: 607, 6: 715, 7: 610, 8: 327}
+episode: 85/2000 -> reward: 122.9999999999998, steps:6288, time-taken: 3.93min, time-elasped: 894.56min
+-> berries picked: 96 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.4742
+	| skipsteps: 0
+	| positive-in-buffer: 3472 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [512, 278, 733, 208, 578, 218, 358, 377, 210]
+	| approx positives in sample 512: 144
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [5, 13, 29, 5, 40, 11, 18, 16, 7]
+	Time taken saving stuff: 0.01s
+
+=== episode:86 Env-steps-taken:71232
+ 	picked: 87 |actions: {0: 801, 1: 813, 2: 814, 3: 656, 4: 832, 5: 680, 6: 637, 7: 571, 8: 281}
+episode: 86/2000 -> reward: 115.13020833333324, steps:6085, time-taken: 3.57min, time-elasped: 898.13min
+-> berries picked: 87 of 800 | patches-visited: [0, 9] | juice left:-0.00
+	| epsilon: 0.4739
+	| skipsteps: 0
+	| positive-in-buffer: 3508 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [501, 276, 741, 213, 586, 224, 366, 390, 211]
+	| approx positives in sample 512: 132
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [9, 7, 26, 9, 34, 14, 15, 10, 8]
+	Time taken saving stuff: 0.01s
+
+=== episode:87 Env-steps-taken:71808
+ 	picked: 88 |actions: {0: 579, 1: 678, 2: 751, 3: 516, 4: 678, 5: 564, 6: 632, 7: 571, 8: 346}
+episode: 87/2000 -> reward: 119.45833333333317, steps:5315, time-taken: 3.73min, time-elasped: 901.86min
+-> berries picked: 88 of 800 | patches-visited: [0, 6] | juice left:-0.00
+	| epsilon: 0.4736
+	| skipsteps: 0
+	| positive-in-buffer: 3570 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [504, 278, 752, 220, 599, 234, 372, 396, 215]
+	| approx positives in sample 512: 146
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [21, 9, 20, 8, 35, 9, 25, 12, 7]
+	Time taken saving stuff: 0.01s
+
+=== episode:88 Env-steps-taken:66336
+ 	picked: 77 |actions: {0: 607, 1: 827, 2: 561, 3: 607, 4: 588, 5: 526, 6: 607, 7: 523, 8: 341}
+episode: 88/2000 -> reward: 91.0885416666666, steps:5187, time-taken: 4.87min, time-elasped: 906.74min
+-> berries picked: 77 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4733
+	| skipsteps: 0
+	| positive-in-buffer: 3632 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [512, 282, 755, 222, 608, 243, 388, 407, 215]
+	| approx positives in sample 512: 122
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 11, 23, 8, 26, 15, 13, 12, 4]
+	Time taken saving stuff: 0.00s
+
+=== episode:89 Env-steps-taken:69984
+ 	picked: 84 |actions: {0: 443, 1: 569, 2: 724, 3: 528, 4: 695, 5: 519, 6: 501, 7: 478, 8: 250}
+episode: 89/2000 -> reward: 108.41666666666656, steps:4707, time-taken: 2.08min, time-elasped: 908.82min
+-> berries picked: 84 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.473
+	| skipsteps: 0
+	| positive-in-buffer: 3696 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [510, 286, 770, 224, 625, 252, 393, 418, 218]
+	| approx positives in sample 512: 126
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [7, 7, 27, 13, 32, 6, 16, 7, 11]
+	Time taken saving stuff: 0.01s
+
+=== episode:90 Env-steps-taken:65184
+ 	picked: 60 |actions: {0: 290, 1: 432, 2: 511, 3: 302, 4: 532, 5: 363, 6: 273, 7: 303, 8: 186}
+episode: 90/2000 -> reward: 86.56249999999999, steps:3192, time-taken: 1.98min, time-elasped: 910.81min
+-> berries picked: 60 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.4727
+	| skipsteps: 0
+	| positive-in-buffer: 3749 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [512, 289, 781, 226, 634, 259, 402, 424, 222]
+	| approx positives in sample 512: 127
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [8, 5, 15, 9, 40, 15, 17, 10, 8]
+	Time taken saving stuff: 0.06s
+
+=== episode:9 Env-steps-taken:67008
+ 	picked: 78 |actions: {0: 272, 1: 872, 2: 442, 3: 517, 4: 829, 5: 301, 6: 439, 7: 385, 8: 423}
+
+==================================================
+eval-episode: 90 -> reward: 94.53124999999993, steps: 4480.0, wall-time: 52.99s
+-> berries picked: 78 of 800 | patches-visited: [1] | juice left:-0.00
+==================================================
+
+
+=== episode:91 Env-steps-taken:71328
+ 	picked: 84 |actions: {0: 502, 1: 973, 2: 662, 3: 685, 4: 538, 5: 646, 6: 563, 7: 543, 8: 398}
+episode: 91/2000 -> reward: 117.18749999999987, steps:5510, time-taken: 2.93min, time-elasped: 914.62min
+-> berries picked: 84 of 800 | patches-visited: [0, 9] | juice left:-0.00
+	| epsilon: 0.4724
+	| skipsteps: 0
+	| positive-in-buffer: 3797 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [504, 292, 788, 231, 644, 269, 415, 430, 224]
+	| approx positives in sample 512: 152
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [13, 6, 34, 13, 27, 14, 15, 14, 16]
+	Time taken saving stuff: 0.12s
+
+=== episode:92 Env-steps-taken:57408
+ 	picked: 35 |actions: {0: 209, 1: 332, 2: 311, 3: 268, 4: 200, 5: 182, 6: 189, 7: 168, 8: 85}
+episode: 92/2000 -> reward: 46.99479166666668, steps:1944, time-taken: 1.31min, time-elasped: 915.93min
+-> berries picked: 35 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4721
+	| skipsteps: 0
+	| positive-in-buffer: 3825 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [508, 294, 793, 234, 648, 271, 418, 434, 225]
+	| approx positives in sample 512: 126
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [7, 7, 23, 8, 30, 15, 14, 12, 10]
+	Time taken saving stuff: 0.01s
+
+=== episode:93 Env-steps-taken:69216
+ 	picked: 78 |actions: {0: 566, 1: 827, 2: 706, 3: 485, 4: 579, 5: 677, 6: 571, 7: 551, 8: 297}
+episode: 93/2000 -> reward: 104.58854166666656, steps:5259, time-taken: 2.80min, time-elasped: 918.74min
+-> berries picked: 78 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.4718
+	| skipsteps: 0
+	| positive-in-buffer: 3882 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [513, 289, 808, 241, 662, 279, 426, 436, 228]
+	| approx positives in sample 512: 156
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [12, 4, 27, 11, 34, 19, 23, 16, 10]
+	Time taken saving stuff: 0.01s
+
+=== episode:94 Env-steps-taken:68448
+ 	picked: 78 |actions: {0: 490, 1: 757, 2: 668, 3: 491, 4: 514, 5: 584, 6: 593, 7: 538, 8: 288}
+episode: 94/2000 -> reward: 102.53124999999991, steps:4923, time-taken: 2.95min, time-elasped: 921.70min
+-> berries picked: 78 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.47150000000000003
+	| skipsteps: 0
+	| positive-in-buffer: 3938 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [514, 292, 816, 249, 671, 289, 437, 440, 230]
+	| approx positives in sample 512: 135
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [8, 7, 25, 9, 39, 13, 14, 11, 9]
+	Time taken saving stuff: 0.01s
+
+=== episode:95 Env-steps-taken:66816
+ 	picked: 67 |actions: {0: 442, 1: 666, 2: 1139, 3: 424, 4: 381, 5: 396, 6: 459, 7: 568, 8: 279}
+episode: 95/2000 -> reward: 94.66145833333329, steps:4754, time-taken: 2.66min, time-elasped: 924.36min
+-> berries picked: 67 of 800 | patches-visited: [0, 9] | juice left:-0.00
+	| epsilon: 0.4712
+	| skipsteps: 0
+	| positive-in-buffer: 3985 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [510, 293, 828, 252, 677, 294, 448, 452, 231]
+	| approx positives in sample 512: 133
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 7, 22, 8, 40, 11, 17, 15, 3]
+	Time taken saving stuff: 0.00s
+
+=== episode:96 Env-steps-taken:72576
+ 	picked: 89 |actions: {0: 521, 1: 692, 2: 985, 3: 731, 4: 606, 5: 653, 6: 509, 7: 548, 8: 281}
+episode: 96/2000 -> reward: 123.4010416666665, steps:5526, time-taken: 2.90min, time-elasped: 927.27min
+-> berries picked: 89 of 800 | patches-visited: [0, 9] | juice left:-0.00
+	| epsilon: 0.4709
+	| skipsteps: 0
+	| positive-in-buffer: 4031 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [503, 297, 841, 261, 684, 302, 458, 452, 233]
+	| approx positives in sample 512: 141
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 2, 32, 11, 29, 21, 17, 13, 6]
+	Time taken saving stuff: 0.01s
+
+=== episode:97 Env-steps-taken:50976
+ 	picked: 9 |actions: {0: 96, 1: 177, 2: 145, 3: 88, 4: 62, 5: 38, 6: 48, 7: 66, 8: 37}
+episode: 97/2000 -> reward: 14.984375000000004, steps:757, time-taken: 0.89min, time-elasped: 928.16min
+-> berries picked: 9 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4706
+	| skipsteps: 0
+	| positive-in-buffer: 4036 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [503, 298, 843, 261, 686, 302, 458, 452, 233]
+	| approx positives in sample 512: 159
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [9, 11, 22, 16, 48, 16, 15, 12, 10]
+	Time taken saving stuff: 0.01s
+
+=== episode:98 Env-steps-taken:66048
+ 	picked: 64 |actions: {0: 422, 1: 580, 2: 972, 3: 442, 4: 513, 5: 563, 6: 536, 7: 477, 8: 290}
+episode: 98/2000 -> reward: 88.5052083333333, steps:4795, time-taken: 2.53min, time-elasped: 930.69min
+-> berries picked: 64 of 800 | patches-visited: [0, 2] | juice left:-0.00
+	| epsilon: 0.4703
+	| skipsteps: 0
+	| positive-in-buffer: 4072 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [501, 299, 852, 266, 693, 310, 466, 451, 234]
+	| approx positives in sample 512: 129
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [8, 4, 25, 11, 40, 10, 16, 10, 5]
+	Time taken saving stuff: 0.01s
+
+=== episode:99 Env-steps-taken:73152
+ 	picked: 93 |actions: {0: 627, 1: 848, 2: 829, 3: 613, 4: 513, 5: 716, 6: 490, 7: 656, 8: 337}
+episode: 99/2000 -> reward: 124.2291666666665, steps:5629, time-taken: 3.25min, time-elasped: 933.94min
+-> berries picked: 93 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.47
+	| skipsteps: 0
+	| positive-in-buffer: 4126 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [507, 298, 861, 267, 702, 318, 478, 459, 236]
+	| approx positives in sample 512: 148
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [16, 5, 33, 15, 39, 10, 12, 12, 6]
+	Time taken saving stuff: 0.01s
+
+=== episode:100 Env-steps-taken:70848
+ 	picked: 86 |actions: {0: 415, 1: 826, 2: 867, 3: 538, 4: 563, 5: 602, 6: 444, 7: 639, 8: 354}
+episode: 100/2000 -> reward: 115.07291666666653, steps:5248, time-taken: 3.20min, time-elasped: 937.15min
+-> berries picked: 86 of 800 | patches-visited: [0, 4, 9] | juice left:-0.00
+	| epsilon: 0.4697
+	| skipsteps: 0
+	| positive-in-buffer: 4188 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [509, 297, 875, 272, 718, 322, 489, 468, 238]
+	| approx positives in sample 512: 145
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [5, 2, 26, 14, 42, 14, 18, 11, 13]
+	Time taken saving stuff: 0.13s
+
+=== episode:10 Env-steps-taken:63456
+ 	picked: 58 |actions: {0: 42, 1: 349, 2: 718, 3: 101, 4: 1848, 5: 279, 6: 86, 7: 333, 8: 32}
+
+==================================================
+eval-episode: 100 -> reward: 77.67708333333333, steps: 3788.0, wall-time: 46.51s
+-> berries picked: 58 of 800 | patches-visited: [0, 1] | juice left:-0.00
+==================================================
+
+
+=== episode:101 Env-steps-taken:62976
+ 	picked: 53 |actions: {0: 158, 1: 319, 2: 477, 3: 251, 4: 318, 5: 274, 6: 204, 7: 298, 8: 150}
+episode: 101/2000 -> reward: 75.46354166666667, steps:2449, time-taken: 1.51min, time-elasped: 939.44min
+-> berries picked: 53 of 800 | patches-visited: [0, 4] | juice left:-0.00
+	| epsilon: 0.4694
+	| skipsteps: 0
+	| positive-in-buffer: 4231 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [512, 302, 886, 275, 726, 329, 492, 468, 241]
+	| approx positives in sample 512: 137
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [9, 11, 27, 13, 25, 17, 13, 14, 8]
+	Time taken saving stuff: 0.00s
+
+=== episode:102 Env-steps-taken:57600
+ 	picked: 33 |actions: {0: 175, 1: 433, 2: 465, 3: 155, 4: 192, 5: 166, 6: 153, 7: 184, 8: 170}
+episode: 102/2000 -> reward: 49.109375000000014, steps:2093, time-taken: 1.55min, time-elasped: 940.99min
+-> berries picked: 33 of 800 | patches-visited: [0, 4, 6] | juice left:-0.00
+	| epsilon: 0.4691
+	| skipsteps: 0
+	| positive-in-buffer: 4259 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [518, 304, 890, 277, 729, 331, 496, 470, 244]
+	| approx positives in sample 512: 144
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [6, 8, 18, 13, 44, 19, 19, 8, 9]
+	Time taken saving stuff: 0.00s
+
+=== episode:103 Env-steps-taken:65856
+ 	picked: 63 |actions: {0: 294, 1: 532, 2: 585, 3: 336, 4: 463, 5: 350, 6: 311, 7: 437, 8: 234}
+episode: 103/2000 -> reward: 89.89062499999994, steps:3542, time-taken: 2.36min, time-elasped: 943.36min
+-> berries picked: 63 of 800 | patches-visited: [0, 7] | juice left:-0.00
+	| epsilon: 0.4688
+	| skipsteps: 0
+	| positive-in-buffer: 4297 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [517, 307, 893, 276, 741, 342, 500, 474, 247]
+	| approx positives in sample 512: 136
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 7, 24, 19, 28, 8, 21, 10, 9]
+	Time taken saving stuff: 0.01s
+
+=== episode:104 Env-steps-taken:68064
+ 	picked: 67 |actions: {0: 294, 1: 506, 2: 741, 3: 391, 4: 481, 5: 392, 6: 347, 7: 372, 8: 262}
+episode: 104/2000 -> reward: 101.16145833333324, steps:3786, time-taken: 2.15min, time-elasped: 945.51min
+-> berries picked: 67 of 800 | patches-visited: [0, 8] | juice left:-0.00
+	| epsilon: 0.4685
+	| skipsteps: 0
+	| positive-in-buffer: 4338 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [527, 309, 902, 279, 745, 349, 507, 472, 248]
+	| approx positives in sample 512: 138
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [7, 6, 23, 17, 31, 15, 17, 14, 8]
+	Time taken saving stuff: 0.01s
+
+=== episode:105 Env-steps-taken:50976
+ 	picked: 10 |actions: {0: 59, 1: 83, 2: 102, 3: 32, 4: 95, 5: 79, 6: 62, 7: 38, 8: 78}
+episode: 105/2000 -> reward: 14.927083333333337, steps:628, time-taken: 0.80min, time-elasped: 946.31min
+-> berries picked: 10 of 800 | patches-visited: [0] | juice left:-0.00
+	| epsilon: 0.4682
+	| skipsteps: 0
+	| positive-in-buffer: 4344 | amount-filled: 100.00%
+	| action-stats:  [0, 1, 2, 3, 4, 5, 6, 7, 8] [524, 310, 907, 279, 746, 349, 509, 472, 248]
+	| approx positives in sample 512: 152
+	| approx action-dist in sample 512: [0, 1, 2, 3, 4, 5, 6, 7, 8] [10, 2, 23, 15, 37, 18, 27, 13, 7]
+	Time taken saving stuff: 0.01s
+
+=== episode:11 Env-steps-taken:81312
+ 	picked: 126 |actions: {0: 232, 1: 665, 2: 3423, 3: 321, 4: 423, 5: 374, 6: 158, 7: 763, 8: 21}
+evalEpisode: 0 -> reward: 166.95312500000009 steps: 6380
+-> berries picked: 126 of 800 | patches-visited: [1, 4, 6] | juice left:-0.00
