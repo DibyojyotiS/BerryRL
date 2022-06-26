@@ -24,7 +24,7 @@ def my_print_fn(berry_env:BerryFieldEnv, buffer, tstrat, ddqntraininer,
         except Exception as e: skipsteps = ddqntraininer.skipSteps
         Env_print_fn(berry_env)
         print('\t| epsilon:', tstrat.epsilon)
-        if lr_scheduler is not None: print('\t lr:', lr_scheduler.get_lr())
+        if lr_scheduler is not None: print('\t| lr:', lr_scheduler.get_lr())
         if buffer.buffer is not None:
             positive_idx = np.argwhere((buffer.buffer['reward']>0).cpu().squeeze())
             a,count = torch.unique(buffer.buffer['action'][positive_idx], return_counts=True)
