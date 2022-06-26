@@ -1,4 +1,5 @@
 import torch
+from torch.optim.lr_scheduler import _LRScheduler
 import numpy as np
 from berry_field.envs import BerryFieldEnv
 
@@ -14,7 +15,8 @@ def Env_print_fn(berry_env:BerryFieldEnv):
         'of', berry_env.get_totalBerries(), '| patches-visited:', visited_patches,
         f'| juice left:{berry_env.total_juice:.2f}')
     
-def my_print_fn(berry_env:BerryFieldEnv, buffer, tstrat, ddqntraininer):
+def my_print_fn(berry_env:BerryFieldEnv, buffer, tstrat, ddqntraininer, 
+                lr_scheduler:_LRScheduler=None):
     tolist = lambda t: t.cpu().numpy().tolist()
     def print_fn():
         ssize = ddqntraininer.batchSize
@@ -22,6 +24,7 @@ def my_print_fn(berry_env:BerryFieldEnv, buffer, tstrat, ddqntraininer):
         except Exception as e: skipsteps = ddqntraininer.skipSteps
         Env_print_fn(berry_env)
         print('\t| epsilon:', tstrat.epsilon)
+        if lr_scheduler is not None: print('\t lr:', lr_scheduler.get_lr())
         if buffer.buffer is not None:
             positive_idx = np.argwhere((buffer.buffer['reward']>0).cpu().squeeze())
             a,count = torch.unique(buffer.buffer['action'][positive_idx], return_counts=True)

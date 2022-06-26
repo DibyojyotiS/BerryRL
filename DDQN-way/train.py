@@ -3,6 +3,7 @@ import time
 from DRLagents import *
 from torch.optim.adam import Adam
 from torch.optim.rmsprop import RMSprop
+from torch.optim.lr_scheduler import MultiStepLR
 
 from Agent import *
 from utils import (getRandomEnv, Env_print_fn, 
@@ -50,13 +51,14 @@ if __name__ == '__main__':
     nnet = agent.getNet(); print(nnet)
 
     # training stuffs
-    optim = Adam(nnet.parameters(), lr=0.0005)
+    optim = Adam(nnet.parameters(), lr=0.01, weight_decay=0.05)
+    schdl = MultiStepLR(optim,[50*i for i in range(1,21)],gamma=0.5)
     buffer = PrioritizedExperienceRelpayBuffer(int(6E4), alpha=0.95,
                                         beta=0.1, beta_rate=0.9/2000)
-    tstrat = epsilonGreedyAction(0.5)
+    tstrat = epsilonGreedyAction(0.5,0.2,decaySteps=1000)
 
     ddqn_trainer = DDQN(trainEnv, nnet, tstrat, optim, buffer, batchSize=512, 
-                        gamma=0.9, update_freq=5, MaxTrainEpisodes=2000,
+                        gamma=0.9, update_freq=5, MaxTrainEpisodes=2000, lr_scheduler=schdl,
                         optimize_every_kth_action=100, num_gradient_steps=25,
                         make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
                         evalFreq=10, printFreq=1, polyak_average=True, polyak_tau=0.1,
@@ -71,7 +73,7 @@ if __name__ == '__main__':
     if resume_run: ddqn_trainer.attempt_resume(RESUME_DIR)    
 
     # make print-fuctions to print extra info
-    trainPrintFn = my_print_fn(trainEnv, buffer, tstrat, ddqn_trainer)
+    trainPrintFn = my_print_fn(trainEnv, buffer, tstrat, ddqn_trainer, schdl)
     evalPrintFn = lambda : Env_print_fn(evalEnv)
 
     # start training! :D

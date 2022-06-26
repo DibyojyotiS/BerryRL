@@ -3,7 +3,7 @@ from collections import deque
 from berry_field.envs import BerryFieldEnv
 from torch import Tensor, float32, nn, device, tensor
 from agent_utils import (berry_worth, random_exploration_v2, 
-    compute_sectorized, Debugging, PatchDiscoveryReward, 
+    compute_distance_sectorized, Debugging, PatchDiscoveryReward, 
     skip_steps, make_simple_feedforward, printLocals, plot_time_mem_curves)
 
 ROOT_2_INV = 0.5**(0.5)
@@ -18,11 +18,11 @@ class Agent():
                 angle = 45, persistence=0.8, worth_offset=0.05, 
                 noise=0.01, nstep_transition=[1], positive_emphasis=0,
                 skipStep=10, reward_patch_discovery=True, 
-                add_exploration = True,
+                add_exploration = True, spacings=[],
 
                 # params related to time memory
-                time_memory_factor=0.5, time_memory_exp=1.0,
-                time_memory_sizes= [50,100,200],
+                time_memory_factor=0.6, time_memory_exp=1.0,
+                time_memory_sizes= [20,50,100,200,400],
 
                 # other params
                 render=False, 
@@ -55,9 +55,15 @@ class Agent():
         - skipStep: int (default 10)
                 - action is repeated for next skipStep steps
         - reward_patch_discovery: bool (default True)
-                - add +1 reward on discovering a new patch
+                - add +0.5 reward on discovering a new patch
         - add_exploration: bool (default True)
                 - adds exploration-subroutine as an action
+        - spacings: list (default empty list)
+                - list of floats between 0 and 1
+                - the observation space is segmented by
+                the floats in this list into rectangular donut
+                shaped segments. The sectorized part of the state
+                is made for each of the segments
 
         #### params related to time memory
         - time_memory_factor: float (default 0.01)
@@ -88,6 +94,7 @@ class Agent():
         self.reward_patch_discovery = reward_patch_discovery
         self.positive_emphasis = positive_emphasis
         self.add_exploration= add_exploration
+        self.spacings = spacings
         self.time_memory_factor = time_memory_factor
         self.time_memory_exp = time_memory_exp
         self.time_memory_sizes = time_memory_sizes
@@ -107,7 +114,8 @@ class Agent():
         # some stuff that i need
         if mode == 'train':
             plot_time_mem_curves(self.time_memory_factor, 
-                self.time_memory_sizes, self.berryField.FIELD_SIZE[0])
+                self.time_memory_sizes, self.time_memory_exp, 
+                self.berryField.FIELD_SIZE[0])
 
     def env_step_wrapper(self, berryField:BerryFieldEnv, render=False):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
@@ -221,8 +229,8 @@ class Agent():
             info = self.berryField.get_info()
 
         # the total-worth is also representative of the percived goodness of observation
-        sectorized_states, avg_worth = compute_sectorized(raw_observation=raw_observation, 
-                info=info, berry_worth_function=self.berry_worth_func, 
+        sectorized_states, avg_worth = compute_distance_sectorized(raw_observation=raw_observation, 
+                info=info, berry_worth_function=self.berry_worth_func, spacings=self.spacings, 
                 prev_sectorized_state=self.prev_sectorized_state, 
                 persistence=self.persistence, angle=self.angle)
         self.prev_sectorized_state = sectorized_states
@@ -272,17 +280,18 @@ class Agent():
                 else: transitions.append(transition)
         return transitions
 
-    def makeNet(self, TORCH_DEVICE,
-            feedforward = dict(infeatures=41, linearsDim = [32,16], lreluslope=0.1),
-            final_stage = dict(infeatures=16, linearsDim = [8], 
-                lreluslope=0.1)):
+    def makeNet(self, TORCH_DEVICE):
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
-        num_sectors = 360//self.angle
         outDims = self.berryField.action_space.n
-        ntimemems = len(self.time_memories)
+        n_sectorized = (1+len(self.spacings))*4*(360//self.angle)
         if self.add_exploration: outDims+=1
-
+        
+        # define the layers
+        feedforward = dict(
+            infeatures=n_sectorized+len(self.time_mem_mats)+4+2, 
+            linearsDim = [32,16,8], lreluslope=0.1)
+        
         class net(nn.Module):
             def __init__(self):
                 super(net, self).__init__()
@@ -290,29 +299,18 @@ class Agent():
                 # build the feed-forward network -> sectors, edge, patch-relative & time-memory
                 self.feedforward = make_simple_feedforward(**feedforward)
 
-                # build the final stage
-                self.final_stage = make_simple_feedforward(**final_stage)
-                
                 # for action advantage estimates
-                self.valueL = nn.Linear(final_stage['linearsDim'][-1], 1)
-                self.actadvs = nn.Linear(final_stage['linearsDim'][-1], outDims)
+                self.valueL = nn.Linear(feedforward['linearsDim'][-1], 1)
+                self.actadvs = nn.Linear(feedforward['linearsDim'][-1], outDims)
 
-                # indices to split at
-                self.f_part = (0, 4*num_sectors+6+ntimemems)
-
-            def forward(self, input:Tensor, debug=False):
+            def forward(self, feedforward_part:Tensor, debug=False):
 
                 # split and reshape input
-                if debug: print(input.shape)
-                feedforward_part = input[:,self.f_part[0]:self.f_part[1]]
+                if debug: print(feedforward_part.shape)
 
                 # process feedforward_part
                 if debug: print('\nfeedforward_part',feedforward_part.shape)
                 for layer in self.feedforward: feedforward_part = layer(feedforward_part)         
-
-                # process merged features
-                if debug: print('concat',feedforward_part.shape)
-                for layer in self.final_stage: feedforward_part = layer(feedforward_part)
 
                 value = self.valueL(feedforward_part)
                 advs = self.actadvs(feedforward_part)
@@ -333,16 +331,17 @@ class Agent():
 
     def showDebug(self, gif=False, f=20, figsize=(15,10)):
         
-        num_sectors = 360//self.angle
+        x,y = self.prev_sectorized_state.shape
+        length = x*y
         actions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 
                     'W', 'NW', 'EX']
 
         def plotfn(axs, state, *args):
-            sectorized_states = state[:4*num_sectors].reshape(4,num_sectors)
-            edge_dist = state[4*num_sectors: 4*num_sectors+4]
-            patch_relative = state[4*num_sectors+4]
-            total_juice = state[4*num_sectors+4+1]
-            time_mem = state[4*num_sectors+4+2:]
+            sectorized_states = state[:length].reshape(x,y)
+            edge_dist = state[length: length+4]
+            patch_relative = state[length+4]
+            total_juice = state[length+5]
+            time_mem = state[length+6:]
             axs[0][0].imshow(sectorized_states)
             axs[0][1].bar([*range(2+len(time_mem))],[total_juice, 
                     patch_relative, *time_mem], [1]*(2+len(time_mem)))
