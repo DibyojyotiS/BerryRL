@@ -1,0 +1,1 @@
+The thing about this run is that the learning rate used is much less than the run in the folder numbered 3.
