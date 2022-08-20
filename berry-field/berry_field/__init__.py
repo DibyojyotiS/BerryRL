@@ -6,6 +6,6 @@ register(
     entry_point='berry_field.envs:BerryFieldEnv_MatInput'
 )
 
-# imports for convenience
+# imports for convenience 
 from berry_field.envs import BerryFieldEnv
 from berry_field.envs.utils.visualization_on_analytics import picture_episode, picture_episodes
