@@ -39,7 +39,8 @@ if __name__ == '__main__':
 
     # copy all files into log-dir and setup logging
     logger = StdoutLogger(filename=f'{LOG_DIR}/log.txt')
-    copy_files('.', f'{LOG_DIR}/pyfiles-backup')
+    abs_file_dir = os.path.split(os.path.abspath(__file__))[0]
+    copy_files(abs_file_dir, f'{LOG_DIR}/pyfiles-backup')
 
     # setup eval and train env
     trainEnv = random_train_env(LOG_DIR)
