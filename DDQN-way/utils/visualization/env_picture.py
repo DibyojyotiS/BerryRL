@@ -1,4 +1,5 @@
 import pickle
+from typing import Iterable
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -8,7 +9,7 @@ import os
 import imageio
 
 
-def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None, show=True, 
+def picture_episode(LOG_DIR:str, episode:int, K=10, figsize=(10,10), title=None, show=True, 
                     alpha=1, pathwidth=1, savepth=None, close=False, pretty=False):
     """ plt plot showing patches, berries and the agent path """
     # open the berry_field pickle and draw patches and berries
@@ -48,7 +49,7 @@ def picture_episode(LOG_DIR, episode, K=10, figsize=(10,10), title=None, show=Tr
     if show: plt.show()
     if close: plt.close()
 
-def picture_episodes(fname, LOG_DIR, episodes, K=10, figsize=(10,10), titlefmt='', 
+def picture_episodes(fname:str, LOG_DIR:str, episodes:Iterable, K=10, figsize=(10,10), titlefmt='', 
                         alpha=1, pathwidth=1, duration=0.5, fps=1, nparallel=0, pretty=False):
     """ save the picture of episodes as .gif or as .mp4 depending on the fname """
     
