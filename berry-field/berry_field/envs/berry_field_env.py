@@ -1,5 +1,6 @@
 import os
 import pickle
+import logging
 import time
 from typing import Tuple
 
@@ -7,10 +8,8 @@ import gym
 import numpy as np
 import copy
 import pyglet
-from gym.envs.classic_control import rendering
 
 from .utils.collision_tree import collision_tree
-from .utils.renderingViewer import renderingViewer
 
 INVSQRT2 = 0.5**0.5
 
@@ -22,6 +21,16 @@ ABS_PATH = os.path.split(__file__)[0]
 MAX_DISPLAY_SIZE = (8*80, 4.5*80) # as (width, height)
 FILE_PATHS = list(map(lambda x: os.path.join(ABS_PATH, x), DATA_PATHS))
 
+# setup rendering
+try:
+    from gym.envs.classic_control import rendering
+    from .utils.renderingViewer import renderingViewer
+    RENDERING_SETUP_SUCCESS = True
+except Exception as ex:
+    logging.warn("Failed to import gym.envs.classic_control.rendering "
+                + f"due to exception {ex}")
+    logging.warn("BerryFieldEnv.render(...) will not work and return None")
+    RENDERING_SETUP_SUCCESS = False
 
 class BerryFieldEnv(gym.Env):
     def __init__(self,
@@ -361,6 +370,8 @@ class BerryFieldEnv(gym.Env):
             if self.viewer is not None: self.viewer = self.viewer.close()
             else: self.viewer = None
             return
+
+        if not RENDERING_SETUP_SUCCESS: return
         
         # berries in view
         screenw, screenh = self.OBSERVATION_SPACE_SIZE
