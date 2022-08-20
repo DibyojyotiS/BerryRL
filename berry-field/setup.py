@@ -3,5 +3,7 @@ from setuptools import setup
 setup(
     name='berry_field',
     version='0.0.1',
-    install_requires=['gym', 'numpy', 'pyglet', 'pickle','time']
+
+    # removed pickel from this list since this cannot be installed by pip
+    install_requires=['gym', 'numpy', 'pyglet','time']
 )
