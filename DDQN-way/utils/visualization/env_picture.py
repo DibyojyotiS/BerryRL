@@ -2,7 +2,6 @@ import pickle
 from typing import Iterable
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
 from berry_field.envs.berry_field_env import BerryFieldEnv
 from matplotlib.patches import Rectangle, Circle
 import os
