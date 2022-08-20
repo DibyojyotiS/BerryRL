@@ -2,7 +2,7 @@
 import os
 import matplotlib.pyplot as plt
 
-def plot_berries_picked(LOG_DIR):
+def plot_berries_picked_vs_episode(LOG_DIR):
     """ plots the number of berries picked in 
     train and eval versus the episode number """
 
@@ -43,5 +43,5 @@ def plot_berries_picked(LOG_DIR):
 
 if __name__ == "__main__":
     LOG_DIR = 'D:\Machine_Learning\RL\Foraging-in-a-field\DDQN-way\.temp\\2022-6-19 17-52-55'
-    plot_berries_picked(LOG_DIR)
+    plot_berries_picked_vs_episode(LOG_DIR)
     plt.show()

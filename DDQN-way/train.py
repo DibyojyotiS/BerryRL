@@ -7,7 +7,7 @@ from torch.optim.lr_scheduler import MultiStepLR
 
 from Agent import *
 from utils import (getRandomEnv, Env_print_fn, 
-        my_print_fn, copy_files, plot_berries_picked)
+        my_print_fn, copy_files, plot_berries_picked_vs_episode)
 
 # set all seeds
 torch.manual_seed(0)
@@ -87,4 +87,4 @@ if __name__ == '__main__':
     evalPrintFn()
     logger.close()
 
-    plot_berries_picked(LOG_DIR)
+    plot_berries_picked_vs_episode(LOG_DIR)
