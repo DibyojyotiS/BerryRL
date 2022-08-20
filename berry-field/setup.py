@@ -4,6 +4,6 @@ setup(
     name='berry_field',
     version='0.0.1',
 
-    # removed pickel from this list since this cannot be installed by pip
-    install_requires=['gym', 'numpy', 'pyglet','time']
+    # removed pickel, time from this list since this cannot be installed by pip
+    install_requires=['gym', 'numpy', 'pyglet']
 )
