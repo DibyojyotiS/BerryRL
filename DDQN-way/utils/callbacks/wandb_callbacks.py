@@ -44,7 +44,7 @@ class wandbEpisodeVideoLogger:
     def __init__(
         self, log_dir:str, save_dir:str, 
         train_log_freq=100, eval_log_freq=10, figsize=(20,20),
-        n_parallelize=5, fps=1, logging=True, syncing=True
+        n_parallelize=5, fps=1, logging=True, syncing=False
     ) -> None:
         """ 
         NOTE:
@@ -99,7 +99,7 @@ class wandbEpisodeVideoLogger:
                     self.last_train_episode = current_episode+1
                     video_log["train"] = {"video": train_video}
                 if self.syncing: 
-                    wandb.save(video_fp, base_path=self.save_dir)
+                    wandb.save(video_fp)
             else:
                 self.train_steps += 1
 
