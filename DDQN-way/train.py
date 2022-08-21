@@ -9,7 +9,7 @@ from torch.optim.rmsprop import RMSprop
 from Agent import *
 from config import CONFIG
 from utils import (Env_print_fn, copy_files, getRandomEnv, my_print_fn,
-                   plot_berries_picked_vs_episode)
+                   plot_berries_picked_vs_episode, wandbMetricsLogger)
 
 # set all seeds
 set_seed(CONFIG["seed"])
@@ -24,10 +24,12 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 if __name__ == '__main__':
 
+    if not os.path.exists(LOG_DIR): os.makedirs(LOG_DIR)
+
     # some variables used later
     callbacks = []
 
-    # init wandb callback if enabled
+    # init wandb if enabled
     if ENABLE_WANDB:
         wandb.init(
             project="test-project",
@@ -36,7 +38,6 @@ if __name__ == '__main__':
             dir=LOG_DIR,
             config=CONFIG
         )
-        callbacks.append(wandb.log)
 
     # copy all files into log-dir and setup logging
     logger = StdoutLogger(filename=f'{LOG_DIR}/log.txt')
@@ -52,8 +53,14 @@ if __name__ == '__main__':
     evalEnv.step = agent.env_step_wrapper(evalEnv)
     nnet = agent.getNet()
     print(nnet)
+
+    # setup wandb callbacks and wandb if enabled
     if ENABLE_WANDB:
         wandb.watch(nnet)
+        wandb_callback = wandbMetricsLogger(
+            berryField_train=trainEnv, berryField_eval=evalEnv
+        )
+        callbacks.append(wandb_callback)
 
     # init training prereqs
     optim = Adam(params=nnet.parameters(), **CONFIG["ADAM"])
@@ -84,7 +91,7 @@ if __name__ == '__main__':
     )
 
     # try to resume training
-    if RESUME_DIR is None and os.path.exists(RESUME_DIR):
+    if RESUME_DIR is not None and os.path.exists(RESUME_DIR):
         ddqn_trainer.attempt_resume(RESUME_DIR)
 
     # make print-fuctions to print extra info
