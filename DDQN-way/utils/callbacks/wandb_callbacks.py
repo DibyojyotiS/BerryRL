@@ -44,7 +44,7 @@ class wandbEpisodeVideoLogger:
     def __init__(
         self, log_dir:str, save_dir:str, 
         train_log_freq=100, eval_log_freq=10, figsize=(20,20),
-        n_parallelize=5, fps=1
+        n_parallelize=5, fps=1, logging=True, syncing=True
     ) -> None:
         """ 
         NOTE:
@@ -53,6 +53,7 @@ class wandbEpisodeVideoLogger:
             assert wether or not to try forming the evaluation video.
             
             This function assumes that logging is being done by the berry-field-env"""
+        assert logging or syncing
         self.log_dir = log_dir
         self.save_dir = save_dir
         self.train_log_freq = train_log_freq
@@ -60,6 +61,9 @@ class wandbEpisodeVideoLogger:
         self.n_parallelize = n_parallelize
         self.fps = fps
         self.figsize = figsize
+
+        self.logging = logging
+        self.syncing = syncing
 
         self.train_steps = 1
         self.eval_steps = 1
@@ -87,12 +91,15 @@ class wandbEpisodeVideoLogger:
                     figsize=self.figsize, titlefmt='train-episode {}',
                     nparallel=self.n_parallelize, fps=self.fps
                 )
-                train_video= wandb.Video(
-                    data_or_path=video_fp, format='mp4',
-                    caption= video_fn, fps=self.fps
-                )
-                self.last_train_episode = current_episode+1
-                video_log["train"] = {"video": train_video}
+                if self.logging:
+                    train_video= wandb.Video(
+                        data_or_path=video_fp, format='mp4',
+                        caption= video_fn, fps=self.fps
+                    )
+                    self.last_train_episode = current_episode+1
+                    video_log["train"] = {"video": train_video}
+                if self.syncing: 
+                    wandb.save(video_fp, base_path=self.save_dir)
             else:
                 self.train_steps += 1
 
@@ -109,11 +116,14 @@ class wandbEpisodeVideoLogger:
                     figsize=self.figsize, titlefmt='eval-episode {}', 
                     nparallel=self.n_parallelize, fps=self.fps
                 )
-                eval_video = wandb.Video(
-                    data_or_path=video_fp, format='mp4',
-                    caption= video_fn, fps=self.fps
-                )
-                video_log["eval"] = {"video": eval_video}
+                if self.logging:
+                    eval_video = wandb.Video(
+                        data_or_path=video_fp, format='mp4',
+                        caption= video_fn, fps=self.fps
+                    )
+                    video_log["eval"] = {"video": eval_video}
+                if self.syncing: 
+                    wandb.save(video_fp, base_path=self.save_dir)
             else:
                 self.eval_steps += 1
 
