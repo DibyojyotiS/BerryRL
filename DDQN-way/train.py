@@ -63,8 +63,8 @@ if __name__ == '__main__':
         )
         wandb_video_callback = wandbEpisodeVideoLogger(
             log_dir=LOG_DIR, save_dir=f'{LOG_DIR}/videos', 
-            train_log_freq=5, eval_log_freq=5,
-            figsize=(10,10)
+            train_log_freq=100, eval_log_freq=10,
+            figsize=(5,5)
         )
         callbacks.extend([wandb_metric_callback,wandb_video_callback])
 
