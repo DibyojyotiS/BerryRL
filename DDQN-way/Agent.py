@@ -13,7 +13,7 @@ EPSILON = 1E-8
 class Agent():
     """ states containing an approximantion of the path of the agent 
     and also computed uisng info from all seen but not-collected berries """
-    def __init__(self, berryField:BerryFieldEnv, mode='train', 
+    def __init__(self, berryField:BerryFieldEnv,
 
                 # params controlling the state and state-transitions
                 angle = 45, persistence=0.8, worth_offset=0.05, 
@@ -32,7 +32,6 @@ class Agent():
         """ 
         ### parameters
         - berryField: BerryFieldEnv instance
-        - mode: 'train' or 'eval'
 
         #### params controlling the state and state-transitions
         - angle: int (default 45)
@@ -86,7 +85,6 @@ class Agent():
                 - wether to render the agent 
          """
         printLocals('Agent', locals())
-        self.istraining = mode == 'train'
         self.angle = angle
         self.persistence = persistence
         self.worth_offset = worth_offset
@@ -114,10 +112,9 @@ class Agent():
             berryField=self.berryField) if debug else None
         
         # some stuff that i need
-        if mode == 'train':
-            plot_time_mem_curves(self.time_memory_factor, 
-                self.time_memory_sizes, self.time_memory_exp, 
-                self.berryField.FIELD_SIZE[0])
+        plot_time_mem_curves(self.time_memory_factor, 
+            self.time_memory_sizes, self.time_memory_exp, 
+            self.berryField.FIELD_SIZE[0])
 
     def env_step_wrapper(self, berryField:BerryFieldEnv, render=False):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
