@@ -16,7 +16,7 @@ set_seed(CONFIG["seed"])
 
 # constants
 RESUME_DIR = CONFIG["RESUME_DIR"]
-ENABLE_WANDB = CONFIG["ENABLE_WANDB"]
+ENABLE_WANDB = CONFIG["WANDB"]["ENABLE_WANDB"]
 
 TIME_STAMP = '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6])
 LOG_DIR = os.path.join(CONFIG["LOG_DIR_PARENT"], TIME_STAMP)
@@ -56,7 +56,7 @@ if __name__ == '__main__':
 
     # setup wandb callbacks and wandb if enabled
     if ENABLE_WANDB:
-        wandb.watch(nnet)
+        wandb.watch(nnet, log_freq=CONFIG["WANDB"]["watch_log_freq"])
         wandb_callback = wandbMetricsLogger(
             berryField_train=trainEnv, berryField_eval=evalEnv
         )

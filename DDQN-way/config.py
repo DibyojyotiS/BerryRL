@@ -62,6 +62,11 @@ CONFIG = {
         resumeable_snapshot=10,
     ),
 
+    "WANDB": dict(
+        ENABLE_WANDB = True,
+        watch_log_freq = 100,
+    ),
+
     "seed": 0, # seed for random, np.random, torch
     "LOG_DIR_PARENT": ".temp", # the log folder for all runs
     "RESUME_DIR": None, # set if resuming a run
