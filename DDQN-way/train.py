@@ -15,7 +15,7 @@ np.random.seed(0)
 random.seed(0)
 
 # high level configs
-WANDB_CALLBACK = False
+ENABLE_WANDB = True
 LOG_DIR = os.path.join('.temp' , '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
 RESUME_DIR= LOG_DIR
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -37,8 +37,13 @@ if __name__ == '__main__':
     callbacks = []
 
     # init wandb callback if enabled
-    if WANDB_CALLBACK:
-        wandb.init(project="test-project", entity="foraging-rl")
+    if ENABLE_WANDB:
+        wandb.init(
+            project="test-project", 
+            group="multi-resolution-time-memory/with-berry-position-memory",
+            entity="foraging-rl",
+            dir = LOG_DIR
+        )
         callbacks.append(wandb.log)
 
     # copy all files into log-dir and setup logging
@@ -54,6 +59,7 @@ if __name__ == '__main__':
     agent = Agent(trainEnv, skipStep=10, nstep_transition=[1], device=TORCH_DEVICE)
     evalEnv.step = agent.env_step_wrapper(evalEnv)
     nnet = agent.getNet(); print(nnet)
+    if ENABLE_WANDB: wandb.watch(nnet)
 
     # init training prereqs
     optim = Adam(nnet.parameters(), lr=0.005, weight_decay=0.05)
