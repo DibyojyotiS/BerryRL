@@ -1,48 +1,40 @@
 import time
+
 import wandb
 from DRLagents import *
 from torch.optim.adam import Adam
-from torch.optim.rmsprop import RMSprop
 from torch.optim.lr_scheduler import MultiStepLR
+from torch.optim.rmsprop import RMSprop
 
 from Agent import *
-from utils import (getRandomEnv, Env_print_fn, 
-        my_print_fn, copy_files, plot_berries_picked_vs_episode)
+from config import CONFIG
+from utils import (Env_print_fn, copy_files, getRandomEnv, my_print_fn,
+                   plot_berries_picked_vs_episode)
 
 # set all seeds
-torch.manual_seed(0)
-np.random.seed(0)
-random.seed(0)
+set_seed(CONFIG["seed"])
 
-# high level configs
-ENABLE_WANDB = True
-LOG_DIR = os.path.join('.temp' , '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6]))
-RESUME_DIR= LOG_DIR
+# constants
+RESUME_DIR = CONFIG["RESUME_DIR"]
+ENABLE_WANDB = CONFIG["ENABLE_WANDB"]
+
+TIME_STAMP = '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6])
+LOG_DIR = os.path.join(CONFIG["LOG_DIR_PARENT"], TIME_STAMP)
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-# helper functions
-def random_train_env(log_dir):
-    print('random_train_env')
-    trainEnv = getRandomEnv(field_size=(20000,20000), 
-        patch_size=(2600,2600), num_patches=10, seperation=2400, 
-        nberries=80, spawn_radius=100, 
-        patch_with_agent_at_center=True,
-        penalize_boundary_hit=False, logDir=log_dir)
-    return trainEnv
 
 if __name__ == '__main__':
 
     # some variables used later
-    resume_run = os.path.exists(RESUME_DIR)
     callbacks = []
 
     # init wandb callback if enabled
     if ENABLE_WANDB:
         wandb.init(
-            project="test-project", 
+            project="test-project",
             group="multi-resolution-time-memory/with-berry-position-memory",
             entity="foraging-rl",
-            dir = LOG_DIR
+            dir=LOG_DIR,
+            config=CONFIG
         )
         callbacks.append(wandb.log)
 
@@ -52,47 +44,60 @@ if __name__ == '__main__':
     copy_files(abs_file_dir, f'{LOG_DIR}/pyfiles-backup')
 
     # setup eval and train env
-    trainEnv = random_train_env(LOG_DIR)
+    trainEnv = getRandomEnv(**CONFIG["RND_TRAIN_ENV"], logDir=LOG_DIR)
     evalEnv = BerryFieldEnv(analytics_folder=f'{LOG_DIR}/eval')
-    
+
     # make the agent and network and wrap evalEnv's step fn
-    agent = Agent(trainEnv, skipStep=10, nstep_transition=[1], device=TORCH_DEVICE)
+    agent = Agent(**CONFIG["AGENT"], berryField=trainEnv, device=TORCH_DEVICE)
     evalEnv.step = agent.env_step_wrapper(evalEnv)
-    nnet = agent.getNet(); print(nnet)
-    if ENABLE_WANDB: wandb.watch(nnet)
+    nnet = agent.getNet()
+    print(nnet)
+    if ENABLE_WANDB:
+        wandb.watch(nnet)
 
     # init training prereqs
-    optim = Adam(nnet.parameters(), lr=0.005, weight_decay=0.05)
-    schdl = MultiStepLR(optim,[50*i for i in range(1,21)],gamma=0.5)
-    buffer = PrioritizedExperienceRelpayBuffer(bufferSize=int(6E4), alpha=0.95,
-                                        beta=0.1, beta_rate=0.9/2000)
-    tstrat = epsilonGreedyAction(epsilon=0.5,finalepsilon=0.2,decaySteps=1000)
+    optim = Adam(params=nnet.parameters(), **CONFIG["ADAM"])
+    schdl = MultiStepLR(optimizer=optim, **CONFIG["MULTI_STEP_LR"])
+    buffer = PrioritizedExperienceRelpayBuffer(**CONFIG["PER_BUFFER"])
+    tstrat = epsilonGreedyAction(**CONFIG["TRAINING_STRAT_EPSILON_GREEDY"])
 
-    ddqn_trainer = DDQN(trainEnv, nnet, tstrat, optim, buffer, batchSize=512, 
-                        gamma=0.9, update_freq=5, MaxTrainEpisodes=2000, lr_scheduler=schdl,
-                        optimize_every_kth_action=100, num_gradient_steps=25,
-                        make_state=agent.makeState, make_transitions=agent.makeStateTransitions,
-                        evalFreq=10, printFreq=1, polyak_average=True, polyak_tau=0.1,
-                        log_dir=LOG_DIR, resumeable_snapshot=10, device=TORCH_DEVICE)
+    ddqn_trainer = DDQN(
+        **CONFIG["DDQN"],
+        trainingEnv=trainEnv,
+        model=nnet,
+        trainExplorationStrategy=tstrat,
+        optimizer=optim,
+        replayBuffer=buffer,
+        lr_scheduler=schdl,
+        make_state=agent.makeState,
+        make_transitions=agent.makeStateTransitions,
+        log_dir=LOG_DIR,
+        device=TORCH_DEVICE
+    )
 
     # print some of the settings for easier reference
-    print(f'optim = {ddqn_trainer.optimizer}, num_gradient_steps= {ddqn_trainer.num_gradient_steps}')
-    print(f"optimizing the online-model after every {ddqn_trainer.optimize_every_kth_action} actions")
-    print(f"batch size={ddqn_trainer.batchSize}, gamma={ddqn_trainer.gamma}, alpha={buffer.alpha}")
-    print(f"polyak_tau={ddqn_trainer.tau}, update_freq={ddqn_trainer.update_freq_episode}")
+    print(
+        f'optim = {ddqn_trainer.optimizer}, num_gradient_steps= {ddqn_trainer.num_gradient_steps}\n'
+        + f"optimizing the online-model after every {ddqn_trainer.optimize_every_kth_action} actions\n"
+        + f"batch size={ddqn_trainer.batchSize}, gamma={ddqn_trainer.gamma}, alpha={buffer.alpha}\n"
+        +f"polyak_tau={ddqn_trainer.tau}, update_freq={ddqn_trainer.update_freq_episode}"
+    )
 
     # try to resume training
-    if resume_run: ddqn_trainer.attempt_resume(RESUME_DIR)    
+    if RESUME_DIR is None and os.path.exists(RESUME_DIR):
+        ddqn_trainer.attempt_resume(RESUME_DIR)
 
     # make print-fuctions to print extra info
     trainPrintFn = my_print_fn(trainEnv, buffer, tstrat, ddqn_trainer, schdl)
-    evalPrintFn = lambda : Env_print_fn(evalEnv)
+    def evalPrintFn(): return Env_print_fn(evalEnv)
 
     # start training! :D
-    try: trianHist = ddqn_trainer.trainAgent(evalEnv=evalEnv,
-            train_printFn=trainPrintFn, eval_printFn=evalPrintFn, 
-            training_callbacks=callbacks)
-    except KeyboardInterrupt as kb: pass
+    try:
+        trianHist = ddqn_trainer.trainAgent(evalEnv=evalEnv,
+                                            train_printFn=trainPrintFn, eval_printFn=evalPrintFn,
+                                            training_callbacks=callbacks)
+    except KeyboardInterrupt as kb:
+        pass
 
     # final evaluation with render
     ddqn_trainer.evaluate(evalEnv=evalEnv, render=True)
