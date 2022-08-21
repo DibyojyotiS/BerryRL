@@ -6,6 +6,7 @@ CONFIG = {
         patch_size=(2600,2600), 
         num_patches=10, seperation=2400, 
         nberries=80, spawn_radius=100, 
+        initial_juice=0.5,
         patch_with_agent_at_center=True,
         penalize_boundary_hit=False
     ),
