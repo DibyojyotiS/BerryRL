@@ -26,11 +26,14 @@ class wandbMetricsLogger:
 
     def __call__(self, info_dict: dict):
         # insert the berries picked data in info-dict
-        info_dict["train"]["env"] = \
-            self._get_berryFieldEnv_episode_infos_(self.berryField_train)
+        if "train" in info_dict:
+            train_infos = self._get_berryFieldEnv_episode_infos_(self.berryField_train)
+            for key, val in train_infos.items():
+                info_dict["train"][key] = val
 
         if "eval" in info_dict:
-            info_dict["eval"]["env"] = \
-                self._get_berryFieldEnv_episode_infos_(self.berryField_eval)
-
+            eval_infos = self._get_berryFieldEnv_episode_infos_(self.berryField_eval)
+            for key,val in eval_infos.items():
+                info_dict["eval"][0][key] = val
+                
         wandb.log(info_dict)
