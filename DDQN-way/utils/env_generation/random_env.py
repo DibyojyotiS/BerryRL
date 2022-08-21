@@ -199,8 +199,7 @@ def getRandomEnv(field_size=(20000,20000), patch_size=(2600,2600), num_patches=1
                 patch_with_agent_at_center = False,
                 end_on_boundary_hit= False, penalize_boundary_hit=False, 
                 initial_pos_around_berry = True, spawn_radius=100, sampling_type=0, 
-                allow_no_action=False, no_action_threshold=0.7, 
-                add_exploration=True, show=False):
+                allow_no_action=False, no_action_threshold=0.7, show=False):
     """
     ### Parameters
     1. spawn_radius: function or int
