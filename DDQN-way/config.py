@@ -65,5 +65,5 @@ CONFIG = {
     "seed": 0, # seed for random, np.random, torch
     "LOG_DIR_PARENT": ".temp", # the log folder for all runs
     "RESUME_DIR": None, # set if resuming a run
-    "ENABLE_WANDB": False, # set to true for server env
+    "ENABLE_WANDB": True, # set to true for server env
 }
