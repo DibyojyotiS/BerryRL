@@ -185,9 +185,12 @@ class Agent():
             
             # print stuff and reset stats and patch-discovery-reward
             if done: 
-                print(f'\n=== episode:{episode} Env-steps-taken:{actual_steps}\n',
-                '\tpicked:',berryField.get_numBerriesPicked(),'|actions:',action_counts,
-                '\tberry-memory', len(self.berry_memory))
+                print(
+                    f'\n=== episode:{episode} Env-steps-taken:{actual_steps}\n',
+                    '\tpicked:',berryField.get_numBerriesPicked(),
+                    '|actions:',action_counts,
+                    # '\tberry-memory', len(self.berry_memory)
+                )
                 actual_steps = 0; episode+=1; patch_discovery_reward(info=None)
                 for k in action_counts:action_counts[k]=0
             
