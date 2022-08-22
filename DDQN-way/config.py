@@ -24,8 +24,8 @@ CONFIG = {
             (20,20),(50,50),(100,100),(200,200),(400,400)
         ],
 
-        # params related to berry memory
-        berry_memory_grid_size = (400,400),
+        # # params related to berry memory
+        # berry_memory_grid_size = (400,400),
 
         # other params
         render=False, 
