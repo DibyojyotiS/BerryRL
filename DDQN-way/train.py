@@ -33,9 +33,9 @@ if __name__ == '__main__':
     # init wandb if enabled
     if ENABLE_WANDB:
         wandb.init(
-            project="test-project",
-            group="multi-resolution-time-memory/with-berry-position-memory",
-            entity="foraging-rl",
+            project=CONFIG["WANDB"]["project"],
+            group=CONFIG["WANDB"]["group"],
+            entity=CONFIG["WANDB"]["entity"],
             dir=LOG_DIR,
             config=CONFIG
         )
