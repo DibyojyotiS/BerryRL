@@ -9,8 +9,8 @@ from torch.optim.rmsprop import RMSprop
 from Agent import *
 from config import CONFIG
 from utils import (Env_print_fn, copy_files, getRandomEnv, my_print_fn,
-                   plot_berries_picked_vs_episode, wandbMetricsLogger, 
-                   wandbEpisodeVideoLogger)
+                   plot_berries_picked_vs_episode, wandbBerryFieldMetrics, 
+                   wandbEpisodeVideoMaker, wandbCallback)
 
 # set all seeds
 set_seed(CONFIG["seed"])
@@ -58,15 +58,18 @@ if __name__ == '__main__':
     # setup wandb callbacks and wandb if enabled
     if ENABLE_WANDB:
         wandb.watch(nnet, log_freq=CONFIG["WANDB"]["watch_log_freq"])
-        wandb_metric_callback = wandbMetricsLogger(
+        wandb_metric_mod = wandbBerryFieldMetrics(
             berryField_train=trainEnv, berryField_eval=evalEnv
         )
-        wandb_video_callback = wandbEpisodeVideoLogger(
+        wandb_video_mod = wandbEpisodeVideoMaker(
             log_dir=LOG_DIR, save_dir=f'{LOG_DIR}/videos', 
             train_log_freq=100, eval_log_freq=10,
-            figsize=(5,5)
+            figsize=(10,10)
         )
-        callbacks.extend([wandb_metric_callback,wandb_video_callback])
+        wandb_callback = wandbCallback(pipeline=[
+            wandb_metric_mod, wandb_video_mod
+        ])
+        callbacks.append(wandb_callback)
 
     # init training prereqs
     optim = Adam(params=nnet.parameters(), **CONFIG["ADAM"])
