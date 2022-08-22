@@ -1,2 +1,2 @@
-from .wandb_callbacks import wandbMetricsLogger
+from .wandb_metrics_logger import wandbMetricsLogger
 from .wandb_episode_video_logger import wandbEpisodeVideoLogger
