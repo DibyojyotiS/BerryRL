@@ -32,8 +32,6 @@ class wandbEpisodeVideoMaker:
             os.makedirs(self.save_dir)
 
     def __call__(self, info_dict:dict):
-        
-        video_log = False
 
         if "train" in info_dict:
             if self.train_steps % self.train_log_freq == 0:
@@ -54,7 +52,7 @@ class wandbEpisodeVideoMaker:
                     caption= video_fn, fps=self.fps
                 )
                 self.last_train_episode = current_episode+1
-                video_log = True
+                print(f"Added video-log {video_fn}")
             else:
                 self.train_steps += 1
 
@@ -75,12 +73,9 @@ class wandbEpisodeVideoMaker:
                     data_or_path=video_fp, format='mp4',
                     caption= video_fn, fps=self.fps
                 )
-                video_log = True
                 self.last_eval_episode = current_episode+1
+                print(f"Added video-log {video_fn}")
             else:
                 self.eval_steps += 1
-
-        if video_log:
-            print(f"Added video-log for {[*video_log.keys()]}")
 
         return info_dict
