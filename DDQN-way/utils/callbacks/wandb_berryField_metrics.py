@@ -1,7 +1,7 @@
 import wandb
 from berry_field import BerryFieldEnv
 
-class wandbMetricsLogger:
+class wandbBerryFieldMetrics:
     def __init__(self,
                  berryField_train: BerryFieldEnv, berryField_eval: BerryFieldEnv
                  ) -> None:
@@ -34,5 +34,5 @@ class wandbMetricsLogger:
             eval_infos = self._get_berryFieldEnv_episode_infos_(self.berryField_eval)
             for key,val in eval_infos.items():
                 info_dict["eval"][0][key] = val
-                
-        wandb.log(info_dict)
+
+        return info_dict

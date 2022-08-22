@@ -2,11 +2,11 @@ import os
 import wandb
 from utils.visualization import picture_episodes
 
-class wandbEpisodeVideoLogger:
+class wandbEpisodeVideoMaker:
     def __init__(
         self, log_dir:str, save_dir:str, 
         train_log_freq=100, eval_log_freq=10, figsize=(20,20),
-        n_parallelize=5, fps=1, logging=True, syncing=False
+        n_parallelize=5, fps=1
     ) -> None:
         """ 
         NOTE:
@@ -15,7 +15,6 @@ class wandbEpisodeVideoLogger:
             assert wether or not to try forming the evaluation video.
             
             This function assumes that logging is being done by the berry-field-env"""
-        assert logging or syncing
         self.log_dir = log_dir
         self.save_dir = save_dir
         self.train_log_freq = train_log_freq
@@ -23,9 +22,6 @@ class wandbEpisodeVideoLogger:
         self.n_parallelize = n_parallelize
         self.fps = fps
         self.figsize = figsize
-
-        self.logging = logging
-        self.syncing = syncing
 
         self.train_steps = 1
         self.eval_steps = 1
@@ -37,7 +33,7 @@ class wandbEpisodeVideoLogger:
 
     def __call__(self, info_dict:dict):
         
-        video_log = {}
+        video_log = False
 
         if "train" in info_dict:
             if self.train_steps % self.train_log_freq == 0:
@@ -53,15 +49,12 @@ class wandbEpisodeVideoLogger:
                     figsize=self.figsize, titlefmt='train-episode {}',
                     nparallel=self.n_parallelize, fps=self.fps
                 )
-                if self.logging:
-                    train_video= wandb.Video(
-                        data_or_path=video_fp, format='mp4',
-                        caption= video_fn, fps=self.fps
-                    )
-                    self.last_train_episode = current_episode+1
-                    video_log["train"] = {"video": train_video}
-                if self.syncing: 
-                    wandb.save(video_fp)
+                info_dict["train"]["video"] = wandb.Video(
+                    data_or_path=video_fp, format='mp4',
+                    caption= video_fn, fps=self.fps
+                )
+                self.last_train_episode = current_episode+1
+                video_log = True
             else:
                 self.train_steps += 1
 
@@ -78,17 +71,16 @@ class wandbEpisodeVideoLogger:
                     figsize=self.figsize, titlefmt='eval-episode {}', 
                     nparallel=self.n_parallelize, fps=self.fps
                 )
-                if self.logging:
-                    eval_video = wandb.Video(
-                        data_or_path=video_fp, format='mp4',
-                        caption= video_fn, fps=self.fps
-                    )
-                    video_log["eval"] = {"video": eval_video}
-                if self.syncing: 
-                    wandb.save(video_fp, base_path=self.save_dir)
+                info_dict["eval"][0]["video"] = wandb.Video(
+                    data_or_path=video_fp, format='mp4',
+                    caption= video_fn, fps=self.fps
+                )
+                video_log = True
+                self.last_eval_episode = current_episode+1
             else:
                 self.eval_steps += 1
 
         if video_log:
-            print(f"Uploading video-log for {[*video_log.keys()]}")
-            wandb.log(video_log, commit=False)
+            print(f"Added video-log for {[*video_log.keys()]}")
+
+        return info_dict
