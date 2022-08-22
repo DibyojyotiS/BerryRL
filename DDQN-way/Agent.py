@@ -131,11 +131,6 @@ class Agent():
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
             berryField=self.berryField) if debug else None
-        
-        # some stuff that i need
-        plot_time_mem_curves(self.time_memory_factor, 
-            self.time_memory_grid_sizes, self.time_memory_exp, 
-            self.berryField.FIELD_SIZE[0])
 
     def env_step_wrapper(self, berryField:BerryFieldEnv, render=False):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
@@ -224,6 +219,7 @@ class Agent():
     def reset_memories(self):
         self.time_memory.reset()
         self.state_deque.clear()
+        self.state_deque.append([None,None,0]) # reinit deque
         self.prev_sectorized_state = None
 
     def _update_memories(self, info, avg_worth):
@@ -232,22 +228,12 @@ class Agent():
         if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
 
         # decay time memory and update time_memory
-        current_time = np.zeros_like(self.time_memories)
-        for i, (mem_x, mem_y) in enumerate(self.time_memory_grid_sizes):
-            x_ = int(x/(self.berryField.FIELD_SIZE[0]/mem_x))
-            y_ = int(y/(self.berryField.FIELD_SIZE[1]/mem_y))
-            decay_factor = max(mem_x, mem_y)
-            delta = self.time_memory_factor*decay_factor/self.berryField.FIELD_SIZE[0]
-            self.time_mem_mats[i] *= 1-delta
-            self.time_mem_mats[i][x_][y_] += delta
-            current_time[i] = min(1,self.time_mem_mats[i][x_][y_])
-        self.time_memories = self.time_memories*self.persistence +\
-                            (1-self.persistence)*(current_time**self.time_memory_exp)
+        self.time_memory.update(x,y)
 
         # update the berry memory
         mem_size = self.berry_memory_grid_size
-        _x = int(x/(self.berryField.FIELD_SIZE[0]/mem_size))
-        _y = int(y/(self.berryField.FIELD_SIZE[1]/mem_size))
+        _x = int(x/(self.berryField.FIELD_SIZE[0]/mem_size[0]))
+        _y = int(y/(self.berryField.FIELD_SIZE[1]/mem_size[1]))
         key = (_x,_y)
         avg_size = float(avg_worth*40) # since worth function is in 0-1 range
 
@@ -255,8 +241,8 @@ class Agent():
             # in case we are revisiting and the berry 
             self.berry_memory.pop(key, 0)
         else: self.berry_memory[key] = (
-            _x*self.berryField.FIELD_SIZE[0]/mem_size + mem_size/2,
-            _y*self.berryField.FIELD_SIZE[1]/mem_size + mem_size/2,
+            _x*self.berryField.FIELD_SIZE[0]/mem_size[0] + mem_size[0]/2,
+            _y*self.berryField.FIELD_SIZE[1]/mem_size[1] + mem_size[1]/2,
             max(avg_size, self.berry_memory.get(key,(0,0,0))[-1]))
         return
 
@@ -299,9 +285,10 @@ class Agent():
         total_juice = info['total_juice']
 
         # make the state by concatenating sectorized_states and memories
-        state = np.concatenate([*sectorized_states, 
-                                edge_dist, patch_relative, 
-                                [total_juice], self.time_memories])
+        state = np.concatenate([
+            *sectorized_states, edge_dist, patch_relative, 
+            [total_juice], self.time_memory.get_time_memories()
+        ])
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
@@ -345,7 +332,7 @@ class Agent():
         
         # define the layers
         feedforward = dict(
-            infeatures=n_sectorized+len(self.time_mem_mats)+4+2, 
+            infeatures=n_sectorized+len(self.time_memory_grid_sizes)+4+2, 
             linearsDim = [32,16,8], lreluslope=0.1)
         
         class net(nn.Module):

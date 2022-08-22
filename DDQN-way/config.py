@@ -20,7 +20,12 @@ CONFIG = {
 
         # params related to time memory
         time_memory_factor=0.6, time_memory_exp=1.0,
-        time_memory_sizes= [20,50,100,200,400],
+        time_memory_grid_sizes= [
+            (20,20),(50,50),(100,100),(200,200),(400,400)
+        ],
+
+        # params related to berry memory
+        berry_memory_grid_size = (400,400),
 
         # other params
         render=False, 
@@ -64,7 +69,7 @@ CONFIG = {
     ),
 
     "WANDB": dict(
-        ENABLE_WANDB = True,
+        ENABLE_WANDB = False,
         watch_log_freq = 100,
     ),
 
