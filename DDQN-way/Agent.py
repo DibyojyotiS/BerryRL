@@ -6,6 +6,7 @@ from torch import Tensor, float32, nn, device, tensor
 from agent_utils import (berry_worth, random_exploration_v2, 
     compute_distance_sectorized, Debugging, PatchDiscoveryReward, 
     skip_steps, make_simple_feedforward, printLocals, plot_time_mem_curves)
+from agent_utils.memories.multi_resolution_time_memory import MultiResolutionTimeMemory
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8
@@ -23,7 +24,12 @@ class Agent():
 
                 # params related to time memory
                 time_memory_factor=0.6, time_memory_exp=1.0,
-                time_memory_sizes= [20,50,100,200,400],
+                time_memory_grid_sizes= [
+                    (20,20),(50,50),(100,100),(200,200),(400,400)
+                ],
+
+                # params related to berry memory
+                berry_memory_grid_size = (400,400),
 
                 # other params
                 render=False, 
@@ -76,11 +82,25 @@ class Agent():
         - time_memory_exp: float (default 1.0)
                 - raise the stored time memory for the current block
                 to time_memory_exp and feed to agent's state
-        - time_memory_sizes: list[int]
-                - (L,L) matrices are alloted to represent the 
-                time spent in a square of size berry-field-size/L
-                so its important that L must divide berry-field-size
+        - time_memory_sizes: list[tuple[int,int]]
+                - the berry-field is divided into (L,M) sized grid
+                and the agent notes the time spent in each of the cell.
+                The memory of the time spent in a particular cell gets 
+                accessed when the agent is in that cell.
         
+        #### params related to berry-memory
+        - berry_memory_grid_size: tuple[int,int]
+                - the berry-field is divided into (L,M) sized grid
+                and we remember the average-size of the berries seen
+                in a particular cell.
+                - The average-size is estimated from the average worth 
+                since the worth function is between 0 and 1.
+                - Any cell with non-zero entry is accessable to the agent 
+                at all times. Basically the agent sees a berry of average 
+                size at the center of the cell.
+                - we will remove a value/cell from memory when its average
+                size falls below 10. Or the agent is too far.
+
         - render: bool (default False)
                 - wether to render the agent 
          """
@@ -97,7 +117,8 @@ class Agent():
         self.spacings = spacings
         self.time_memory_factor = time_memory_factor
         self.time_memory_exp = time_memory_exp
-        self.time_memory_sizes = time_memory_sizes
+        self.time_memory_grid_sizes = time_memory_grid_sizes 
+        self.berry_memory_grid_size = berry_memory_grid_size
         self.render = render
         self.skipSteps = skipStep
         self.device = device
@@ -113,7 +134,7 @@ class Agent():
         
         # some stuff that i need
         plot_time_mem_curves(self.time_memory_factor, 
-            self.time_memory_sizes, self.time_memory_exp, 
+            self.time_memory_grid_sizes, self.time_memory_exp, 
             self.berryField.FIELD_SIZE[0])
 
     def env_step_wrapper(self, berryField:BerryFieldEnv, render=False):
@@ -187,15 +208,23 @@ class Agent():
         self.prev_sectorized_state = None
 
         # for time memory
-        self.time_mem_mats = [
-            np.zeros((L,L)) for L in self.time_memory_sizes
-        ]
-        self.time_memories = np.zeros(len(self.time_mem_mats))
+        self.time_memory = MultiResolutionTimeMemory(
+            time_memory_grid_sizes= self.time_memory_grid_sizes,
+            berryField_FIELD_SIZE= self.berryField.FIELD_SIZE,
+            time_memory_factor= self.time_memory_factor,
+            time_memory_exp= self.time_memory_exp,
+            persistence= self.persistence
+        )
 
         # a different kind of berry-memory
         self.berry_memory = {}
 
         return
+
+    def reset_memories(self):
+        self.time_memory.reset()
+        self.state_deque.clear()
+        self.prev_sectorized_state = None
 
     def _update_memories(self, info, avg_worth):
         x,y = info['position']
@@ -204,11 +233,11 @@ class Agent():
 
         # decay time memory and update time_memory
         current_time = np.zeros_like(self.time_memories)
-        for i,L in enumerate(self.time_memory_sizes):
-            mem_x, mem_y = self.time_mem_mats[i].shape
-            x_ = int(x//(self.berryField.FIELD_SIZE[0]//mem_x))
-            y_ = int(y//(self.berryField.FIELD_SIZE[1]//mem_y))
-            delta = self.time_memory_factor*L/self.berryField.FIELD_SIZE[0]
+        for i, (mem_x, mem_y) in enumerate(self.time_memory_grid_sizes):
+            x_ = int(x/(self.berryField.FIELD_SIZE[0]/mem_x))
+            y_ = int(y/(self.berryField.FIELD_SIZE[1]/mem_y))
+            decay_factor = max(mem_x, mem_y)
+            delta = self.time_memory_factor*decay_factor/self.berryField.FIELD_SIZE[0]
             self.time_mem_mats[i] *= 1-delta
             self.time_mem_mats[i][x_][y_] += delta
             current_time[i] = min(1,self.time_mem_mats[i][x_][y_])
@@ -216,12 +245,15 @@ class Agent():
                             (1-self.persistence)*(current_time**self.time_memory_exp)
 
         # update the berry memory
-        mem_size = 40
+        mem_size = self.berry_memory_grid_size
         _x = int(x/(self.berryField.FIELD_SIZE[0]/mem_size))
         _y = int(y/(self.berryField.FIELD_SIZE[1]/mem_size))
         key = (_x,_y)
         avg_size = float(avg_worth*40) # since worth function is in 0-1 range
-        if avg_size < 10: self.berry_memory.pop(key, 0)
+
+        if avg_size < 10: 
+            # in case we are revisiting and the berry 
+            self.berry_memory.pop(key, 0)
         else: self.berry_memory[key] = (
             _x*self.berryField.FIELD_SIZE[0]/mem_size + mem_size/2,
             _y*self.berryField.FIELD_SIZE[1]/mem_size + mem_size/2,
@@ -240,14 +272,14 @@ class Agent():
         """ makes a state from the observation and info. reward, done are ignored """
         # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
         if info is None: # reinit memory and get the info and raw observation from berryField
-            self._init_memories()
+            self.reset_memories()
             raw_observation = self.berryField.raw_observation()
             info = self.berryField.get_info()
 
-        # add the berry-memory to raw observation
-        cx,cy = info['position']
-        memory = [[x-cx,y-cy,s] for x,y,s in self.berry_memory.values()]
-        if len(memory) > 0: raw_observation = np.concatenate([raw_observation,memory])
+        # # add the berry-memory to raw observation
+        # cx,cy = info['position']
+        # memory = [[x-cx,y-cy,s] for x,y,s in self.berry_memory.values()]
+        # if len(memory) > 0: raw_observation = np.concatenate([raw_observation,memory])
 
         # the total-worth is also representative of the percived goodness of observation
         sectorized_states, avg_worth = compute_distance_sectorized(
@@ -373,7 +405,7 @@ class Agent():
             axs[0][0].set_title('sectorized states')
             axs[0][1].set_title('measure of patch-center-dist')
             axs[0][1].set_xticklabels(["", "total-juice","patch-rel",
-                *[f"time-mem-{x}" for x in self.time_memory_sizes]]) 
+                *[f"time-mem-{x}" for x in self.time_memory_grid_sizes]]) 
             axs[1][0].set_title('measure of dist-from-edge')
             axs[1][0].set_xticklabels(["","","left","right","top","bottom"]) 
             axs[0][1].set_ylim(top=1)
