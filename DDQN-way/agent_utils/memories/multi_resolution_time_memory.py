@@ -3,6 +3,8 @@ from typing import List, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 
+from agent_utils.memories.base_class import MemoryBase
+
 
 # to visualize the memory up hill curve
 def plot_time_mem_curves(factor,sizes,exp=1.0,berryfieldside=20000,n=1000):
@@ -19,7 +21,7 @@ def plot_time_mem_curves(factor,sizes,exp=1.0,berryfieldside=20000,n=1000):
     plt.show()
 
 
-class MultiResolutionTimeMemory:
+class MultiResolutionTimeMemory(MemoryBase):
     def __init__(
         self, 
         time_memory_grid_sizes: List[Tuple[int, int]],

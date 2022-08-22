@@ -69,7 +69,7 @@ CONFIG = {
     ),
 
     "WANDB": dict(
-        ENABLE_WANDB = False,
+        ENABLE_WANDB = True,
         watch_log_freq = 100,
     ),
 
