@@ -33,7 +33,7 @@ CONFIG = {
     ),
     
     "ADAM": dict(
-        lr=0.0001, weight_decay=0.01
+        lr=0.0001, weight_decay=0.0
     ),
 
     "MULTI_STEP_LR": dict(
