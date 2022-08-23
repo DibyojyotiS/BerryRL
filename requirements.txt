@@ -1,5 +1,6 @@
 gym==0.19.0
 imageio
+imageip-ffmpeg
 matplotlib
 numpy
 pygame
