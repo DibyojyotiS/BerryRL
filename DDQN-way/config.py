@@ -70,7 +70,7 @@ CONFIG = {
 
     "WANDB": dict(
         ENABLE_WANDB = True,
-        project="test-project",
+        project="Agent-Design",
         group="multi-resolution-time-memory",
         entity="foraging-rl",
         watch_log_freq = 100,
