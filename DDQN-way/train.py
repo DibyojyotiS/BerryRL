@@ -63,7 +63,7 @@ if __name__ == '__main__':
         )
         wandb_video_mod = wandbEpisodeVideoMaker(
             log_dir=LOG_DIR, save_dir=f'{LOG_DIR}/videos', 
-            train_log_freq=100, eval_log_freq=10,
+            train_log_freq=10, eval_log_freq=10,
             figsize=(10,10)
         )
         wandb_callback = wandbCallback(pipeline=[
