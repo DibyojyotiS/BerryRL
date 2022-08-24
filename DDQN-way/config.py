@@ -56,7 +56,7 @@ CONFIG = {
 
     "DDQN": dict(
         batchSize=512, 
-        gamma=0.9, 
+        gamma=0.8, 
         update_freq=5, 
         MaxTrainEpisodes=2000, 
         optimize_every_kth_action=100, 
@@ -66,6 +66,7 @@ CONFIG = {
         polyak_average=True, 
         polyak_tau=0.1,
         resumeable_snapshot=10,
+        gradient_clips = (-0.1,0.1),
     ),
 
     "WANDB": dict(
