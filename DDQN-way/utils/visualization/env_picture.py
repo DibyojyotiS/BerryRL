@@ -31,6 +31,8 @@ def picture_episode(LOG_DIR:str, episode:int, K=10, figsize=(10,10), title=None,
     # open the agent path and draw the path with K fold decimation
     path = f'{LOG_DIR}/analytics-berry-field/{episode}/agent_path.txt'
     with open(path, 'r') as f: agentpath = eval('['+f.readline()+']')
+    pathlen = len(agentpath) # original length before decimation by K
+
     agentpath = np.array(agentpath[::K])
     ax.plot(agentpath[:,0],agentpath[:,1],linewidth=pathwidth)
     ax.axes.set_aspect('equal')
@@ -42,7 +44,7 @@ def picture_episode(LOG_DIR:str, episode:int, K=10, figsize=(10,10), title=None,
             with open(path,'r') as f: 
                 nberries = f.readlines()[-2].split(':')[-1].strip()
         except FileNotFoundError as ex: print(f'{path} not there!')
-        plt.title(str(title)+f'\ntotal steps: {len(agentpath)-1}' + f'\n{nberries} berries picked')
+        plt.title(str(title)+f'\ntotal steps: {pathlen-1}' + f'\n{nberries} berries picked')
     if savepth: plt.savefig(savepth)
     if show: plt.show()
     if close: plt.close()
