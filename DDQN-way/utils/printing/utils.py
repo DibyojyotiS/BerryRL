@@ -18,6 +18,7 @@ def Env_print_fn(berry_env:BerryFieldEnv):
 def my_print_fn(berry_env:BerryFieldEnv, buffer, tstrat, ddqntraininer, 
                 lr_scheduler:_LRScheduler=None):
     tolist = lambda t: t.cpu().numpy().tolist()
+    eps = 10E-6
     def print_fn():
         ssize = ddqntraininer.batchSize
         try: skipsteps = ddqntraininer.skipSteps(ddqntraininer.current_episode)
@@ -26,7 +27,7 @@ def my_print_fn(berry_env:BerryFieldEnv, buffer, tstrat, ddqntraininer,
         print('\t| epsilon:', tstrat.epsilon)
         if lr_scheduler is not None: print('\t| lr:', lr_scheduler.get_lr())
         if buffer.buffer is not None:
-            positive_idx = np.argwhere((buffer.buffer['reward']>0).cpu().squeeze())
+            positive_idx = np.argwhere((buffer.buffer['reward'] > eps).cpu().squeeze())
             a,count = torch.unique(buffer.buffer['action'][positive_idx], return_counts=True)
             sample = buffer.sample(ssize)[0]
             positive_idxsmp = np.argwhere((sample["reward"]>0).cpu().squeeze())
