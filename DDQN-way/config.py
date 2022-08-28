@@ -56,11 +56,11 @@ CONFIG = {
 
     "DDQN": dict(
         batchSize=512, 
-        gamma=0.5, 
+        gamma=0.8, 
         update_freq=5, 
         MaxTrainEpisodes=2000, 
-        optimize_every_kth_action=100, 
-        num_gradient_steps=25,
+        optimize_every_kth_action=-1, 
+        num_gradient_steps=50,
         evalFreq=10, 
         printFreq=1, 
         polyak_average=True, 
