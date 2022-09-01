@@ -51,7 +51,7 @@ if __name__ == '__main__':
 
     # make the agent and network and wrap evalEnv's step fn
     agent = Agent(**CONFIG["AGENT"], berryField=trainEnv, device=TORCH_DEVICE)
-    evalEnv.step = agent.env_step_wrapper(evalEnv)
+    evalEnv.step = agent.get_wrapped_env_step(evalEnv)
     nnet = agent.getNet()
     print(nnet)
 

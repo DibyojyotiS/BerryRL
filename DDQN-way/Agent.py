@@ -126,13 +126,13 @@ class Agent():
         # init memories and other stuff
         self._init_memories()
         self.nnet = self.makeNet(TORCH_DEVICE=device)
-        self.berryField.step = self.env_step_wrapper(self.berryField, render)
+        self.berryField.step = self.get_wrapped_env_step(self.berryField, render)
 
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
             berryField=self.berryField) if debug else None
 
-    def env_step_wrapper(self, berryField:BerryFieldEnv, render=False):
+    def get_wrapped_env_step(self, berryField:BerryFieldEnv, render=False):
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
         for better gradients..., also rewards are clipped between 0 and 2 """
         print('rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)')
