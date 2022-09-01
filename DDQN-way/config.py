@@ -42,7 +42,7 @@ CONFIG = {
     ),
 
     "PER_BUFFER": dict(
-        bufferSize=int(6E4), 
+        bufferSize=int(1E4), 
         alpha=0.95,
         beta=0.1, 
         beta_rate=0.9/2000
