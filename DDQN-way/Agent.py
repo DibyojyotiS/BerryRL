@@ -133,9 +133,9 @@ class Agent():
             berryField=self.berryField) if debug else None
 
     def get_wrapped_env_step(self, berryField:BerryFieldEnv, render=False):
-        """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
+        """ kinda magnifies rewards by 1/(berry_env.REWARD_RATE*MAXSIZE)
         for better gradients..., also rewards are clipped between 0 and 2 """
-        print('rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)')
+        print('rewards scaled by 1/(berryField.REWARD_RATE*MAXSIZE)')
         print('rewards are clipped between 0 and 1')
         
         MAXSIZE = max(berryField.berry_collision_tree.boxes[:,2])
