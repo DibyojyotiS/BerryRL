@@ -154,7 +154,7 @@ class Agent():
 
         if self.reward_patch_discovery:
             print("Rewarding patch discovery")
-            patch_discovery_reward = PatchDiscoveryReward(reward_value=0.5)
+            patch_discovery_reward = PatchDiscoveryReward(reward_value=0.25)
 
         # some stats to track
         actual_steps = 0
