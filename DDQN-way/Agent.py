@@ -136,7 +136,7 @@ class Agent():
         """ kinda magnifies rewards by 2/(berry_env.REWARD_RATE*MAXSIZE)
         for better gradients..., also rewards are clipped between 0 and 2 """
         print('rewards scaled by 2/(berryField.REWARD_RATE*MAXSIZE)')
-        print('rewards are clipped between 0 and 2')
+        print('rewards are clipped between 0 and 1')
         
         MAXSIZE = max(berryField.berry_collision_tree.boxes[:,2])
         scale = 2/(berryField.REWARD_RATE*MAXSIZE)
@@ -179,7 +179,7 @@ class Agent():
 
             # modify reward
             reward = scale*sum_reward
-            reward = min(max(reward, 0), 2)
+            reward = min(max(reward, 0), 1)
             if self.reward_patch_discovery: 
                 reward += patch_discovery_reward(info)
             
