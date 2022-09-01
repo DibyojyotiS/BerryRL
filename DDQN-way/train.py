@@ -33,6 +33,7 @@ if __name__ == '__main__':
     # init wandb if enabled
     if ENABLE_WANDB:
         wandb.init(
+            name=TIME_STAMP,
             project=CONFIG["WANDB"]["project"],
             group=CONFIG["WANDB"]["group"],
             entity=CONFIG["WANDB"]["entity"],
