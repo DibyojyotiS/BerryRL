@@ -139,7 +139,7 @@ class Agent():
         print('rewards are clipped between 0 and 1')
         
         MAXSIZE = max(berryField.berry_collision_tree.boxes[:,2])
-        scale = 2/(berryField.REWARD_RATE*MAXSIZE)
+        scale = 1/(berryField.REWARD_RATE*MAXSIZE)
         nactions = berryField.action_space.n
         berry_env_step = berryField.step
 
