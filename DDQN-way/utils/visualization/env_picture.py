@@ -49,6 +49,10 @@ def picture_episode(LOG_DIR:str, episode:int, K=10, figsize=(10,10), title=None,
     if show: plt.show()
     if close: plt.close()
 
+
+def _apply_kwargs(function, kwargs_dict):
+    return function(**kwargs_dict)
+
 def picture_episodes(fname:str, LOG_DIR:str, episodes:Iterable, K=10, figsize=(10,10), titlefmt='', 
                         alpha=1, pathwidth=1, duration=0.5, fps=1, nparallel=0, pretty=False):
     """ save the picture of episodes as .gif or as .mp4 depending on the fname """
@@ -69,7 +73,10 @@ def picture_episodes(fname:str, LOG_DIR:str, episodes:Iterable, K=10, figsize=(1
     if nparallel:
         import multiprocessing as mp
         with mp.Pool(nparallel) as pool: 
-            pool.starmap(lambda x:picture_episode(**x), [kwargs_gen(i) for i in episodes])
+            pool.starmap(
+                _apply_kwargs, 
+                [(picture_episode, kwargs_gen(i)) for i in episodes]
+            )
 
     if fname.endswith('.gif'):
         with imageio.get_writer(fname, duration=duration) as f:
