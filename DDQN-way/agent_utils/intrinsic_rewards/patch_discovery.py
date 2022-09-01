@@ -1,4 +1,8 @@
 class PatchDiscoveryReward:
+    """This is a callable that will reward the 
+    discovery of new patches. The reward will be equal to 
+    the set reward_value when one or more new patch is discovered.
+    """
     def __init__(self,reward_value=1.0):
         self.reward = reward_value
         self.visited_patches = set()
