@@ -57,7 +57,7 @@ CONFIG = {
     "DDQN": dict(
         batchSize=512, 
         gamma=0.8, 
-        update_freq=5, 
+        update_freq=10, 
         MaxTrainEpisodes=2000, 
         optimize_every_kth_action=-1, 
         num_gradient_steps=50,
