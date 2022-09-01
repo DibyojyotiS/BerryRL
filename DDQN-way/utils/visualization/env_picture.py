@@ -53,34 +53,41 @@ def picture_episodes(fname:str, LOG_DIR:str, episodes:Iterable, K=10, figsize=(1
                         alpha=1, pathwidth=1, duration=0.5, fps=1, nparallel=0, pretty=False):
     """ save the picture of episodes as .gif or as .mp4 depending on the fname """
     
-    if not os.path.exists('.tmp_pics'): os.makedirs('.tmp_pics')
+    base_tmp_dir = os.path.join(LOG_DIR, ".tmp_pics")
+    tmp_save_path_template = os.path.join(base_tmp_dir, 'temp_pic_episode_img_{}.png')
+    if not os.path.exists(base_tmp_dir): os.makedirs(base_tmp_dir)
 
-    def argen(i):
-        return LOG_DIR,i,K,figsize,titlefmt.format(i),False,\
-            alpha,pathwidth,f'.tmp_pics/temp_pic_episode_img_{i}.png',True, pretty
+    def kwargs_gen(i):
+        return dict(
+            LOG_DIR=LOG_DIR, episode=i, K=K, 
+            figsize=figsize, title=titlefmt.format(i), 
+            show=False, alpha=alpha, pathwidth=pathwidth, 
+            savepth=tmp_save_path_template.format(i), 
+            close=True, pretty=pretty
+        )
 
     if nparallel:
         import multiprocessing as mp
         with mp.Pool(nparallel) as pool: 
-            pool.starmap(picture_episode, [argen(i) for i in episodes])
+            pool.starmap(lambda x:picture_episode(**x), [kwargs_gen(i) for i in episodes])
 
     if fname.endswith('.gif'):
         with imageio.get_writer(fname, duration=duration) as f:
             for i in episodes:
-                if not nparallel: picture_episode(*argen(i))
-                img = imageio.imread(f'.tmp_pics/temp_pic_episode_img_{i}.png')
+                if not nparallel: picture_episode(**kwargs_gen(i))
+                img = imageio.imread(tmp_save_path_template.format(i))
                 f.append_data(img)
-                os.remove(f'.tmp_pics/temp_pic_episode_img_{i}.png')
+                os.remove(tmp_save_path_template.format(i))
 
     if fname.endswith('.mp4'):
         with imageio.get_writer(fname, fps=fps) as f:
             for i in episodes:
-                if not nparallel: picture_episode(*argen(i))
-                img = imageio.imread(f'.tmp_pics/temp_pic_episode_img_{i}.png')
+                if not nparallel: picture_episode(**kwargs_gen(i))
+                img = imageio.imread(tmp_save_path_template.format(i))
                 f.append_data(img)
-                os.remove(f'.tmp_pics/temp_pic_episode_img_{i}.png')
+                os.remove(tmp_save_path_template.format(i))
 
-    os.removedirs('.tmp_pics')
+    os.rmdir(base_tmp_dir)
 
 
 # if __name__ == "__main__":
