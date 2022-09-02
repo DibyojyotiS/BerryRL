@@ -35,7 +35,7 @@ CONFIG = {
     ),
     
     "ADAM": dict(
-        lr=1e-5, weight_decay=0.0
+        lr=1e-4, weight_decay=0.0
     ),
 
     "MULTI_STEP_LR": dict(
@@ -44,7 +44,7 @@ CONFIG = {
     ),
 
     "PER_BUFFER": dict(
-        bufferSize=int(1E4), 
+        bufferSize=int(1E5), 
         alpha=0.95,
         beta=0.1, 
         beta_rate=0.9/2000
@@ -62,10 +62,10 @@ CONFIG = {
         update_freq=10, 
         MaxTrainEpisodes=2000, 
         optimize_every_kth_action=-1, 
-        num_gradient_steps=200,
+        num_gradient_steps=400,
         evalFreq=10, 
         printFreq=1, 
-        polyak_average=False, 
+        polyak_average=True, 
         polyak_tau=0.1,
         resumeable_snapshot=10,
         gradient_clips = (-0.1,0.1),
@@ -79,7 +79,7 @@ CONFIG = {
         watch_log_freq = 100,
     ),
 
-    "seed": 0, # seed for random, np.random, torch
+    "seed": 1, # seed for random, np.random, torch
     "LOG_DIR_PARENT": ".temp", # the log folder for all runs
     "RESUME_DIR": None, # set if resuming a run
 }
