@@ -16,11 +16,13 @@ class Agent():
     and also computed uisng info from all seen but not-collected berries """
     def __init__(self, berryField:BerryFieldEnv,
 
-                # params controlling the state and state-transitions
+                # params controlling the percepted reward, state and state-transitions
                 angle = 45, persistence=0.8, worth_offset=0.05, 
                 noise=0.01, nstep_transition=[1], positive_emphasis=0,
-                skipStep=10, reward_patch_discovery=True, 
+                skipStep=10, patch_discovery_reward=0.5, 
                 add_exploration = True, spacings=[],
+                reward_magnification = 1e4/25,
+                perceptable_reward_range = [0,2],
 
                 # params related to time memory
                 time_memory_factor=0.6, time_memory_exp=1.0,
@@ -61,8 +63,9 @@ class Agent():
                 times in makeStateTransitions
         - skipStep: int (default 10)
                 - action is repeated for next skipStep steps
-        - reward_patch_discovery: bool (default True)
-                - add +0.5 reward on discovering a new patch
+        - patch_discovery_reward: float (default 0.5)
+                - add patch_discovery_reward amount of reward on discovering a new patch
+                - can be set to None to disable reward patch discovery
         - add_exploration: bool (default True)
                 - adds exploration-subroutine as an action
         - spacings: list (default empty list)
@@ -71,6 +74,12 @@ class Agent():
                 the floats in this list into rectangular donut
                 shaped segments. The sectorized part of the state
                 is made for each of the segments
+        - reward_magnification: float
+                - the actual env step reward is multiplied by this
+                - the reward for patch discovery is seperate from
+                env step and is not multiplied by this
+        - perceptable_reward_range: tupple(int, int)
+                - the min and max cap of the reward 
 
         #### params related to time memory
         - time_memory_factor: float (default 0.01)
@@ -111,10 +120,12 @@ class Agent():
         self.berryField = berryField
         self.noise = noise
         self.nstep_transitions = nstep_transition # for approx n-step TD effect
-        self.reward_patch_discovery = reward_patch_discovery
+        self.patch_discovery_reward = patch_discovery_reward
         self.positive_emphasis = positive_emphasis
         self.add_exploration= add_exploration
         self.spacings = spacings
+        self.reward_magnification = reward_magnification
+        self.perceptable_reward_range = perceptable_reward_range
         self.time_memory_factor = time_memory_factor
         self.time_memory_exp = time_memory_exp
         self.time_memory_grid_sizes = time_memory_grid_sizes 
@@ -132,16 +143,19 @@ class Agent():
         self.debugger = Debugging(debugDir=debugDir, 
             berryField=self.berryField) if debug else None
 
+        # some sanity checks
+        assert len(perceptable_reward_range) == 2
+
     def get_wrapped_env_step(self, berryField:BerryFieldEnv, render=False):
-        """ kinda magnifies rewards by 1/(berry_env.REWARD_RATE*MAXSIZE)
-        for better gradients..., also rewards are clipped between 0 and 2 """
-        print('rewards scaled by 1/(berryField.REWARD_RATE*MAXSIZE)')
-        print('rewards are clipped between 0 and 1')
+        """ kinda magnifies rewards self.reward_scale for better gradients, 
+        also rewards are clipped within self.perceptable_reward_range"""
         
-        MAXSIZE = max(berryField.berry_collision_tree.boxes[:,2])
-        scale = 1/(berryField.REWARD_RATE*MAXSIZE)
         nactions = berryField.action_space.n
         berry_env_step = berryField.step
+        reward_min, reward_max = self.perceptable_reward_range
+
+        print(f'rewards scaled by {self.reward_magnification}')
+        print(f'scaled rewards are clipped between {reward_min} and {reward_max}')
 
         # add the exploration subroutine to env action space
         if self.add_exploration:
@@ -152,9 +166,9 @@ class Agent():
                 device=self.device, render=render)
             nactions+=1
 
-        if self.reward_patch_discovery:
+        if self.patch_discovery_reward is not None and self.patch_discovery_reward != 0:
             print("Rewarding patch discovery")
-            patch_discovery_reward = PatchDiscoveryReward(reward_value=0.25)
+            patch_discovery_reward = PatchDiscoveryReward(reward_value=0.5)
 
         # some stats to track
         actual_steps = 0
@@ -166,10 +180,10 @@ class Agent():
 
             # execute the action
             if self.add_exploration and action == nactions-1:
-                sum_reward, skip_trajectory, steps = exploration_step()
+                reward, skip_trajectory, steps = exploration_step()
             else:
                 if render: berryField.render()
-                sum_reward, skip_trajectory, steps = skip_steps(action=action, 
+                reward, skip_trajectory, steps = skip_steps(action=action, 
                     skipSteps= self.skipSteps, berryenv_step= berry_env_step)
             listOfBerries, info, _, done = skip_trajectory[-1]
 
@@ -178,11 +192,11 @@ class Agent():
             action_counts[action] += 1
 
             # modify reward
-            reward = scale*sum_reward
-            reward = min(max(reward, 0), 1)
-            if self.reward_patch_discovery: 
-                reward += patch_discovery_reward(info)
-            
+            scaled_reward = self.reward_magnification*reward
+            if self.patch_discovery_reward is not None and self.patch_discovery_reward != 0: 
+                scaled_reward += patch_discovery_reward(info)
+            scaled_reward = min(max(scaled_reward, reward_min), reward_max)
+
             # print stuff and reset stats and patch-discovery-reward
             if done: 
                 print(
@@ -194,7 +208,7 @@ class Agent():
                 actual_steps = 0; episode+=1; patch_discovery_reward(info=None)
                 for k in action_counts:action_counts[k]=0
             
-            return listOfBerries, reward, done, info
+            return listOfBerries, scaled_reward, done, info
         return step
 
     def _init_memories(self):
