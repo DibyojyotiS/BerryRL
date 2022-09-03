@@ -168,7 +168,7 @@ class Agent():
 
         if self.patch_discovery_reward is not None and self.patch_discovery_reward != 0:
             print("Rewarding patch discovery")
-            patch_discovery_reward = PatchDiscoveryReward(reward_value=self.patch_discovery_reward)
+            get_patch_discovery_reward = PatchDiscoveryReward(reward_value=self.patch_discovery_reward)
 
         # some stats to track
         actual_steps = 0
@@ -194,8 +194,9 @@ class Agent():
             # modify reward
             scaled_reward = self.reward_magnification*reward
             if self.patch_discovery_reward is not None and self.patch_discovery_reward != 0: 
-                scaled_reward += patch_discovery_reward(info)
-            scaled_reward = min(max(scaled_reward, reward_min), reward_max)
+                scaled_reward += get_patch_discovery_reward(info)
+            clipped_reward = min(max(scaled_reward, reward_min), reward_max)
+            
 
             # print stuff and reset stats and patch-discovery-reward
             if done: 
@@ -205,10 +206,10 @@ class Agent():
                     '|actions:',action_counts,
                     # '\tberry-memory', len(self.berry_memory)
                 )
-                actual_steps = 0; episode+=1; patch_discovery_reward(info=None)
+                actual_steps = 0; episode+=1; get_patch_discovery_reward(info=None)
                 for k in action_counts:action_counts[k]=0
             
-            return listOfBerries, scaled_reward, done, info
+            return listOfBerries, clipped_reward, done, info
         return step
 
     def _init_memories(self):
