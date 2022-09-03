@@ -35,7 +35,7 @@ CONFIG = {
     ),
     
     "ADAM": dict(
-        lr=1e-5, weight_decay=0.0
+        lr=1e-4, weight_decay=0.0
     ),
 
     "MULTI_STEP_LR": dict(
@@ -59,10 +59,10 @@ CONFIG = {
     "DDQN": dict(
         batchSize=512, 
         gamma=0.7, 
-        update_freq=10, 
+        update_freq=5, 
         MaxTrainEpisodes=2000, 
         optimize_every_kth_action=100, #-1, 
-        num_gradient_steps=50, #400,
+        num_gradient_steps=25, #400,
         evalFreq=10, 
         printFreq=1, 
         polyak_average=True, 
