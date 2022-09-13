@@ -130,3 +130,4 @@ trainLogs
 .temp_stuffs
 .tempstuffs
 .temp*
+DDQN-way/agent_utils/nn_utils/action_inhibitor.py
