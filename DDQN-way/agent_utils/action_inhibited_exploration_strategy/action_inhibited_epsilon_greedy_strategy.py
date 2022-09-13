@@ -73,7 +73,7 @@ class ActionInhibitedEpsilonGreedyActionStrategy(epsilonGreedyAction):
             eGreedyAction = self._get_random_action()
         else:
             action_scores = model(state) # Q-values or action-log-probablities
-            action_scores[:,self.disabled_actions] = 0
+            action_scores[:,self.disabled_actions] = float("-inf")
             eGreedyAction = torch.argmax(action_scores, dim=-1, keepdim=True)
 
         # if entropy and log-probablities are not required 
