@@ -11,6 +11,7 @@ from config import CONFIG
 from utils import (Env_print_fn, copy_files, getRandomEnv, my_print_fn,
                    plot_berries_picked_vs_episode, wandbBerryFieldMetrics, 
                    wandbEpisodeVideoMaker, wandbCallback)
+from agent_utils import ActionInhibitedEpsilonGreedyActionStrategy
 
 # set all seeds
 set_seed(CONFIG["seed"])
@@ -76,7 +77,10 @@ if __name__ == '__main__':
     optim = Adam(params=nnet.parameters(), **CONFIG["ADAM"])
     schdl = MultiStepLR(optimizer=optim, **CONFIG["MULTI_STEP_LR"])
     buffer = PrioritizedExperienceRelpayBuffer(**CONFIG["PER_BUFFER"])
-    tstrat = epsilonGreedyAction(**CONFIG["TRAINING_STRAT_EPSILON_GREEDY"])
+    tstrat = ActionInhibitedEpsilonGreedyActionStrategy(
+        **CONFIG["TRAINING_STRAT_ACTION_INHIBITED_EPSILON_GREEDY"]
+    )
+    # tstrat = epsilonGreedyAction(**CONFIG["TRAINING_STRAT_EPSILON_GREEDY"])
 
     ddqn_trainer = DDQN(
         **CONFIG["DDQN"],

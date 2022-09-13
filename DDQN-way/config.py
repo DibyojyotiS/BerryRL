@@ -50,7 +50,8 @@ CONFIG = {
         beta_rate=0.9/2000
     ),
 
-    "TRAINING_STRAT_EPSILON_GREEDY": dict(
+    "TRAINING_STRAT_ACTION_INHIBITED_EPSILON_GREEDY": dict(
+        enable_episodes=[0,0,0,0,0,0,0,0,100], # 9 actions, enable rnd expl at set episode
         epsilon=0.5,
         finalepsilon=0.2,
         decaySteps=1000
