@@ -22,7 +22,11 @@ def random_exploration_v1(berryenv:BerryFieldEnv, discount=1.0,
             beries are visible or when the episode terminates. 
             - if exploration does not start then only one step
             is taken along the path of exploration and the subroutine
-            is terminated. """
+            is terminated. 
+    4. render: bool (default False)
+            - renders the env frame every renderS step
+    5. renderS: int (default 10)
+            - the env is renderec every renderS step if render is true"""
 
     assert mode in [1,2]
 
