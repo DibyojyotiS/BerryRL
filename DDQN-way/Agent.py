@@ -206,7 +206,9 @@ class Agent():
                     '|actions:',action_counts,
                     # '\tberry-memory', len(self.berry_memory)
                 )
-                actual_steps = 0; episode+=1; get_patch_discovery_reward(info=None)
+                actual_steps = 0; episode+=1
+                if self.patch_discovery_reward is not None and self.patch_discovery_reward != 0: 
+                    get_patch_discovery_reward(info=None)
                 for k in action_counts:action_counts[k]=0
             
             return listOfBerries, clipped_reward, done, info
