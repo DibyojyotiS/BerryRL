@@ -77,11 +77,13 @@ if __name__ == '__main__':
     schdl = MultiStepLR(optimizer=optim, **CONFIG["MULTI_STEP_LR"])
     buffer = PrioritizedExperienceRelpayBuffer(**CONFIG["PER_BUFFER"])
     tstrat = epsilonGreedyAction(**CONFIG["TRAINING_STRAT_EPSILON_GREEDY"])
+    clipped_loss = lambda *args, **kwargs: weighted_MSEloss(*args, **kwargs).clamp(-1,1)
 
     ddqn_trainer = DDQN(
         **CONFIG["DDQN"],
         trainingEnv=trainEnv,
         model=nnet,
+        loss=clipped_loss,
         trainExplorationStrategy=tstrat,
         optimizer=optim,
         replayBuffer=buffer,
