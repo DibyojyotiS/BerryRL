@@ -29,6 +29,9 @@ CONFIG = {
         # # params related to berry memory
         # berry_memory_grid_size = (400,400),
 
+        # param controling q-values
+        qval_scale_delta = 0.5e-2,
+
         # other params
         render=False, 
         debug=False, debugDir='.temp',

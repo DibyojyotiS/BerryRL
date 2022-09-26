@@ -33,6 +33,9 @@ class Agent():
                 # params related to berry memory
                 # berry_memory_grid_size = (400,400),
 
+                # param controling q-values
+                qval_scale_delta = 0.5e-2,
+
                 # other params
                 render=False, 
                 debug=False, debugDir='.temp',
@@ -110,6 +113,12 @@ class Agent():
                 - we will remove a value/cell from memory when its average
                 size falls below 10. Or the agent is too far.
 
+        #### params controling q-values
+        - qval_scale_delta: the delta increment to the qval_scale. The q-value 
+                corresponding to the exploration-subroutine is scaled a value
+                which is incremented by qval_scale_delta after every episode.
+                The value starts as qval_scale_delta.
+
         - render: bool (default False)
                 - wether to render the agent 
          """
@@ -130,6 +139,7 @@ class Agent():
         self.time_memory_exp = time_memory_exp
         self.time_memory_grid_sizes = time_memory_grid_sizes 
         # self.berry_memory_grid_size = berry_memory_grid_size
+        self.qval_scale_delta = qval_scale_delta
         self.render = render
         self.skipSteps = skipStep
         self.device = device
@@ -138,6 +148,11 @@ class Agent():
         self._init_memories()
         self.nnet = self.makeNet(TORCH_DEVICE=device)
         self.berryField.step = self.get_wrapped_env_step(self.berryField, render)
+
+        # if add_exploration then intentionally scale down the Q-values for 
+        # the random - exploration subroutine for the first few episodes while
+        # the agent learns the Q-values of the other 8 actions
+        self.qval_scale = tensor([1]*8+[0], dtype=float32, device=self.device)
 
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
@@ -236,6 +251,15 @@ class Agent():
 
         return
 
+    def new_episode_started(self):
+        """updates to agent state after an episode ends"""
+        self.reset_memories()
+        self.increment_qval_scale()
+
+    def increment_qval_scale(self):
+        self.qval_scale = 0.5e-2 + self.qval_scale
+        self.qval_scale = self.qval_scale.clamp(0, 1)
+
     def reset_memories(self):
         self.time_memory.reset()
         self.state_deque.clear()
@@ -263,7 +287,7 @@ class Agent():
         """ makes a state from the observation and info. reward, done are ignored """
         # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
         if info is None: # reinit memory and get the info and raw observation from berryField
-            self.reset_memories()
+            self.new_episode_started()
             raw_observation = self.berryField.raw_observation()
             info = self.berryField.get_info()
 
@@ -328,17 +352,17 @@ class Agent():
                 else: transitions.append(transition)
         return transitions
 
-    def makeNet(self, TORCH_DEVICE):
+    def makeNet(agent_self, TORCH_DEVICE):
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
-        outDims = self.berryField.action_space.n
-        n_sectorized = (1+len(self.spacings))*4*(360//self.angle)
-        if self.add_exploration: outDims+=1
+        outDims = agent_self.berryField.action_space.n
+        n_sectorized = (1+len(agent_self.spacings))*4*(360//agent_self.angle)
+        if agent_self.add_exploration: outDims+=1
         
         # define the layers
         feedforward = dict(
-            infeatures=n_sectorized+len(self.time_memory_grid_sizes)+4+2, 
-            linearsDim = [32,16,8], lreluslope=0.1)
+            infeatures=n_sectorized+len(agent_self.time_memory_grid_sizes)+4+2, 
+            linearsDim = [32,16,16], lreluslope=0.1)
         
         class net(nn.Module):
             def __init__(self):
@@ -363,12 +387,15 @@ class Agent():
                 value = self.valueL(feedforward_part)
                 advs = self.actadvs(feedforward_part)
                 qvalues = value + (advs - advs.mean())
-                
+
+                if agent_self.add_exploration:
+                    qvalues = agent_self.qval_scale * qvalues
+
                 return qvalues
 
-        self.nnet = net().to(TORCH_DEVICE)
-        print('total-params: ', sum(p.numel() for p in self.nnet.parameters() if p.requires_grad))
-        return self.nnet
+        agent_self.nnet = net().to(TORCH_DEVICE)
+        print('total-params: ', sum(p.numel() for p in agent_self.nnet.parameters() if p.requires_grad))
+        return agent_self.nnet
 
     def getNet(self,debug=False)->nn.Module:
         """ return the agent's brain (a duelling net)"""
