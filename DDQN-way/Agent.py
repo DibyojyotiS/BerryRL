@@ -139,12 +139,18 @@ class Agent():
         self.nnet = self.makeNet(TORCH_DEVICE=device)
         self.berryField.step = self.get_wrapped_env_step(self.berryField, render)
 
+        # init some statistics for tracking
+        self._init_stats()
+
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
             berryField=self.berryField) if debug else None
 
         # some sanity checks
         assert len(perceptable_reward_range) == 2
+
+    def _init_stats(self):
+        self.max_qvals = None
 
     def _init_memories(self):
         # for the approx n-step TD construct
@@ -329,16 +335,16 @@ class Agent():
                 else: transitions.append(transition)
         return transitions
 
-    def makeNet(self, TORCH_DEVICE):
+    def makeNet(agent_self, TORCH_DEVICE):
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
-        outDims = self.berryField.action_space.n
-        n_sectorized = (1+len(self.spacings))*4*(360//self.angle)
-        if self.add_exploration: outDims+=1
+        outDims = agent_self.berryField.action_space.n
+        n_sectorized = (1+len(agent_self.spacings))*4*(360//agent_self.angle)
+        if agent_self.add_exploration: outDims+=1
         
         # define the layers
         feedforward = dict(
-            infeatures=n_sectorized+len(self.time_memory_grid_sizes)+4+2, 
+            infeatures=n_sectorized+len(agent_self.time_memory_grid_sizes)+4+2, 
             linearsDim = [32,16,16], lreluslope=0.1)
         
         class net(nn.Module):
@@ -367,9 +373,9 @@ class Agent():
                 
                 return qvalues
 
-        self.nnet = net().to(TORCH_DEVICE)
-        print('total-params: ', sum(p.numel() for p in self.nnet.parameters() if p.requires_grad))
-        return self.nnet
+        agent_self.nnet = net().to(TORCH_DEVICE)
+        print('total-params: ', sum(p.numel() for p in agent_self.nnet.parameters() if p.requires_grad))
+        return agent_self.nnet
 
     def getNet(self,debug=False)->nn.Module:
         """ return the agent's brain (a duelling net)"""
