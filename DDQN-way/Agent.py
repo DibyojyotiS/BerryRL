@@ -137,7 +137,7 @@ class Agent():
 
         # init memories and other stuff
         self._init_memories()
-        self.nnet = self.makeNet(TORCH_DEVICE=device, stats_required=stats_enabled)
+        self.nnet = self.makeNet(TORCH_DEVICE=device)
         self.berryField.step = self.get_wrapped_env_step(self.berryField, render)
 
         # init some statistics for tracking
@@ -309,6 +309,7 @@ class Agent():
                     f'\n=== episode:{episode} Env-steps-taken:{actual_steps}\n',
                     '\tpicked:',berryField.get_numBerriesPicked(),
                     '|actions:',action_counts,
+                    '\n\tmax Q-values:', np.round(self.max_qvals.cpu().numpy(), 2)
                     # '\tberry-memory', len(self.berry_memory)
                 )
                 actual_steps = 0; episode+=1
@@ -350,7 +351,7 @@ class Agent():
                 else: transitions.append(transition)
         return transitions
 
-    def makeNet(agent_self, TORCH_DEVICE, stats_required=False):
+    def makeNet(agent_self, TORCH_DEVICE):
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
         outDims = agent_self.berryField.action_space.n
@@ -387,8 +388,7 @@ class Agent():
                 qvalues = value + (advs - advs.mean())
                 
                 # update some stats
-                if stats_required:
-                    agent_self._update_stats(qvals_tensor=qvalues)
+                agent_self._update_stats(qvals_tensor=qvalues)
                                  
                 return qvalues
 
