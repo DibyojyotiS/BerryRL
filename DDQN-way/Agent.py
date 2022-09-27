@@ -257,7 +257,7 @@ class Agent():
         self.increment_qval_scale()
 
     def increment_qval_scale(self):
-        self.qval_scale = 0.5e-2 + self.qval_scale
+        self.qval_scale = self.qval_scale_delta + self.qval_scale
         self.qval_scale = self.qval_scale.clamp(0, 1)
 
     def reset_memories(self):
