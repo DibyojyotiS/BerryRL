@@ -338,7 +338,7 @@ class Agent():
         # define the layers
         feedforward = dict(
             infeatures=n_sectorized+len(self.time_memory_grid_sizes)+4+2, 
-            linearsDim = [32,16,8], lreluslope=0.1)
+            linearsDim = [32,16,16], lreluslope=0.1)
         
         class net(nn.Module):
             def __init__(self):
