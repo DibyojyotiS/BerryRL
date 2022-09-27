@@ -157,7 +157,7 @@ class Agent():
         if self.max_qvals is None:
             self.max_qvals = qvals_tensor.detach().clone()
         else:
-            self.max_qvals = self.max_qvals.max()
+            self.max_qvals = self.max_qvals.max(qvals_tensor)
 
     def _reset_stats(self):
         self.max_qvals = None
@@ -207,11 +207,16 @@ class Agent():
             WORTH_OFFSET=self.worth_offset,
             min_berry_size=10, max_berry_size=40)
 
+    def _new_episode_started(self):
+        """updates to agent state after an episode ends"""
+        self._reset_memories()
+        self._reset_stats()
+
     def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
         # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
         if info is None: # reinit memory and get the info and raw observation from berryField
-            self._reset_memories()
+            self._new_episode_started()
             raw_observation = self.berryField.raw_observation()
             info = self.berryField.get_info()
 
