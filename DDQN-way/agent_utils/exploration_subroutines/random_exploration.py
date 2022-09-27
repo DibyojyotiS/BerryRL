@@ -1,6 +1,6 @@
 from typing import Tuple
 import numpy as np
-from torch import argmax, float32, nn, tensor
+from torch import argmax, float32, nn, tensor, Tensor
 from berry_field.envs import BerryFieldEnv
 from .utils import skip_steps
 
@@ -74,8 +74,9 @@ def random_exploration_v2(berryenv:BerryFieldEnv, model:nn.Module,
 
     def guided_exploration_step(skip_trajectory):
         state = makeState(skip_trajectory, p_action)
-        qvals = model(tensor([state], dtype=float32, device=device))
-        action = argmax(qvals[:,:8], dim=-1, keepdim=True).item()
+        qvals:Tensor = model(tensor([state], dtype=float32, device=device))
+        n_usual_actions = qvals.shape[-1] - 1
+        action = argmax(qvals[:,:n_usual_actions], dim=-1, keepdim=True).item()
         # berryenv.render() # uncomment for debugging purposes
         return skip_steps(action, skipSteps, berryenv_step)     
 

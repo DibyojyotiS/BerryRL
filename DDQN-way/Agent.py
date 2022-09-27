@@ -151,8 +151,8 @@ class Agent():
 
         # if add_exploration then intentionally scale down the Q-values for 
         # the random - exploration subroutine for the first few episodes while
-        # the agent learns the Q-values of the other 8 actions
-        self.qval_scale = tensor([1]*8+[0], dtype=float32, device=self.device)
+        # the agent learns the Q-values of the other usual actions
+        self.qval_scale = tensor([1]*(360//angle)+[0], dtype=float32, device=self.device)
 
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
