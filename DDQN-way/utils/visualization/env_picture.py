@@ -28,12 +28,23 @@ def picture_episode(LOG_DIR:str, episode:int, K=10, figsize=(10,10), title=None,
     for x,y,pw,ph in patch_data: 
         ax.add_patch(Rectangle((x-pw/2,y-ph/2), pw, ph, fill=False, alpha=alpha))
 
-    # open the agent path and draw the path with K fold decimation
+    # load the agent path with K fold decimation
     path = f'{LOG_DIR}/analytics-berry-field/{episode}/agent_path.txt'
     with open(path, 'r') as f: agentpath = eval('['+f.readline()+']')
     pathlen = len(agentpath) # original length before decimation by K
-
     agentpath = np.array(agentpath[::K])
+
+    # visualize areas where the agent got stuck
+    bin_x = berry_field.FIELD_SIZE[0]/100
+    bin_y = berry_field.FIELD_SIZE[1]/100
+    bins = [[bin_x*i for i in range(101)], [bin_y*i for i in range(101)]]
+    hist = np.histogram2d(agentpath[:,0], agentpath[:,1], bins)[0]
+    hist = np.clip(hist, 0, 3*(bin_x**2 + bin_y**2)**0.5)
+    ax.matshow(-hist.transpose(), origin='lower', 
+        extent=(0, berry_field.FIELD_SIZE[0], 0, berry_field.FIELD_SIZE[1]), 
+        cmap='bone')
+
+    # draw the path
     ax.plot(agentpath[:,0],agentpath[:,1],linewidth=pathwidth)
     ax.axes.set_aspect('equal')
 

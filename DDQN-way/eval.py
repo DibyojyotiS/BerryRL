@@ -1,12 +1,10 @@
 from DRLagents import *
 from Agent import *
 from utils import picture_episode
+from config import CONFIG
 
 # set all seeds
-seed=10
-torch.manual_seed(seed)
-np.random.seed(seed)
-random.seed(seed)
+set_seed(CONFIG["seed"])
 
 LOG_DIR = None
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -14,12 +12,10 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 if __name__ == '__main__':
 
     berry_env = BerryFieldEnv()
-    agent = Agent(berry_env, mode='eval', debug=True, noise=0.03,
-                persistence=0.9, time_memory_factor=0.5, skipStep=10, 
-                render=True, device=TORCH_DEVICE)
+    agent = Agent(**CONFIG["AGENT"], berryField=berry_env, device=TORCH_DEVICE)
 
     nnet = agent.getNet()
-    nnet.load_state_dict(torch.load('..\\trainLogs\models\episode-160\\onlinemodel_statedict.pt'))
+    nnet.load_state_dict(torch.load('..\\trainLogs\models\episode-240\\onlinemodel_statedict.pt'))
     nnet = nnet.eval()
 
     buffer = None; optim = None; tstrat = None
