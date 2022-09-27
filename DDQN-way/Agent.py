@@ -36,7 +36,8 @@ class Agent():
                 # other params
                 render=False, 
                 debug=False, debugDir='.temp',
-                device=device('cpu')) -> None:
+                device=device('cpu'),
+                stats_enabled=True) -> None:
         """ 
         ### parameters
         - berryField: BerryFieldEnv instance
@@ -136,7 +137,7 @@ class Agent():
 
         # init memories and other stuff
         self._init_memories()
-        self.nnet = self.makeNet(TORCH_DEVICE=device)
+        self.nnet = self.makeNet(TORCH_DEVICE=device, stats_required=stats_enabled)
         self.berryField.step = self.get_wrapped_env_step(self.berryField, render)
 
         # init some statistics for tracking
@@ -150,6 +151,15 @@ class Agent():
         assert len(perceptable_reward_range) == 2
 
     def _init_stats(self):
+        self.max_qvals = None
+
+    def _update_stats(self, qvals_tensor: Tensor):
+        if self.max_qvals is None:
+            self.max_qvals = qvals_tensor.detach().clone()
+        else:
+            self.max_qvals = self.max_qvals.max()
+
+    def _reset_stats(self):
         self.max_qvals = None
 
     def _init_memories(self):
@@ -335,7 +345,7 @@ class Agent():
                 else: transitions.append(transition)
         return transitions
 
-    def makeNet(agent_self, TORCH_DEVICE):
+    def makeNet(agent_self, TORCH_DEVICE, stats_required=False):
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
         outDims = agent_self.berryField.action_space.n
@@ -371,6 +381,10 @@ class Agent():
                 advs = self.actadvs(feedforward_part)
                 qvalues = value + (advs - advs.mean())
                 
+                # update some stats
+                if stats_required:
+                    agent_self._update_stats(qvals_tensor=qvalues)
+                                 
                 return qvalues
 
         agent_self.nnet = net().to(TORCH_DEVICE)
