@@ -146,6 +146,89 @@ class Agent():
         # some sanity checks
         assert len(perceptable_reward_range) == 2
 
+    def _init_memories(self):
+        # for the approx n-step TD construct
+        self.state_deque = deque(maxlen=max(self.nstep_transitions) + 1)
+        self.state_deque.append([None,None,0]) # init deque
+
+        # for persistence
+        self.prev_sectorized_state = None
+
+        # for time memory
+        self.time_memory = MultiResolutionTimeMemory(
+            time_memory_grid_sizes= self.time_memory_grid_sizes,
+            berryField_FIELD_SIZE= self.berryField.FIELD_SIZE,
+            time_memory_factor= self.time_memory_factor,
+            time_memory_exp= self.time_memory_exp,
+            persistence= self.persistence
+        )
+
+        # a different kind of berry-memory
+        self.berry_memory = {}
+
+        return
+
+    def _reset_memories(self):
+        self.time_memory.reset()
+        self.state_deque.clear()
+        self.state_deque.append([None,None,0]) # reinit deque
+        self.prev_sectorized_state = None
+
+    def _update_memories(self, info, avg_worth):
+        x,y = info['position']
+        if x == self.berryField.FIELD_SIZE[0]: x -= EPSILON
+        if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
+
+        # decay time memory and update time_memory
+        self.time_memory.update(x,y)
+        return
+
+    def _berry_worth_func(self, sizes, dists):
+        return berry_worth(sizes, dists, 
+            REWARD_RATE=self.berryField.REWARD_RATE, 
+            DRAIN_RATE=self.berryField.DRAIN_RATE, 
+            HALFDIAGOBS=self.berryField.HALFDIAGOBS, 
+            WORTH_OFFSET=self.worth_offset,
+            min_berry_size=10, max_berry_size=40)
+
+    def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
+        """ makes a state from the observation and info. reward, done are ignored """
+        # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
+        if info is None: # reinit memory and get the info and raw observation from berryField
+            self._reset_memories()
+            raw_observation = self.berryField.raw_observation()
+            info = self.berryField.get_info()
+
+        # # add the berry-memory to raw observation
+        # cx,cy = info['position']
+        # memory = [[x-cx,y-cy,s] for x,y,s in self.berry_memory.values()]
+        # if len(memory) > 0: raw_observation = np.concatenate([raw_observation,memory])
+
+        # the total-worth is also representative of the percived goodness of observation
+        sectorized_states, avg_worth = compute_distance_sectorized(
+                raw_observation=raw_observation, 
+                info=info, berry_worth_function=self._berry_worth_func, 
+                spacings=self.spacings, 
+                prev_sectorized_state=self.prev_sectorized_state, 
+                persistence=self.persistence, angle=self.angle)
+        self.prev_sectorized_state = sectorized_states
+
+        # update memories
+        self._update_memories(info, avg_worth)
+
+        # other extra information
+        edge_dist = info['scaled_dist_from_edge']
+        patch_relative = info['patch-relative']
+        total_juice = info['total_juice']
+
+        # make the state by concatenating sectorized_states and memories
+        state = np.concatenate([
+            *sectorized_states, edge_dist, patch_relative, 
+            [total_juice], self.time_memory.get_time_memories()
+        ])
+
+        return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
+
     def get_wrapped_env_step(self, berryField:BerryFieldEnv, render=False):
         """ kinda magnifies rewards self.reward_scale for better gradients, 
         also rewards are clipped within self.perceptable_reward_range"""
@@ -170,7 +253,8 @@ class Agent():
             print("Rewarding patch discovery")
             get_patch_discovery_reward = PatchDiscoveryReward(reward_value=self.patch_discovery_reward)
 
-        # some stats to track
+        # some stats to track; env based, so defined here so that they are 
+        # independent for the training and the eval environment instances
         actual_steps = 0
         episode = 0
         action_counts = {i:0 for i in range(nactions)}
@@ -213,89 +297,6 @@ class Agent():
             
             return listOfBerries, clipped_reward, done, info
         return step
-
-    def _init_memories(self):
-        # for the approx n-step TD construct
-        self.state_deque = deque(maxlen=max(self.nstep_transitions) + 1)
-        self.state_deque.append([None,None,0]) # init deque
-
-        # for persistence
-        self.prev_sectorized_state = None
-
-        # for time memory
-        self.time_memory = MultiResolutionTimeMemory(
-            time_memory_grid_sizes= self.time_memory_grid_sizes,
-            berryField_FIELD_SIZE= self.berryField.FIELD_SIZE,
-            time_memory_factor= self.time_memory_factor,
-            time_memory_exp= self.time_memory_exp,
-            persistence= self.persistence
-        )
-
-        # a different kind of berry-memory
-        self.berry_memory = {}
-
-        return
-
-    def reset_memories(self):
-        self.time_memory.reset()
-        self.state_deque.clear()
-        self.state_deque.append([None,None,0]) # reinit deque
-        self.prev_sectorized_state = None
-
-    def _update_memories(self, info, avg_worth):
-        x,y = info['position']
-        if x == self.berryField.FIELD_SIZE[0]: x -= EPSILON
-        if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
-
-        # decay time memory and update time_memory
-        self.time_memory.update(x,y)
-        return
-
-    def berry_worth_func(self, sizes, dists):
-        return berry_worth(sizes, dists, 
-            REWARD_RATE=self.berryField.REWARD_RATE, 
-            DRAIN_RATE=self.berryField.DRAIN_RATE, 
-            HALFDIAGOBS=self.berryField.HALFDIAGOBS, 
-            WORTH_OFFSET=self.worth_offset,
-            min_berry_size=10, max_berry_size=40)
-
-    def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
-        """ makes a state from the observation and info. reward, done are ignored """
-        # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
-        if info is None: # reinit memory and get the info and raw observation from berryField
-            self.reset_memories()
-            raw_observation = self.berryField.raw_observation()
-            info = self.berryField.get_info()
-
-        # # add the berry-memory to raw observation
-        # cx,cy = info['position']
-        # memory = [[x-cx,y-cy,s] for x,y,s in self.berry_memory.values()]
-        # if len(memory) > 0: raw_observation = np.concatenate([raw_observation,memory])
-
-        # the total-worth is also representative of the percived goodness of observation
-        sectorized_states, avg_worth = compute_distance_sectorized(
-                raw_observation=raw_observation, 
-                info=info, berry_worth_function=self.berry_worth_func, 
-                spacings=self.spacings, 
-                prev_sectorized_state=self.prev_sectorized_state, 
-                persistence=self.persistence, angle=self.angle)
-        self.prev_sectorized_state = sectorized_states
-
-        # update memories
-        self._update_memories(info, avg_worth)
-
-        # other extra information
-        edge_dist = info['scaled_dist_from_edge']
-        patch_relative = info['patch-relative']
-        total_juice = info['total_juice']
-
-        # make the state by concatenating sectorized_states and memories
-        state = np.concatenate([
-            *sectorized_states, edge_dist, patch_relative, 
-            [total_juice], self.time_memory.get_time_memories()
-        ])
-
-        return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
 
     def makeState(self, skip_trajectory, action_taken):
         """ skip trajectory is a sequence of [[next-observation, reward, done, info],...] """
