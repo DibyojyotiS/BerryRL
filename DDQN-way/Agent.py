@@ -157,7 +157,7 @@ class Agent():
         if self.max_qvals is None:
             self.max_qvals = qvals_tensor.detach().clone()
         else:
-            self.max_qvals = self.max_qvals.max(qvals_tensor)
+            self.max_qvals = self.max_qvals.max(qvals_tensor.detach())
 
     def _reset_stats(self):
         self.max_qvals = None
@@ -388,7 +388,8 @@ class Agent():
                 qvalues = value + (advs - advs.mean())
                 
                 # update some stats
-                agent_self._update_stats(qvals_tensor=qvalues)
+                if qvalues.shape[0]==1: # only when taking action in env
+                    agent_self._update_stats(qvals_tensor=qvalues)
                                  
                 return qvalues
 
