@@ -150,18 +150,6 @@ class Agent():
         # some sanity checks
         assert len(perceptable_reward_range) == 2
 
-    def _init_stats(self):
-        self.max_qvals = None
-
-    def _update_stats(self, qvals_tensor: Tensor):
-        if self.max_qvals is None:
-            self.max_qvals = qvals_tensor.detach().clone()
-        else:
-            self.max_qvals = self.max_qvals.max(qvals_tensor.detach())
-
-    def _reset_stats(self):
-        self.max_qvals = None
-
     def _init_memories(self):
         # for the approx n-step TD construct
         self.state_deque = deque(maxlen=max(self.nstep_transitions) + 1)
@@ -210,7 +198,6 @@ class Agent():
     def _new_episode_started(self):
         """updates to agent state after an episode ends"""
         self._reset_memories()
-        self._reset_stats()
 
     def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
@@ -309,8 +296,6 @@ class Agent():
                     f'\n=== episode:{episode} Env-steps-taken:{actual_steps}\n',
                     '\tpicked:',berryField.get_numBerriesPicked(),
                     '|actions:',action_counts,
-                    '\n\tmax Q-values:', np.round(self.max_qvals.cpu().numpy(), 2)
-                    # '\tberry-memory', len(self.berry_memory)
                 )
                 actual_steps = 0; episode+=1
                 if self.patch_discovery_reward is not None and self.patch_discovery_reward != 0: 
@@ -386,11 +371,7 @@ class Agent():
                 value = self.valueL(feedforward_part)
                 advs = self.actadvs(feedforward_part)
                 qvalues = value + (advs - advs.mean())
-                
-                # update some stats
-                if qvalues.shape[0]==1: # only when taking action in env
-                    agent_self._update_stats(qvals_tensor=qvalues)
-                                 
+
                 return qvalues
 
         agent_self.nnet = net().to(TORCH_DEVICE)
