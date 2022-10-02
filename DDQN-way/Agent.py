@@ -140,9 +140,6 @@ class Agent():
         self.nnet = self.makeNet(TORCH_DEVICE=device)
         self.berryField.step = self.get_wrapped_env_step(self.berryField, render)
 
-        # init some statistics for tracking
-        self._init_stats()
-
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
             berryField=self.berryField) if debug else None
@@ -294,8 +291,7 @@ class Agent():
             if done: 
                 print(
                     f'\n=== episode:{episode} Env-steps-taken:{actual_steps}\n',
-                    '\tpicked:',berryField.get_numBerriesPicked(),
-                    '|actions:',action_counts,
+                    '\tactions counts:',action_counts,
                 )
                 actual_steps = 0; episode+=1
                 if self.patch_discovery_reward is not None and self.patch_discovery_reward != 0: 
