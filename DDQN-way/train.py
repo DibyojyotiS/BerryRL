@@ -2,6 +2,7 @@ import time
 
 import wandb
 from DRLagents import *
+from DRLagents.agents.DQN import epsilonGreedyAction
 from torch.optim.adam import Adam
 from torch.optim.lr_scheduler import MultiStepLR
 from torch.optim.rmsprop import RMSprop
@@ -9,8 +10,9 @@ from torch.optim.rmsprop import RMSprop
 from Agent import *
 from config import CONFIG
 from utils import (Env_print_fn, copy_files, getRandomEnv, my_print_fn,
-                   plot_berries_picked_vs_episode, wandbBerryFieldMetrics, 
-                   wandbEpisodeVideoMaker, wandbCallback)
+                   plot_berries_picked_vs_episode, max_qvalues_stats_callback,
+                   wandbEpisodeVideoMaker, CallbackPipeline, 
+                   BerryFieldMetricsCallback, InfoPrinterCallback)
 
 # set all seeds
 set_seed(CONFIG["seed"])
@@ -23,12 +25,8 @@ TIME_STAMP = '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6])
 LOG_DIR = os.path.join(CONFIG["LOG_DIR_PARENT"], TIME_STAMP)
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-if __name__ == '__main__':
-
+def init_logging():
     if not os.path.exists(LOG_DIR): os.makedirs(LOG_DIR)
-
-    # some variables used later
-    callbacks = []
 
     # init wandb if enabled
     if ENABLE_WANDB:
@@ -45,6 +43,30 @@ if __name__ == '__main__':
     logger = StdoutLogger(filename=f'{LOG_DIR}/log.txt')
     abs_file_dir = os.path.split(os.path.abspath(__file__))[0]
     copy_files(abs_file_dir, f'{LOG_DIR}/pyfiles-backup')
+    return logger
+
+def get_training_callbacks(trainEnv, evalEnv, nnet):
+    # setup wandb callbacks and wandb if enabled
+    callback_pipe = CallbackPipeline()
+    callback_pipe.append_stage(max_qvalues_stats_callback)
+    if ENABLE_WANDB:
+        wandb.watch(nnet, log_freq=CONFIG["WANDB"]["watch_log_freq"])
+        wandb_video_mod = wandbEpisodeVideoMaker(
+            log_dir=LOG_DIR, save_dir=f'{LOG_DIR}/videos', 
+            train_log_freq=20, eval_log_freq=10,
+            figsize=(10,10)
+        )
+        env_metric_mod = BerryFieldMetricsCallback(trainEnv, evalEnv)
+        callback_pipe.append_stage(env_metric_mod)
+        callback_pipe.append_stage(wandb_video_mod)
+        callback_pipe.append_stage(wandb.log)
+    training_callbacks = [callback_pipe]
+    return training_callbacks
+
+
+if __name__ == '__main__':
+
+    logger = init_logging()
 
     # setup eval and train env
     trainEnv = getRandomEnv(**CONFIG["RND_TRAIN_ENV"], logDir=LOG_DIR)
@@ -55,22 +77,6 @@ if __name__ == '__main__':
     evalEnv.step = agent.get_wrapped_env_step(evalEnv)
     nnet = agent.getNet()
     print(nnet)
-
-    # setup wandb callbacks and wandb if enabled
-    if ENABLE_WANDB:
-        wandb.watch(nnet, log_freq=CONFIG["WANDB"]["watch_log_freq"])
-        wandb_metric_mod = wandbBerryFieldMetrics(
-            berryField_train=trainEnv, berryField_eval=evalEnv
-        )
-        wandb_video_mod = wandbEpisodeVideoMaker(
-            log_dir=LOG_DIR, save_dir=f'{LOG_DIR}/videos', 
-            train_log_freq=20, eval_log_freq=10,
-            figsize=(10,10)
-        )
-        wandb_callback = wandbCallback(pipeline=[
-            wandb_metric_mod, wandb_video_mod
-        ])
-        callbacks.append(wandb_callback)
 
     # init training prereqs
     optim = Adam(params=nnet.parameters(), **CONFIG["ADAM"])
@@ -108,11 +114,13 @@ if __name__ == '__main__':
     trainPrintFn = my_print_fn(trainEnv, buffer, tstrat, ddqn_trainer, schdl)
     def evalPrintFn(): return Env_print_fn(evalEnv)
 
+    training_callbacks = get_training_callbacks(trainEnv, evalEnv, nnet)
+
     # start training! :D
     try:
         trianHist = ddqn_trainer.trainAgent(evalEnv=evalEnv,
                                             train_printFn=trainPrintFn, eval_printFn=evalPrintFn,
-                                            training_callbacks=callbacks)
+                                            training_callbacks=training_callbacks)
     except KeyboardInterrupt as kb:
         pass
 
