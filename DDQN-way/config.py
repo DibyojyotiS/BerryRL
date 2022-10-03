@@ -15,7 +15,7 @@ CONFIG = {
         # params controlling the state and state-transitions
         angle = 45, persistence=0.8, worth_offset=0.05, 
         noise=0.01, nstep_transition=[1], positive_emphasis=0,
-        skipStep=10, patch_discovery_reward=0.5, 
+        skipStep=10, patch_discovery_reward=0.0, 
         add_exploration = True, spacings=[],
         reward_magnification = 1e4/25,
         perceptable_reward_range = [0,2],
@@ -58,7 +58,7 @@ CONFIG = {
 
     "DDQN": dict(
         batchSize=512, 
-        gamma=0.7, 
+        gamma=0.9, 
         update_freq=5, 
         MaxTrainEpisodes=2000, 
         optimize_every_kth_action=100, #-1, 
