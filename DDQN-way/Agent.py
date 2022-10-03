@@ -2,7 +2,7 @@ from matplotlib.axes import Axes
 import numpy as np
 from collections import deque
 from berry_field.envs import BerryFieldEnv
-from torch import Tensor, float32, nn, device, tensor
+from torch import Tensor, float32, nn, device, tensor, cat
 from agent_utils import (berry_worth, random_exploration_v2, 
     compute_distance_sectorized, Debugging, PatchDiscoveryReward, 
     skip_steps, make_simple_feedforward, printLocals, plot_time_mem_curves)
@@ -335,14 +335,13 @@ class Agent():
     def makeNet(agent_self, TORCH_DEVICE):
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
-        outDims = agent_self.berryField.action_space.n
+        n_berry_field_actions = agent_self.berryField.action_space.n
         n_sectorized = (1+len(agent_self.spacings))*4*(360//agent_self.angle)
-        if agent_self.add_exploration: outDims+=1
         
         # define the layers
         feedforward = dict(
             infeatures=n_sectorized+len(agent_self.time_memory_grid_sizes)+4+2, 
-            linearsDim = [32,16,16], lreluslope=0.1)
+            linearsDim = [64,32,32], lreluslope=0.01)
         
         class net(nn.Module):
             def __init__(self):
@@ -351,9 +350,15 @@ class Agent():
                 # build the feed-forward network -> sectors, edge, patch-relative & time-memory
                 self.feedforward = make_simple_feedforward(**feedforward)
 
-                # for action advantage estimates
+                # estimate underlying value for the environment actions
                 self.valueL = nn.Linear(feedforward['linearsDim'][-1], 1)
-                self.actadvs = nn.Linear(feedforward['linearsDim'][-1], outDims)
+                self.actadvs = nn.Linear(feedforward['linearsDim'][-1], n_berry_field_actions)
+
+                # for action advantage estimates
+                # if exploration action is enabled, have a seperate node for it
+                # since it is different from the rest of the actions in behaviour and time
+                if agent_self.add_exploration:
+                    self.exploration_action_qvalue = nn.Linear(feedforward['linearsDim'][-1], 1)
 
             def forward(self, feedforward_part:Tensor, debug=False):
 
@@ -364,9 +369,15 @@ class Agent():
                 if debug: print('\nfeedforward_part',feedforward_part.shape)
                 for layer in self.feedforward: feedforward_part = layer(feedforward_part)         
 
+                # qvalues for env actions
                 value = self.valueL(feedforward_part)
                 advs = self.actadvs(feedforward_part)
                 qvalues = value + (advs - advs.mean())
+
+                # concat qvalue for exploration subroutine
+                if agent_self.add_exploration:
+                    qv = self.exploration_action_qvalue(feedforward_part)
+                    qvalues = cat([qvalues, qv], dim=-1)
 
                 return qvalues
 
