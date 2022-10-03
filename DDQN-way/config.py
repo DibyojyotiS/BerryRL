@@ -17,7 +17,7 @@ CONFIG = {
         noise=0.01, nstep_transition=[1], positive_emphasis=0,
         skipStep=10, patch_discovery_reward=0.5, 
         add_exploration = True, spacings=[],
-        reward_magnification = 1e4/25,
+        reward_magnification = 1e4/50,
         perceptable_reward_range = [-float('inf'),float('inf')],
 
         # params related to time memory
