@@ -225,11 +225,13 @@ class Agent():
         edge_dist = info['scaled_dist_from_edge']
         patch_relative = info['patch-relative']
         total_juice = info['total_juice']
+        any_berry_picked = len(info["recently_picked_berries"]) > 0
 
         # make the state by concatenating sectorized_states and memories
         state = np.concatenate([
             *sectorized_states, edge_dist, patch_relative, 
-            [total_juice], self.time_memory.get_time_memories()
+            [total_juice], self.time_memory.get_time_memories(),
+            [any_berry_picked]
         ])
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
@@ -302,7 +304,15 @@ class Agent():
         return step
 
     def makeState(self, skip_trajectory, action_taken):
-        """ skip trajectory is a sequence of [[next-observation, reward, done, info],...] """
+        """ skip trajectory is a sequence of [[next-observation, info, reward, done],...] """
+        
+        # the last info's recently_picked_berries must be a concat of all the recently_picked_berries
+        berries_picked_in_trajectory = [
+            l for x in skip_trajectory for l in (x[1]["recently_picked_berries"] if x[1] is not None else [])
+        ]
+        if skip_trajectory[-1][1] is not None:
+            skip_trajectory[-1][1]["recently_picked_berries"] = berries_picked_in_trajectory
+
         final_state = self._computeState(*skip_trajectory[-1])
         if self.debugger: self.debugger.record(final_state)
         return final_state
@@ -341,7 +351,7 @@ class Agent():
         
         # define the layers
         feedforward = dict(
-            infeatures=n_sectorized+len(agent_self.time_memory_grid_sizes)+4+2, 
+            infeatures=n_sectorized+len(agent_self.time_memory_grid_sizes)+4+2+1, 
             linearsDim = [32,16,16], lreluslope=0.1)
         
         class net(nn.Module):
