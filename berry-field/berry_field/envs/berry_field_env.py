@@ -326,7 +326,7 @@ class BerryFieldEnv(gym.Env):
                 1 - max(0, y+h//2 - H)/(h//2), # scaled distance from the top edge; 1 if not in view
                 1 - max(0, h//2 - y)/(h//2) # scaled distance from the bottom edge; 1 if not in view
             ],
-            'recently-picked-berries': self.recently_picked_berries
+            'recently_picked_berries': self.recently_picked_berries
         }
 
         return info
