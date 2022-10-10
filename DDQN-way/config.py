@@ -39,27 +39,28 @@ CONFIG = {
     ),
 
     "MULTI_STEP_LR": dict(
-        milestones=[50*i for i in range(1,21)],
+        milestones=[100*i for i in range(1,11)],
         gamma=0.5
     ),
 
     "PER_BUFFER": dict(
-        bufferSize=int(1E5), 
+        bufferSize=int(5E5), 
         alpha=0.95,
         beta=0.1, 
         beta_rate=0.9/2000
     ),
 
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
-        epsilon=0.5,
-        finalepsilon=0.2,
-        decaySteps=1000
+        epsilon=0.55,
+        finalepsilon=0.4,
+        decaySteps=200,
+        decay_type='exp'
     ),
 
     "DDQN": dict(
-        batchSize=512, 
+        batchSize=1024, 
         gamma=0.9, 
-        update_freq=5, 
+        update_freq=20, 
         MaxTrainEpisodes=2000, 
         optimize_every_kth_action=100, #-1, 
         num_gradient_steps=25, #400,
@@ -74,12 +75,12 @@ CONFIG = {
     "WANDB": dict(
         ENABLE_WANDB = True, # set to true for server env
         project="Agent-Design",
-        group="multi-resolution-time-memory",
+        group="tuning-params-group-5",
         entity="foraging-rl",
         watch_log_freq = 100,
     ),
 
-    "seed": 1, # seed for random, np.random, torch
-    "LOG_DIR_PARENT": ".temp", # the log folder for all runs
+    "seed": 4, # seed for random, np.random, torch
+    "LOG_DIR_PARENT": ".temp/tuning-params-group-5", # the log folder for all runs
     "RESUME_DIR": None, # set if resuming a run
 }
