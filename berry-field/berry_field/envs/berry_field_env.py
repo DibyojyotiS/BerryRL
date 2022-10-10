@@ -325,7 +325,8 @@ class BerryFieldEnv(gym.Env):
                 1 - max(0, x+w//2 - W)/(w//2), # scaled distance from right edge; 1 if not in view
                 1 - max(0, y+h//2 - H)/(h//2), # scaled distance from the top edge; 1 if not in view
                 1 - max(0, h//2 - y)/(h//2) # scaled distance from the bottom edge; 1 if not in view
-            ]
+            ],
+            'recently-picked-berries': self.recently_picked_berries
         }
 
         return info
@@ -519,7 +520,7 @@ class BerryFieldEnv(gym.Env):
         sizes = boxes[:,2] # boxes are an array with rows as [x,y, size, size]
         reward = self.REWARD_RATE * np.sum(sizes)
         self.berry_collision_tree.delete_boxes(list(boxIds))
-        self.recently_picked_berries = sizes # update the recently picked for analysis
+        self.recently_picked_berries = sizes # update the recently picked for analysis and info
         return reward
 
 
