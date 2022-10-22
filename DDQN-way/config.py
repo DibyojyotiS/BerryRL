@@ -39,7 +39,7 @@ CONFIG = {
     ),
 
     "MULTI_STEP_LR": dict(
-        milestones=[100*i for i in range(1,11)],
+        milestones=[100*i for i in range(1,3)],
         gamma=0.5
     ),
 
@@ -60,7 +60,7 @@ CONFIG = {
     "DDQN": dict(
         batchSize=1024, 
         gamma=0.9, 
-        update_freq=20, 
+        update_freq=5, 
         MaxTrainEpisodes=2000, 
         optimize_every_kth_action=100, #-1, 
         num_gradient_steps=25, #400,
@@ -69,18 +69,18 @@ CONFIG = {
         polyak_average=True, 
         polyak_tau=0.1,
         resumeable_snapshot=10,
-        gradient_clips = (-0.1,0.1),
+        gradient_clips = (-0.5,0.5),
     ),
 
     "WANDB": dict(
         ENABLE_WANDB = True, # set to true for server env
         project="Agent-Design",
-        group="berry-picked-bool-feature",
+        group="tuning-berry-picked-bool-feature-1",
         entity="foraging-rl",
         watch_log_freq = 100,
     ),
 
     "seed": 4, # seed for random, np.random, torch
-    "LOG_DIR_PARENT": ".temp/berry-picked-bool-feature", # the log folder for all runs
+    "LOG_DIR_PARENT": ".temp/tuning-berry-picked-bool-feature-1", # the log folder for all runs
     "RESUME_DIR": None, # set if resuming a run
 }
