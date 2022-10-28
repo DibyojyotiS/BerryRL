@@ -47,12 +47,12 @@ CONFIG = {
         bufferSize=int(5E5), 
         alpha=0.95,
         beta=0.1, 
-        beta_rate=0.9/2000
+        beta_rate=0.9/800
     ),
 
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
         epsilon=0.55,
-        finalepsilon=0.4,
+        finalepsilon=0.1,
         decaySteps=200,
         decay_type='exp'
     ),
