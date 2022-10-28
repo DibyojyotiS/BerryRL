@@ -225,13 +225,13 @@ class Agent():
         edge_dist = info['scaled_dist_from_edge']
         patch_relative = info['patch-relative']
         total_juice = info['total_juice']
-        any_berry_picked = len(info["recently_picked_berries"]) > 0
+        rep_picked_berries = sum(info["recently_picked_berries"])/40
 
         # make the state by concatenating sectorized_states and memories
         state = np.concatenate([
             *sectorized_states, edge_dist, patch_relative, 
             [total_juice], self.time_memory.get_time_memories(),
-            [any_berry_picked]
+            [rep_picked_berries]
         ])
 
         return state + np.random.uniform(-self.noise, self.noise, size=state.shape)
@@ -352,7 +352,7 @@ class Agent():
         # define the layers
         feedforward = dict(
             infeatures=n_sectorized+len(agent_self.time_memory_grid_sizes)+4+2+1, 
-            linearsDim = [32,16,16], lreluslope=0.1)
+            linearsDim = [32,16,16], lreluslope=0.01)
         
         class net(nn.Module):
             def __init__(self):
