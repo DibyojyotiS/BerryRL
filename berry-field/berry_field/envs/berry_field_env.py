@@ -530,7 +530,7 @@ class BerryFieldEnv(gym.Env):
         juice_reward = self._pick_collided_berries()
         living_cost = - self.DRAIN_RATE*(self.current_action != 8) # noAction
         reward = juice_reward + living_cost
-        self.total_juice += reward
+        self.total_juice = max(0, self.total_juice + reward)
 
         # for cuirosity reward (don't add to self.total_juice)
         if self.reward_curiosity:
