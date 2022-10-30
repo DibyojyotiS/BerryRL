@@ -17,8 +17,8 @@ CONFIG = {
         noise=0.01, nstep_transition=[1], positive_emphasis=0,
         skipStep=10, patch_discovery_reward=0.0, 
         add_exploration = True, spacings=[],
-        reward_magnification = 1e4/25,
-        perceptable_reward_range = [0,2],
+        reward_magnification = 3 * 1e4/50,
+        perceptable_reward_range = [-0.04,3],
 
         # params related to time memory
         time_memory_factor=0.6, time_memory_exp=1.0,
@@ -61,7 +61,7 @@ CONFIG = {
         batchSize=1024, 
         gamma=0.9, 
         update_freq=5, 
-        MaxTrainEpisodes=2000, 
+        MaxTrainEpisodes=800, 
         optimize_every_kth_action=100, #-1, 
         num_gradient_steps=25, #400,
         evalFreq=10, 
