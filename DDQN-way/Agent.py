@@ -272,7 +272,10 @@ class Agent():
             # execute the action
             if self.add_exploration and action == nactions-1:
                 reward, skip_trajectory, steps = exploration_step()
-                self.prev_sectorized_state = None # clear persistence state
+                if steps > self.skipSteps:
+                    self.prev_sectorized_state = None 
+                    # clear persistence state is explortion-subroutine was 
+                    # engaged for more than one skip_steps
             else:
                 if render: berryField.render()
                 reward, skip_trajectory, steps = skip_steps(action=action, 
