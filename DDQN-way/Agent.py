@@ -23,6 +23,7 @@ class Agent():
                 add_exploration = True, spacings=[],
                 reward_magnification = 1e4/25,
                 perceptable_reward_range = [0,2],
+                step_reward = 0.5,
 
                 # params related to time memory
                 time_memory_factor=0.6, time_memory_exp=1.0,
@@ -81,6 +82,8 @@ class Agent():
                 env step and is not multiplied by this
         - perceptable_reward_range: tupple(int, int)
                 - the min and max cap of the reward 
+        - step_reward: float
+                - the reward for taking each step
 
         #### params related to time memory
         - time_memory_factor: float (default 0.01)
@@ -127,6 +130,7 @@ class Agent():
         self.spacings = spacings
         self.reward_magnification = reward_magnification
         self.perceptable_reward_range = perceptable_reward_range
+        self.step_reward = step_reward
         self.time_memory_factor = time_memory_factor
         self.time_memory_exp = time_memory_exp
         self.time_memory_grid_sizes = time_memory_grid_sizes 
@@ -287,7 +291,9 @@ class Agent():
             if self.patch_discovery_reward is not None and self.patch_discovery_reward != 0: 
                 scaled_reward += get_patch_discovery_reward(info)
             clipped_reward = min(max(scaled_reward, reward_min), reward_max)
-            
+
+            # reward the step taken - might give agent incentive to live longer
+            clipped_reward += self.step_reward            
 
             # print stuff and reset stats and patch-discovery-reward
             if done: 
