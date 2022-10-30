@@ -19,7 +19,7 @@ CONFIG = {
         add_exploration = True, spacings=[],
         reward_magnification = 2 * 1e4/40,
         perceptable_reward_range = [0,2],
-        step_reward = 0.5,
+        step_reward = 0.05,
 
         # params related to time memory
         time_memory_factor=0.6, time_memory_exp=1.0,
