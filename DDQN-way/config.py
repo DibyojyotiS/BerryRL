@@ -7,7 +7,7 @@ CONFIG = {
         num_patches=10, seperation=2400, 
         nberries=80, spawn_radius=100, 
         initial_juice=0.5,
-        maxtime=5*60, play_till_maxtime = True,
+        maxtime=5*60, play_till_maxtime = False,
         patch_with_agent_at_center=True,
         penalize_boundary_hit=False
     ),
@@ -76,12 +76,12 @@ CONFIG = {
     "WANDB": dict(
         ENABLE_WANDB = True, # set to true for server env
         project="Agent-Design",
-        group="tuning-berry-picked-bool-feature-4.0",
+        group="tuning-berry-picked-bool-feature-2.1.1",
         entity="foraging-rl",
         watch_log_freq = 100,
     ),
 
     "seed": 4, # seed for random, np.random, torch
-    "LOG_DIR_PARENT": ".temp/tuning-berry-picked-bool-feature-4.0", # the log folder for all runs
+    "LOG_DIR_PARENT": ".temp/tuning-berry-picked-bool-feature-2.1.1", # the log folder for all runs
     "RESUME_DIR": None, # set if resuming a run
 }
