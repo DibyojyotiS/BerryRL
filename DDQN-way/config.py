@@ -76,12 +76,12 @@ CONFIG = {
     "WANDB": dict(
         ENABLE_WANDB = True, # set to true for server env
         project="Agent-Design",
-        group="tuning-berry-picked-bool-feature-2.1.1",
+        group="tuning-berry-picked-bool-feature-2.1.2",
         entity="foraging-rl",
         watch_log_freq = 100,
     ),
 
     "seed": 4, # seed for random, np.random, torch
-    "LOG_DIR_PARENT": ".temp/tuning-berry-picked-bool-feature-2.1.1", # the log folder for all runs
+    "LOG_DIR_PARENT": ".temp/tuning-berry-picked-bool-feature-2.1.2", # the log folder for all runs
     "RESUME_DIR": None, # set if resuming a run
 }
