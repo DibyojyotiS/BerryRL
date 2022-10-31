@@ -7,7 +7,7 @@ CONFIG = {
         num_patches=10, seperation=2400, 
         nberries=80, spawn_radius=100, 
         initial_juice=0.5,
-        maxtime=5*60, play_till_maxtime = False,
+        maxtime=5*60, play_till_maxtime = True,
         patch_with_agent_at_center=True,
         penalize_boundary_hit=False
     ),
