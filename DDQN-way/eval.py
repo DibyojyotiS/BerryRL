@@ -1,4 +1,5 @@
 from DRLagents import *
+from DRLagents.agents.DDQN import greedyAction
 from Agent import *
 from utils import picture_episode
 from config import CONFIG
@@ -15,7 +16,7 @@ if __name__ == '__main__':
     agent = Agent(**CONFIG["AGENT"], berryField=berry_env, device=TORCH_DEVICE)
 
     nnet = agent.getNet()
-    nnet.load_state_dict(torch.load('..\\trainLogs\models\episode-240\\onlinemodel_statedict.pt'))
+    nnet.load_state_dict(torch.load('.temp\\tuning-berry-picked-bool-feature-2.1.2\\2022-10-31 16-56-18\\trainLogs\models\episode-244\\onlinemodel_statedict.pt'))
     nnet = nnet.eval()
 
     buffer = None; optim = None; tstrat = None
@@ -25,7 +26,7 @@ if __name__ == '__main__':
                         make_state=agent.makeState, log_dir=LOG_DIR, 
                         device=TORCH_DEVICE)
     
-    try:ddqn_trainer.evaluate(estrat)
+    try:ddqn_trainer.evaluate(estrat, render=True)
     except KeyboardInterrupt as ex: pass
 
     print(berry_env.get_numBerriesPicked(), 
