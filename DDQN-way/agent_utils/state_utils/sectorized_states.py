@@ -1,5 +1,4 @@
 import numpy as np
-from bisect import bisect_left
 from berry_field.envs import BerryFieldEnv
 
 EPSILON = 1e-8
