@@ -205,7 +205,8 @@ class Agent():
         # the total-worth is also representative of the percived goodness of observation
         sectorized_states, avg_worth = compute_sectorized(
                 raw_observation=raw_observation, 
-                info=info, berry_worth_function=self._berry_worth_func, 
+                info=info, berry_worth_function=self._berry_worth_func,
+                half_diagonalL= self.berryField.HALFDIAGOBS, 
                 prev_sectorized_state=self.prev_sectorized_state, 
                 persistence=self.persistence, angle=self.angle)
         self.prev_sectorized_state = sectorized_states

@@ -21,7 +21,7 @@ def getTrueAngles(directions, referenceVector=[0,1]):
     return angles
 
 def compute_sectorized(raw_observation:np.ndarray, info:dict, 
-                        berry_worth_function:'function', 
+                        berry_worth_function:'function', half_diagonalL:float,
                         prev_sectorized_state=None, 
                         persistence=0.8,angle=45):
     """ 
@@ -35,6 +35,9 @@ def compute_sectorized(raw_observation:np.ndarray, info:dict,
             - a function that takes in the sizes (array) 
             and distances (array) and returns a array
             denoting the worth of each berry. 
+    - half_diagonalL: float
+            - the length of the half diagonal of the observation window
+            - used to normalize the distance of berry from agent
     - prev_sectorized_state: ndarray (default None)
             - previously computed sectorized state
             to be used for persistence of vision
@@ -83,7 +86,7 @@ def compute_sectorized(raw_observation:np.ndarray, info:dict,
                 maxworthyness_idx = np.argmax(worthinesses) # max worthy
                 a1[idx] = worthyness = worthinesses[maxworthyness_idx]
                 a2[idx] = np.average(worthinesses)
-                a3[idx] = 1 - _dists[maxworthyness_idx]
+                a3[idx] = 1 - _dists[maxworthyness_idx]/half_diagonalL
                 total_worth += sum(worthinesses)
                 
                 if worthyness > maxworth:

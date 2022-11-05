@@ -252,8 +252,7 @@ class BerryFieldEnv(gym.Env):
     def step(self, action):
         """ observation returns a list of visible berries represented by their their center and sizes 
         make sure that self.position is correct/updated before calling this 
-        The centers are reported with origin at agent's positon, and scaled by dividing by 
-        the length of half-diagonal of the observation-space (self.HALFDIAGOBS) 
+        The centers are reported with origin at agent's positon
         
         returns : list_of_visible_berries, reward, done, info"""
 
@@ -334,11 +333,9 @@ class BerryFieldEnv(gym.Env):
     def raw_observation(self):
         ''' returns visible berries as a list represented by their their center and sizes 
         make sure that self.position is correct/updated before calling this 
-        The centers are reported with origin at agent's positon, and scaled by dividing by 
-        the length of half-diagonal of the observation-space (self.HALFDIAGOBS)'''
+        The berry centers are reported with origin at agent's positon'''
         berry_boxes = self._get_berries_in_view((*self.position, *self.OBSERVATION_SPACE_SIZE))
         berry_boxes[:,:2] = berry_boxes[:,:2] - self.position
-        berry_boxes[:,:2] = berry_boxes[:,:2]/self.HALFDIAGOBS # scale to 0-1 
         return berry_boxes[:,:3]
 
 
