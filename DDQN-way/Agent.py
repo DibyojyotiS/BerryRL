@@ -339,7 +339,7 @@ class Agent():
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
         outDims = agent_self.berryField.action_space.n
-        n_sectorized = (1+len(agent_self.spacings))*4*(360//agent_self.angle)
+        n_sectorized = 4*(360//agent_self.angle)
         if agent_self.add_exploration: outDims+=1
         
         # define the layers
