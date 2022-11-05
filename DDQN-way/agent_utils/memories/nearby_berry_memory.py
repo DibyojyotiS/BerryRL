@@ -1,5 +1,5 @@
 import numpy as np
-from numba import njit
+from numba import njit, prange
 from agent_utils.memories.base_class import MemoryBase
 
 
@@ -40,6 +40,14 @@ def njitupdate(berry_score, berry_pos_xy, berry_size, agent_pos_xy, max_dist_pop
             min_index = int(min_tree[1][1])
             memory[min_index] = [berry_pos_xy[0], berry_pos_xy[1], berry_size]
             updateMinTree(min_index, berry_score, min_tree)
+
+
+@njit
+def bulkUpdata(listOfBerries, agent_pos_xy, max_dist_pop_th, min_dist_pop_th, memory, min_tree):
+    for i in prange(len(listOfBerries)):
+        berry_pos_xy = listOfBerries[i, :2]
+        # berry_score = 
+
 
 
 class NearbyBerryMemory(MemoryBase):
