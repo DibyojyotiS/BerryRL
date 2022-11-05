@@ -4,7 +4,7 @@ from collections import deque
 from berry_field.envs import BerryFieldEnv
 from torch import Tensor, float32, nn, device, tensor
 from agent_utils import (berry_worth, random_exploration_v2, 
-    compute_distance_sectorized, Debugging, PatchDiscoveryReward, 
+    compute_sectorized, Debugging, PatchDiscoveryReward, 
     skip_steps, make_simple_feedforward, printLocals, plot_time_mem_curves)
 from agent_utils.memories.multi_resolution_time_memory import MultiResolutionTimeMemory
 
@@ -20,7 +20,7 @@ class Agent():
                 angle = 45, persistence=0.8, worth_offset=0.05, 
                 noise=0.01, nstep_transition=[1], positive_emphasis=0,
                 skipStep=10, patch_discovery_reward=0.5, 
-                add_exploration = True, spacings=[],
+                add_exploration = True,
                 reward_magnification = 1e4/25,
                 perceptable_reward_range = [0,2],
 
@@ -69,12 +69,6 @@ class Agent():
                 - can be set to None to disable reward patch discovery
         - add_exploration: bool (default True)
                 - adds exploration-subroutine as an action
-        - spacings: list (default empty list)
-                - list of floats between 0 and 1
-                - the observation space is segmented by
-                the floats in this list into rectangular donut
-                shaped segments. The sectorized part of the state
-                is made for each of the segments
         - reward_magnification: float
                 - the actual env step reward is multiplied by this
                 - the reward for patch discovery is seperate from
@@ -124,7 +118,6 @@ class Agent():
         self.patch_discovery_reward = patch_discovery_reward
         self.positive_emphasis = positive_emphasis
         self.add_exploration= add_exploration
-        self.spacings = spacings
         self.reward_magnification = reward_magnification
         self.perceptable_reward_range = perceptable_reward_range
         self.time_memory_factor = time_memory_factor
@@ -210,10 +203,9 @@ class Agent():
         # if len(memory) > 0: raw_observation = np.concatenate([raw_observation,memory])
 
         # the total-worth is also representative of the percived goodness of observation
-        sectorized_states, avg_worth = compute_distance_sectorized(
+        sectorized_states, avg_worth = compute_sectorized(
                 raw_observation=raw_observation, 
                 info=info, berry_worth_function=self._berry_worth_func, 
-                spacings=self.spacings, 
                 prev_sectorized_state=self.prev_sectorized_state, 
                 persistence=self.persistence, angle=self.angle)
         self.prev_sectorized_state = sectorized_states

@@ -17,7 +17,7 @@ CONFIG = {
         angle = 45, persistence=0.8, worth_offset=0.05, 
         noise=0.01, nstep_transition=[1], positive_emphasis=0,
         skipStep=10, patch_discovery_reward=0.0, 
-        add_exploration = True, spacings=[],
+        add_exploration = True,
         reward_magnification = 3 * 1e4/50,
         perceptable_reward_range = [-0.04,3],
 
