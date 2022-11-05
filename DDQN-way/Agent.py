@@ -6,7 +6,7 @@ from torch import Tensor, float32, nn, device, tensor
 from agent_utils import (berry_worth, random_exploration_v2, 
     compute_sectorized, Debugging, PatchDiscoveryReward, 
     skip_steps, make_simple_feedforward, printLocals, plot_time_mem_curves)
-from agent_utils.memories.multi_resolution_time_memory import MultiResolutionTimeMemory
+from agent_utils.memories import MultiResolutionTimeMemory, NearbyBerryMemory
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8
@@ -158,23 +158,32 @@ class Agent():
         )
 
         # a different kind of berry-memory
-        self.berry_memory = {}
+        self.berry_memory = NearbyBerryMemory(
+            dist_th1=10,
+            dist_th2=1300,
+            memory_size=100
+        )
 
         return
 
     def _reset_memories(self):
         self.time_memory.reset()
+        self.berry_memory.reset()
         self.state_deque.clear()
         self.state_deque.append([None,None,0]) # reinit deque
         self.prev_sectorized_state = None
 
-    def _update_memories(self, info, avg_worth):
+    def _update_memories(self, listOfBerries, info, avg_worth):
         x,y = info['position']
         if x == self.berryField.FIELD_SIZE[0]: x -= EPSILON
         if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
 
         # decay time memory and update time_memory
         self.time_memory.update(x,y)
+
+        # update the berry memory
+        # TODO need the berry scores here!
+        self.berry_memory.update() 
         return
 
     def _berry_worth_func(self, sizes, dists):
@@ -189,22 +198,21 @@ class Agent():
         """updates to agent state after an episode ends"""
         self._reset_memories()
 
-    def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
+    def _computeState(self, listOfBerries, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
         # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
         if info is None: # reinit memory and get the info and raw observation from berryField
             self._new_episode_started()
-            raw_observation = self.berryField.raw_observation()
+            listOfBerries = self.berryField.raw_observation()
             info = self.berryField.get_info()
 
-        # # add the berry-memory to raw observation
-        # cx,cy = info['position']
-        # memory = [[x-cx,y-cy,s] for x,y,s in self.berry_memory.values()]
-        # if len(memory) > 0: raw_observation = np.concatenate([raw_observation,memory])
+        # add the berry-memory to raw observation
+        memorizedBerries = self.berry_memory.getMemoryBerries()
+        listOfBerries = np.vstack([listOfBerries, memorizedBerries])
 
         # the total-worth is also representative of the percived goodness of observation
         sectorized_states, avg_worth = compute_sectorized(
-                raw_observation=raw_observation, 
+                raw_observation=listOfBerries, 
                 info=info, berry_worth_function=self._berry_worth_func,
                 half_diagonalL= self.berryField.HALFDIAGOBS, 
                 prev_sectorized_state=self.prev_sectorized_state, 
@@ -212,7 +220,7 @@ class Agent():
         self.prev_sectorized_state = sectorized_states
 
         # update memories
-        self._update_memories(info, avg_worth)
+        self._update_memories(listOfBerries, info, avg_worth)
 
         # other extra information
         edge_dist = info['scaled_dist_from_edge']
