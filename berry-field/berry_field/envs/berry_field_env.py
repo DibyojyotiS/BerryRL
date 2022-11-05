@@ -8,8 +8,7 @@ import gym
 import numpy as np
 import copy
 import pyglet
-
-from .utils.collision_tree import collision_tree
+from berry_field.envs.utils.collision_tree import collision_tree
 
 INVSQRT2 = 0.5**0.5
 
@@ -24,7 +23,7 @@ FILE_PATHS = list(map(lambda x: os.path.join(ABS_PATH, x), DATA_PATHS))
 # setup rendering
 try:
     from gym.envs.classic_control import rendering
-    from .utils.renderingViewer import renderingViewer
+    from berry_field.envs.utils.renderingViewer import renderingViewer
     RENDERING_SETUP_SUCCESS = True
 except Exception as ex:
     logging.warn("Failed to import gym.envs.classic_control.rendering "
