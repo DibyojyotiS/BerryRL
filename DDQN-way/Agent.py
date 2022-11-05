@@ -188,7 +188,6 @@ class Agent():
         return berry_worth(sizes, dists, 
             REWARD_RATE=self.berryField.REWARD_RATE, 
             DRAIN_RATE=self.berryField.DRAIN_RATE, 
-            HALFDIAGOBS=self.berryField.HALFDIAGOBS, 
             WORTH_OFFSET=self.worth_offset,
             min_berry_size=10, max_berry_size=40)
 
