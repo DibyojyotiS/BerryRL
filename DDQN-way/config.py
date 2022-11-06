@@ -28,7 +28,7 @@ CONFIG = {
         ],
 
         # params related to berry memory
-        berryMemoryMinPopThXY = (1920/2, 1080/2),
+        berryMemoryMinPopThXY = (1920/2 -10, 1080/2 -10),
         berryMemoryMaxPopThXY = (2600, 2600),
         berryMemorySize = 100,
 
