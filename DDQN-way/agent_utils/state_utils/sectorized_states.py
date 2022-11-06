@@ -62,6 +62,7 @@ def computeSectorized(listOfBerries:np.ndarray, info:dict,
     - listOfBerries: ndarray
             - observation returned from BerryFieldEnv.step
             - a numpy array with rows as [x,y,berry-size]
+            - x,y is the RELATIVE position of berry from agent
     - info: dict[str,Any] 
             - info returned from BerryFieldEnv.step 
     - berry_worth_function: function
