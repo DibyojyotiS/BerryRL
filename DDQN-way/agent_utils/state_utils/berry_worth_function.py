@@ -31,8 +31,8 @@ if __name__ == "__main__":
     REWARD_RATE, DRAIN_RATE, HALFDIAGOBS = \
         1e-4, 1/(2*120*400), 0.5*(1920**2 + 1080**2)**0.5
 
-    sizes = np.array([10,40,10,40])
-    dists = np.array([0.99,1.5,0,0])
+    sizes = np.asfarray(np.random.randint(1,5, size=80)*10)
+    dists = np.asfarray(np.random.randint(10,1300, size=80))
     w = berry_worth(sizes, dists,
             REWARD_RATE, DRAIN_RATE, HALFDIAGOBS,
             WORTH_OFFSET=0.05)
