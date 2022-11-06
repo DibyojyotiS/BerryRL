@@ -67,6 +67,7 @@ class NearbyBerryMemory():
         njitAddBerry(berryScore, berryPosXY, berrySize, agentPosXY, self.minDistPopTh, self.maxDistPopTh, self.memory, self.minTree, self.hashMap)
 
     def bulkUpdate(self, listOfBerries, listOfberryScores, agentPosXY):
+        if len(listOfBerries) < 0: return
         njitRemoveBerriesOutOfRange(agentPosXY, self.minDistPopTh, self.maxDistPopTh, self.memory, self.minTree, self.hashMap)
         njitBulkAddBerries(listOfBerries, listOfberryScores, agentPosXY, self.minDistPopTh, self.maxDistPopTh, self.memory, self.minTree, self.hashMap)
 
