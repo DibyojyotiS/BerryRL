@@ -132,6 +132,9 @@ class Agent():
         self.nnet = self.makeNet(TORCH_DEVICE=device)
         self.berryField.step = self.get_wrapped_env_step(self.berryField, render)
 
+        # maximum possible distance to berry, for use in place of halfDiagonal in berry worth
+        self.MaxBerryDist = (self.berryMemoryMaxPopThXY[0]**2 + self.berryMemoryMaxPopThXY[1]**2)**0.5
+
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
             berryField=self.berryField) if debug else None
@@ -185,10 +188,11 @@ class Agent():
         return
 
     def _berry_worth_func(self, sizes, dists):
+        # replaced berryField.HALFDIAGOBS with this to have enough wiggle for worths of far-away berries
         return berry_worth(sizes, dists, 
             REWARD_RATE=self.berryField.REWARD_RATE, 
             DRAIN_RATE=self.berryField.DRAIN_RATE, 
-            HALFDIAGOBS=self.berryField.HALFDIAGOBS, 
+            HALFDIAGOBS=self.MaxBerryDist, # self.berryField.HALFDIAGOBS, 
             WORTH_OFFSET=self.worth_offset,
             min_berry_size=10, max_berry_size=40)
 
@@ -211,7 +215,7 @@ class Agent():
         sectorized_states, avg_worth, worths = computeSectorized(
                 listOfBerries= np.vstack([listOfBerries, memorizedBerries]), 
                 info=info, berry_worth_function=self._berry_worth_func,
-                halfDiagonalLen= self.berryField.HALFDIAGOBS, 
+                halfDiagonalLen= self.MaxBerryDist, # self.berryField.HALFDIAGOBS, 
                 prev_sectorized_state=self.prev_sectorized_state, 
                 persistence=self.persistence, angle=self.angle)
         self.prev_sectorized_state = sectorized_states
