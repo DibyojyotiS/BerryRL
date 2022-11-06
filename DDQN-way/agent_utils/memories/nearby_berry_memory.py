@@ -40,8 +40,8 @@ def njitAddBerry(berryScore, berryPosXY, berrySize, agentPosXY, minDistPopThXY, 
     absBerryPosX = abs(berryPosXY[0])
     absBerryPosY = abs(berryPosXY[1])
     if (
-        ((absBerryPosX > minDistPopThXY[0]) | (absBerryPosY > minDistPopThXY[1]))
-        & (absBerryPosX < maxDistPopThXY[0]) & (absBerryPosY < maxDistPopThXY[1])
+        ((absBerryPosX >= minDistPopThXY[0]) | (absBerryPosY >= minDistPopThXY[1]))
+        & (absBerryPosX <= maxDistPopThXY[0]) & (absBerryPosY <= maxDistPopThXY[1])
     ):
         min_berry_score = minTree[1][0]
         berryPosX = berryPosXY[0] + agentPosXY[0] # absolute x coordinate of berry
