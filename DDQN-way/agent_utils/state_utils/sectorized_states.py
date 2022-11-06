@@ -44,7 +44,7 @@ def njitSectorized(angles, worths, dist, a1, a2, a3, a4, angle, halfDiagonalLen)
             maxSecWorthIdx = args[np.argmax(sectorWorths)] # max worthy
             a1[idx] = worthyness = worths[maxSecWorthIdx]
             a2[idx] = np.sum(sectorWorths)/len(sectorWorths)
-            a3[idx] = 1 - dist[maxSecWorthIdx]/halfDiagonalLen
+            a3[idx] = max(0, 1 - dist[maxSecWorthIdx]/halfDiagonalLen)
             
             if worthyness > maxworth:
                 maxworthSector = idx
