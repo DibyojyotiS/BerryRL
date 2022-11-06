@@ -31,9 +31,9 @@ class Agent():
                 ],
 
                 # params related to berry memory
-                berryMemoryMinPopTh = 10,
-                berryMemoryMaxPopTh = 1300,
-                berryMemorySize = 100,
+                berryMemoryMinPopThXY = (1920/2, 1080/2),
+                berryMemoryMaxPopThXY = (2600,2600),
+                berryMemorySize = 50,
 
                 # other params
                 render=False, 
@@ -120,8 +120,8 @@ class Agent():
         self.time_memory_factor = time_memory_factor
         self.time_memory_exp = time_memory_exp
         self.time_memory_grid_sizes = time_memory_grid_sizes 
-        self.berryMemoryMinPopTh = berryMemoryMinPopTh
-        self.berryMemoryMaxPopTh = berryMemoryMaxPopTh
+        self.berryMemoryMinPopThXY = berryMemoryMinPopThXY
+        self.berryMemoryMaxPopThXY = berryMemoryMaxPopThXY
         self.berryMemorySize = berryMemorySize
         self.render = render
         self.skipSteps = skipStep
@@ -158,8 +158,8 @@ class Agent():
 
         # a different kind of berry-memory
         self.berry_memory = NearbyBerryMemory(
-            minDistPopTh=self.berryMemoryMinPopTh,
-            maxDistPopTh=self.berryMemoryMaxPopTh,
+            minDistPopThXY=self.berryMemoryMinPopThXY,
+            maxDistPopThXY=self.berryMemoryMaxPopThXY,
             memorySize=self.berryMemorySize
         )
 
