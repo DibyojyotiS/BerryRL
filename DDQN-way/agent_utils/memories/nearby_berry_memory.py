@@ -28,7 +28,8 @@ def njitRemoveBerriesOutOfRange(agentPosXY, minDistPopThXY, maxDistPopThXY, memo
     )[0]
     for index in indices:
         if memory[index][2] == -1.0: continue
-        hashMap.pop((int(memory[index][0]), int(memory[index][1]), int(memory[index][2])))
+        # TODO getting key error here sometimes
+        hashMap.pop((int(memory[index][0]), int(memory[index][1]), int(memory[index][2])), -1)
         memory[index][0] = memory[index][1] = memory[index][2] = -1
         njitUpdateMinTree(index, -1, minTree)
 
