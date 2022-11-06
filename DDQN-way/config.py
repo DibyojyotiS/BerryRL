@@ -14,7 +14,7 @@ CONFIG = {
 
     "AGENT": dict(
         # params controlling the state and state-transitions
-        angle = 45, persistence=0.8, worth_offset=0.1, 
+        angle = 45, persistence=0.8, worth_offset=0.01, 
         noise=0.01, nstep_transition=[1], positive_emphasis=0,
         skipStep=10, patch_discovery_reward=0.0, 
         add_exploration = True,
@@ -76,7 +76,7 @@ CONFIG = {
     ),
 
     "WANDB": dict(
-        ENABLE_WANDB = True, # set to true for server env
+        ENABLE_WANDB = False, # set to true for server env
         project="Agent-Design",
         group="nearby-berry-memory-0.0.1",
         entity="foraging-rl",
@@ -84,6 +84,6 @@ CONFIG = {
     ),
 
     "seed": 4, # seed for random, np.random, torch
-    "LOG_DIR_PARENT": ".temp/nearby-berry-memory-0.0.1", # the log folder for all runs
+    "LOG_DIR_PARENT": ".temp/nearby-berry-memory-0.0.1/testing", # the log folder for all runs
     "RESUME_DIR": None, # set if resuming a run
 }
