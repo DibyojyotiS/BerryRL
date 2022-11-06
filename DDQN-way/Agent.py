@@ -4,7 +4,7 @@ from collections import deque
 from berry_field.envs import BerryFieldEnv
 from torch import Tensor, float32, nn, device, tensor
 from agent_utils import (berry_worth, random_exploration_v2, 
-    compute_sectorized, Debugging, PatchDiscoveryReward, 
+    computeSectorized, Debugging, PatchDiscoveryReward, 
     skip_steps, make_simple_feedforward, printLocals, plot_time_mem_curves)
 from agent_utils.memories import MultiResolutionTimeMemory, NearbyBerryMemory
 
@@ -31,7 +31,9 @@ class Agent():
                 ],
 
                 # params related to berry memory
-                # berry_memory_grid_size = (400,400),
+                berryMemoryMinPopTh = 10,
+                berryMemoryMaxPopTh = 1300,
+                berryMemorySize = 100,
 
                 # other params
                 render=False, 
@@ -93,17 +95,12 @@ class Agent():
                 accessed when the agent is in that cell.
         
         #### params related to berry-memory
-        - berry_memory_grid_size: tuple[int,int]
-                - the berry-field is divided into (L,M) sized grid
-                and we remember the average-size of the berries seen
-                in a particular cell.
-                - The average-size is estimated from the average worth 
-                since the worth function is between 0 and 1.
-                - Any cell with non-zero entry is accessable to the agent 
-                at all times. Basically the agent sees a berry of average 
-                size at the center of the cell.
-                - we will remove a value/cell from memory when its average
-                size falls below 10. Or the agent is too far.
+        - berryMemoryMinPopTh: float
+                - the minimum distance to berry allowed for berry to exist in memory
+        - berryMemoryMaxPopTh: float
+                - the maximum distance to berry allowed for berry to exist in memory
+        - berryMemorySize: int
+                - the capacity of berry memory
 
         - render: bool (default False)
                 - wether to render the agent 
@@ -123,7 +120,9 @@ class Agent():
         self.time_memory_factor = time_memory_factor
         self.time_memory_exp = time_memory_exp
         self.time_memory_grid_sizes = time_memory_grid_sizes 
-        # self.berry_memory_grid_size = berry_memory_grid_size
+        self.berryMemoryMinPopTh = berryMemoryMinPopTh
+        self.berryMemoryMaxPopTh = berryMemoryMaxPopTh
+        self.berryMemorySize = berryMemorySize
         self.render = render
         self.skipSteps = skipStep
         self.device = device
@@ -159,9 +158,9 @@ class Agent():
 
         # a different kind of berry-memory
         self.berry_memory = NearbyBerryMemory(
-            dist_th1=10,
-            dist_th2=1300,
-            memory_size=100
+            minDistPopTh=self.berryMemoryMinPopTh,
+            maxDistPopTh=self.berryMemoryMaxPopTh,
+            memorySize=self.berryMemorySize
         )
 
         return
@@ -173,7 +172,7 @@ class Agent():
         self.state_deque.append([None,None,0]) # reinit deque
         self.prev_sectorized_state = None
 
-    def _update_memories(self, listOfBerries, info, avg_worth):
+    def _update_memories(self, listOfBerries, info, worths):
         x,y = info['position']
         if x == self.berryField.FIELD_SIZE[0]: x -= EPSILON
         if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
@@ -182,8 +181,7 @@ class Agent():
         self.time_memory.update(x,y)
 
         # update the berry memory
-        # TODO need the berry scores here!
-        self.berry_memory.update() 
+        self.berry_memory.bulkUpdate(listOfBerries, worths, info['position']) 
         return
 
     def _berry_worth_func(self, sizes, dists):
@@ -206,21 +204,20 @@ class Agent():
             listOfBerries = self.berryField.raw_observation()
             info = self.berryField.get_info()
 
-        # add the berry-memory to raw observation
+        # retrive the berries in memory
         memorizedBerries = self.berry_memory.getMemoryBerries()
-        listOfBerries = np.vstack([listOfBerries, memorizedBerries])
 
         # the total-worth is also representative of the percived goodness of observation
-        sectorized_states, avg_worth = compute_sectorized(
-                raw_observation=listOfBerries, 
+        sectorized_states, avg_worth, worths = computeSectorized(
+                listOfBerries= np.vstack([listOfBerries, memorizedBerries]), 
                 info=info, berry_worth_function=self._berry_worth_func,
-                half_diagonalL= self.berryField.HALFDIAGOBS, 
+                halfDiagonalLen= self.berryField.HALFDIAGOBS, 
                 prev_sectorized_state=self.prev_sectorized_state, 
                 persistence=self.persistence, angle=self.angle)
         self.prev_sectorized_state = sectorized_states
-
+    
         # update memories
-        self._update_memories(listOfBerries, info, avg_worth)
+        self._update_memories(listOfBerries, info, worths)
 
         # other extra information
         edge_dist = info['scaled_dist_from_edge']

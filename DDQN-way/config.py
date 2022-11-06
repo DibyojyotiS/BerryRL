@@ -27,8 +27,10 @@ CONFIG = {
             (20,20),(50,50),(100,100),(200,200),(400,400)
         ],
 
-        # # params related to berry memory
-        # berry_memory_grid_size = (400,400),
+        # params related to berry memory
+        berryMemoryMinPopTh = 10,
+        berryMemoryMaxPopTh = 1300,
+        berryMemorySize = 100,
 
         # other params
         render=False, 
