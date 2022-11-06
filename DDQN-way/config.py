@@ -28,8 +28,8 @@ CONFIG = {
         ],
 
         # params related to berry memory
-        berryMemoryMinPopTh = 10,
-        berryMemoryMaxPopTh = 1300,
+        berryMemoryMinPopThXY = (1920/2, 1080/2),
+        berryMemoryMaxPopThXY = (2600, 2600),
         berryMemorySize = 100,
 
         # other params
@@ -78,12 +78,12 @@ CONFIG = {
     "WANDB": dict(
         ENABLE_WANDB = True, # set to true for server env
         project="Agent-Design",
-        group="tuning-berry-picked-bool-feature-2.1.2",
+        group="nearby-berry-memory-0.0.1",
         entity="foraging-rl",
         watch_log_freq = 100,
     ),
 
     "seed": 4, # seed for random, np.random, torch
-    "LOG_DIR_PARENT": ".temp/tuning-berry-picked-bool-feature-2.1.2", # the log folder for all runs
+    "LOG_DIR_PARENT": ".temp/nearby-berry-memory-0.0.1", # the log folder for all runs
     "RESUME_DIR": None, # set if resuming a run
 }
