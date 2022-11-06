@@ -33,14 +33,17 @@ def njitRemoveBerriesOutOfRange(agentPosXY, minDistPopTh, maxDistPopTh, memory, 
 @njit
 def njitAddBerry(berryScore, berryPosXY, berrySize, agentPosXY, minDistPopTh, maxDistPopTh, memory, minTree, hashMap):
     # add the new berry to the memory if it's score is greater than the minimum score
-    dist = ((berryPosXY[0] - agentPosXY[0])**2 + (berryPosXY[1] - agentPosXY[1])**2)**0.5
+    # berryPosXY is the relative position of the berry from the agent
+    dist = (berryPosXY[0]**2 + berryPosXY[1]**2)**0.5
     if (dist > minDistPopTh and dist < maxDistPopTh):
         min_berry_score = minTree[1][0]
-        posIx = (int(berryPosXY[0]), int(berryPosXY[1]), int(berrySize))
+        berryPosX = berryPosXY[0] + agentPosXY[0] # absolute x coordinate of berry
+        berryPosY = berryPosXY[1] + agentPosXY[1] # absolute y coordinate of berry
+        posIx = (int(berryPosX), int(berryPosY), int(berrySize))
         if berryScore > min_berry_score and hashMap.get(posIx, 0) != 1:
             min_index = int(minTree[1][1])
-            memory[min_index][0] = berryPosXY[0]
-            memory[min_index][1] = berryPosXY[1]
+            memory[min_index][0] = berryPosX
+            memory[min_index][1] = berryPosY
             memory[min_index][2] = berrySize
             hashMap[posIx] = 1
             njitUpdateMinTree(min_index, berryScore, minTree)
@@ -63,11 +66,13 @@ class NearbyBerryMemory():
         self.__initMemory()
 
     def update(self, berryScore, berryPosXY, berrySize, agentPosXY):
+        """berryPosXY is the relative position of the berry with rspect to the agent"""
         njitRemoveBerriesOutOfRange(agentPosXY, self.minDistPopTh, self.maxDistPopTh, self.memory, self.minTree, self.hashMap)
         njitAddBerry(berryScore, berryPosXY, berrySize, agentPosXY, self.minDistPopTh, self.maxDistPopTh, self.memory, self.minTree, self.hashMap)
 
     def bulkUpdate(self, listOfBerries, listOfberryScores, agentPosXY):
-        if len(listOfBerries) < 0: return
+        """listOfBerries is a list of [x,y,berry-size] where x,y are relative postion of the berry with rspect to the agent"""
+        if len(listOfBerries) == 0: return
         njitRemoveBerriesOutOfRange(agentPosXY, self.minDistPopTh, self.maxDistPopTh, self.memory, self.minTree, self.hashMap)
         njitBulkAddBerries(listOfBerries, listOfberryScores, agentPosXY, self.minDistPopTh, self.maxDistPopTh, self.memory, self.minTree, self.hashMap)
 
