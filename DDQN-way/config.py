@@ -14,7 +14,7 @@ CONFIG = {
 
     "AGENT": dict(
         # params controlling the state and state-transitions
-        angle = 45, persistence=0.8, worth_offset=0.05, 
+        angle = 45, persistence=0.8, worth_offset=0.1, 
         noise=0.01, nstep_transition=[1], positive_emphasis=0,
         skipStep=10, patch_discovery_reward=0.0, 
         add_exploration = True,
