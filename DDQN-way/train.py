@@ -50,7 +50,7 @@ def get_training_callbacks(trainEnv, evalEnv, nnet):
     callback_pipe = CallbackPipeline()
     callback_pipe.append_stage(max_qvalues_stats_callback)
     if ENABLE_WANDB:
-        wandb.watch(nnet, log_freq=CONFIG["WANDB"]["watch_log_freq"])
+        # wandb.watch(nnet, log_freq=CONFIG["WANDB"]["watch_log_freq"])
         wandb_video_mod = wandbEpisodeVideoMaker(
             log_dir=LOG_DIR, save_dir=f'{LOG_DIR}/videos', 
             train_log_freq=20, eval_log_freq=10,
