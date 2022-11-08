@@ -35,6 +35,7 @@ class wandbEpisodeVideoMaker:
     def __call__(self, info_dict:dict):
 
         timeStart = time_ns()
+        made_a_video = False
 
         if "train" in info_dict:
             if self.train_steps % self.train_log_freq == 0:
@@ -55,6 +56,7 @@ class wandbEpisodeVideoMaker:
                     caption= video_fn, fps=self.fps
                 )
                 self.last_train_episode = current_episode+1
+                made_a_video=True
                 print(f"Added video-log {video_fn}")
             else:
                 self.train_steps += 1
@@ -77,10 +79,12 @@ class wandbEpisodeVideoMaker:
                     caption= video_fn, fps=self.fps
                 )
                 self.last_eval_episode = current_episode+1
+                made_a_video=True
                 print(f"Added video-log {video_fn}")
             else:
                 self.eval_steps += 1
 
-        print(f"Time taken for making video: {(time_ns() - timeStart)/1e9:.2f}s")
+        if made_a_video:
+            print(f"Time taken for making video: {(time_ns() - timeStart)/1e9:.2f}s")
 
         return info_dict
