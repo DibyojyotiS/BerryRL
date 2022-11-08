@@ -45,15 +45,23 @@ def njitAddBerry(berryScore, berryPosXY, berrySize, agentPosXY, minDistPopThXY, 
         & (absBerryPosX <= maxDistPopThXY[0]) & (absBerryPosY <= maxDistPopThXY[1])
     ):
         min_berry_score = minTree[1][0]
-        berryPosX = berryPosXY[0] + agentPosXY[0] # absolute x coordinate of berry
-        berryPosY = berryPosXY[1] + agentPosXY[1] # absolute y coordinate of berry
-        posIx = (int(berryPosX), int(berryPosY), int(berrySize))
-        if berryScore > min_berry_score and hashMap.get(posIx, 0) != 1:
+        roundedBerryPosX = round(berryPosXY[0] + agentPosXY[0], 2) # absolute x coordinate of berry
+        roundedBerryPosY = round(berryPosXY[1] + agentPosXY[1], 2) # absolute y coordinate of berry
+        posIx = (int(roundedBerryPosX), int(roundedBerryPosY), int(berrySize))
+
+        # if the berry already exists in the memory then simply update the score and exits
+        currentIdx = hashMap.get(posIx, -1)
+        if currentIdx != -1:
+            njitUpdateMinTree(currentIdx, berryScore, minTree)
+            return
+
+        # insert a new berry only if it's score is larger than the minimum score in memory
+        if (berryScore > min_berry_score):
             min_index = int(minTree[1][1])
-            memory[min_index][0] = berryPosX
-            memory[min_index][1] = berryPosY
+            memory[min_index][0] = roundedBerryPosX
+            memory[min_index][1] = roundedBerryPosY
             memory[min_index][2] = berrySize
-            hashMap[posIx] = 1
+            hashMap[posIx] = min_index
             njitUpdateMinTree(min_index, berryScore, minTree)
 
 
@@ -73,12 +81,12 @@ class NearbyBerryMemory():
         self.memorySize = memorySize
         self.__initMemory()
 
-    def update(self, berryScore, berryPosXY, berrySize, agentPosXY):
+    def insertOrUpdate(self, berryScore, berryPosXY, berrySize, agentPosXY):
         """berryPosXY is the relative position of the berry with rspect to the agent"""
         njitRemoveBerriesOutOfRange(agentPosXY, self.minDistPopThXY, self.maxDistPopThXY, self.memory, self.minTree, self.hashMap)
         njitAddBerry(berryScore, berryPosXY, berrySize, agentPosXY, self.minDistPopThXY, self.maxDistPopThXY, self.memory, self.minTree, self.hashMap)
 
-    def bulkUpdate(self, listOfBerries, listOfberryScores, agentPosXY):
+    def bulkInsertOrUpdate(self, listOfBerries, listOfberryScores, agentPosXY):
         """listOfBerries is a list of [x,y,berry-size] where x,y are relative postion of the berry with rspect to the agent"""
         if len(listOfBerries) == 0: return
         njitRemoveBerriesOutOfRange(agentPosXY, self.minDistPopThXY, self.maxDistPopThXY, self.memory, self.minTree, self.hashMap)
@@ -137,14 +145,14 @@ if __name__ == "__main__":
 
     mem = NearbyBerryMemory((10,10), (150,150), 50)
     berries, worths = setup()
-    mem.update(0.2, (10,10), 20, (0,0))
-    mem.bulkUpdate(berries, worths, (0,0))
+    mem.insertOrUpdate(0.2, (10,10), 20, (0,0))
+    mem.bulkInsertOrUpdate(berries, worths, (0,0))
     mem.reset()
 
     times = []
     for i in range(10000):
         berries, worths = setup()
         startT = time_ns()
-        mem.bulkUpdate(berries, worths, (0,0))
+        mem.bulkInsertOrUpdate(berries, worths, (0,0))
         times.append(time_ns() - startT)
     print("average time bulkUpdate:", np.average(times), "ns")

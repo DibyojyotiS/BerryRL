@@ -184,7 +184,7 @@ class Agent():
         self.time_memory.update(x,y)
 
         # update the berry memory
-        self.berry_memory.bulkUpdate(listOfBerries, worths, info['position']) 
+        self.berry_memory.bulkInsertOrUpdate(listOfBerries, worths, info['position']) 
         return
 
     def _berry_worth_func(self, sizes, dists):
@@ -211,9 +211,14 @@ class Agent():
         # retrive the berries in memory
         memorizedBerries = self.berry_memory.getMemoryBerries()
 
+        # stack the memorized berries before the new ones so that their
+        # scores in the memory are updated before the new berries are inserted
+        # then the bulkInsertOrUpdate method is called
+        listOfBerries = np.vstack([memorizedBerries, listOfBerries])
+
         # the total-worth is also representative of the percived goodness of observation
         sectorized_states, avg_worth, worths = computeSectorized(
-                listOfBerries= np.vstack([listOfBerries, memorizedBerries]), 
+                listOfBerries= listOfBerries, 
                 info=info, berry_worth_function=self._berry_worth_func,
                 halfDiagonalLen= self.MaxBerryDist, # self.berryField.HALFDIAGOBS, 
                 prev_sectorized_state=self.prev_sectorized_state, 
