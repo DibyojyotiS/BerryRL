@@ -13,6 +13,7 @@ from utils import (Env_print_fn, copy_files, getRandomEnv, my_print_fn,
                    plot_berries_picked_vs_episode, max_qvalues_stats_callback,
                    wandbEpisodeVideoMaker, CallbackPipeline, 
                    BerryFieldMetricsCallback, InfoPrinterCallback)
+from utils.callbacks.callback_pipeline import BackgroundThread
 
 # set all seeds
 set_seed(CONFIG["seed"])
@@ -46,7 +47,7 @@ def init_logging():
     copy_files(abs_file_dir, f'{LOG_DIR}/pyfiles-backup')
     return logger
 
-def get_training_callbacks(trainEnv, evalEnv, nnet):
+def getDaemonCallbackPipe(trainEnv, evalEnv, nnet):
     # setup wandb callbacks and wandb if enabled
     callback_pipe = CallbackPipeline()
     callback_pipe.append_stage(max_qvalues_stats_callback)
@@ -54,15 +55,16 @@ def get_training_callbacks(trainEnv, evalEnv, nnet):
         # wandb.watch(nnet, log_freq=CONFIG["WANDB"]["watch_log_freq"])
         wandb_video_mod = wandbEpisodeVideoMaker(
             log_dir=LOG_DIR, save_dir=f'{LOG_DIR}/videos', 
-            train_log_freq=20, eval_log_freq=10,
+            train_log_freq=10, eval_log_freq=10,
             figsize=(10,10)
         )
         env_metric_mod = BerryFieldMetricsCallback(trainEnv, evalEnv)
         callback_pipe.append_stage(env_metric_mod)
         callback_pipe.append_stage(wandb_video_mod)
         callback_pipe.append_stage(wandb.log)
-    training_callbacks = [callback_pipe]
-    return training_callbacks
+    daemonCallbackPipe = BackgroundThread(callback_pipe)
+    daemonCallbackPipe.startBackGroundProcess()
+    return daemonCallbackPipe
 
 
 if __name__ == '__main__':
@@ -115,7 +117,8 @@ if __name__ == '__main__':
     trainPrintFn = my_print_fn(trainEnv, buffer, tstrat, ddqn_trainer, schdl)
     def evalPrintFn(): return Env_print_fn(evalEnv)
 
-    training_callbacks = get_training_callbacks(trainEnv, evalEnv, nnet)
+    daemonCallbackPipe = getDaemonCallbackPipe(trainEnv, evalEnv, nnet)
+    training_callbacks = [daemonCallbackPipe]
 
     # start training! :D
     try:
@@ -124,6 +127,9 @@ if __name__ == '__main__':
                                             training_callbacks=training_callbacks)
     except KeyboardInterrupt as kb:
         pass
+
+    daemonCallbackPipe.stop()
+    del daemonCallbackPipe
 
     # final evaluation with render
     ddqn_trainer.evaluate(evalEnv=evalEnv, render=True)
