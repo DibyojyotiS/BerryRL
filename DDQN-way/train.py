@@ -35,6 +35,7 @@ def init_logging():
             project=CONFIG["WANDB"]["project"],
             group=CONFIG["WANDB"]["group"],
             entity=CONFIG["WANDB"]["entity"],
+            notes=CONFIG["WANDB"]["notes"],
             dir=LOG_DIR,
             config=CONFIG
         )

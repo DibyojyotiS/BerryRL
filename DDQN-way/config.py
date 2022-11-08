@@ -76,14 +76,20 @@ CONFIG = {
     ),
 
     "WANDB": dict(
-        ENABLE_WANDB = False, # set to true for server env
+        ENABLE_WANDB = True, # set to true for server env
         project="Agent-Design",
-        group="nearby-berry-memory-0.0.1",
+        group="nearby-berry-memory/0.0.1",
         entity="foraging-rl",
         watch_log_freq = 100,
+        notes=(
+            "the berries from memory and current observation are taken" 
+            + "together for the computation of the sectorized state,"
+            + "the maxObsDiag parameter is adjusted to the maximum limit of memory"
+            + "this allows enough wiggle of values in the sectorized state"
+            )
     ),
 
-    "seed": 4, # seed for random, np.random, torch
-    "LOG_DIR_PARENT": ".temp/nearby-berry-memory-0.0.1/testing", # the log folder for all runs
+    "seed": 0, # seed for random, np.random, torch
+    "LOG_DIR_PARENT": ".temp/nearby-berry-memory/0.0.1", # the log folder for all runs
     "RESUME_DIR": None, # set if resuming a run
 }
