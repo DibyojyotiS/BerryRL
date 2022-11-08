@@ -1,4 +1,5 @@
 import os
+from time import time_ns
 import wandb
 from utils.visualization import picture_episodes
 
@@ -32,6 +33,8 @@ class wandbEpisodeVideoMaker:
             os.makedirs(self.save_dir)
 
     def __call__(self, info_dict:dict):
+
+        timeStart = time_ns()
 
         if "train" in info_dict:
             if self.train_steps % self.train_log_freq == 0:
@@ -77,5 +80,7 @@ class wandbEpisodeVideoMaker:
                 print(f"Added video-log {video_fn}")
             else:
                 self.eval_steps += 1
+
+        print(f"Time taken for making video: {(time_ns() - timeStart)/1e9:.2f}s")
 
         return info_dict
