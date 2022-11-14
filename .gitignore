@@ -127,6 +127,7 @@ dmypy.jsons
 # my temporary folder
 analytics-berry-field
 trainLogs
+gitignore-folder
 .temp_stuffs
 .tempstuffs
 .temp*
