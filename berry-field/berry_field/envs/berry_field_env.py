@@ -12,7 +12,7 @@ from berry_field.envs.utils.collision_tree import collision_tree
 
 INVSQRT2 = 0.5**0.5
 
-# location of the csv files with the location and description of each berry and patch
+# csv files with the location and description of each berry and patch
 DATA_PATHS = ['data/berry_coordinates.csv', 'data/patch_coordinates.csv']
 ABS_PATH = os.path.split(__file__)[0]
 
@@ -45,10 +45,6 @@ class BerryFieldEnv(gym.Env):
 
                 # can specify only your berries
                 user_berry_data = None, # [patch-no, size, x,y]
-
-                # for curiosity reward
-                reward_curiosity = False, reward_curiosity_beta=0.25,
-                reward_grid_size = (100,100), # should divide respective dimention of field_size
 
                 # for analytics
                 enable_analytics = True,
@@ -96,19 +92,6 @@ class BerryFieldEnv(gym.Env):
                 - can specify berries as list of [patch-no, size, x,y]
                 - overrides the original berry data
 
-        ### ====== curiosity reward ======
-        11. reward_curiosity: bool (default False)
-                - wether curiosity reward is to be used
-        12. reward_curiosity_beta: float (default 0.25)
-                - the reward is modified as:
-                actual_reward*beta + curiosity_reward*(1-beta)
-                - Note that the juice is not incremented by 
-                the curiosity-reward
-        13. reward_grid_size: tupple[int,int] (default (100,100)) 
-                - break the field into smaller grids, 
-                - agent gets rewarded on the first entry to any 
-                of the blocks in the grid.
-        
         ### ====== analytics ======
         14. enable_analytics: bool (default True)
                 - if true this will start saving the 
@@ -190,17 +173,6 @@ class BerryFieldEnv(gym.Env):
         # init the structures (mainly collision trees)
         self._init_berryfield(user_berry_data)
 
-        # for curiosity reward
-        self.reward_curiosity = reward_curiosity
-        self.reward_curiosity_beta = reward_curiosity_beta
-        if reward_curiosity:
-            assert all(f%z == 0 for f,z in zip(field_size, reward_grid_size))
-            numx = field_size[0]//reward_grid_size[0]
-            numy = field_size[1]//reward_grid_size[1]
-            self.reward_grid_size = reward_grid_size
-            self.size_visited_grid = (numx, numy)
-            self.visited_grids = np.zeros((numx, numy))
-
         # for analytics
         self.analysis_enabled = enable_analytics
         self.num_resets = 0 # used to index the analysis saves
@@ -228,8 +200,6 @@ class BerryFieldEnv(gym.Env):
         self.num_berry_collected = 0
 
         self.position = initial_position if initial_position is not None else self.INITIAL_POSITION
-
-        if self.reward_curiosity: self.visited_grids = np.zeros(self.size_visited_grid)
 
         if berry_data is not None: self._init_berryfield(berry_data)
         else: self._reset_berryfield()
@@ -282,7 +252,7 @@ class BerryFieldEnv(gym.Env):
 
         # generate the info and observation
         info = self.get_info()
-        list_of_visible_berries = self.raw_observation()
+        list_of_visible_berries = self.get_list_of_visible_berries()
 
         # update the analytice
         if self.analysis_enabled: 
@@ -329,7 +299,7 @@ class BerryFieldEnv(gym.Env):
 
         return info
 
-    def raw_observation(self):
+    def get_list_of_visible_berries(self):
         ''' returns visible berries as a list represented by their their center and sizes 
         make sure that self.position is correct/updated before calling this 
         The berry centers are reported with origin at agent's positon'''
@@ -337,28 +307,11 @@ class BerryFieldEnv(gym.Env):
         berry_boxes[:,:2] = berry_boxes[:,:2] - self.position
         return berry_boxes[:,:3]
 
-
     def get_numBerriesPicked(self):
         return self.num_berry_collected
 
     def get_totalBerries(self):
         return len(self.berry_collision_tree.boxIds)
-
-    def curiosity_reward(self):
-        """ the agent is rewarded by curiosity_reward when it enters a section for the first time 
-        make sure that self.position is correct/updated before calling this """
-        x,y = self.position
-        current_gridx = x//self.reward_grid_size[0]
-        current_gridy = y//self.reward_grid_size[1]
-
-        # for top and right boundaries
-        if current_gridx >= self.size_visited_grid[0]: return 0
-        if current_gridy >= self.size_visited_grid[1]: return 0
-
-        curiosity_reward =  1 - self.visited_grids[current_gridx, current_gridy]
-        self.visited_grids[current_gridx, current_gridy] = 1
-        return curiosity_reward
-
 
     def render(self, mode="human", circle_res=10):
 
@@ -470,7 +423,6 @@ class BerryFieldEnv(gym.Env):
         self.berry_collision_tree = copy.deepcopy(self.ORIGINAL_BERRY_COLLISION_TREE) # only this copy will be modified during the runtime
         self.patch_visited = {i:0 for i in range(len(self.patch_tree.boxes))}
 
-
     def _reset_berryfield(self):
         """ resets the structures of berry-field to the original states """
         self.berry_collision_tree = copy.deepcopy(self.ORIGINAL_BERRY_COLLISION_TREE)
@@ -527,12 +479,6 @@ class BerryFieldEnv(gym.Env):
         living_cost = - self.DRAIN_RATE*(self.current_action != 8) # noAction
         reward = juice_reward + living_cost
         self.total_juice = max(0, self.total_juice + reward)
-
-        # for cuirosity reward (don't add to self.total_juice)
-        if self.reward_curiosity:
-            curiosity_reward = self.curiosity_reward()
-            reward = reward * self.reward_curiosity_beta + \
-                 curiosity_reward * (1 - self.reward_curiosity_beta)
 
         # -ve reward on hitting boundary
         if self.PENALIZE_BOUNDARY_HIT and self._has_hit_boundary(): reward = -1
