@@ -125,6 +125,7 @@ venv.bak/
 dmypy.jsons
 
 # my temporary folder
+
 analytics-berry-field
 trainLogs
 gitignore-folder
