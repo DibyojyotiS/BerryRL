@@ -4,9 +4,9 @@ from collections import deque
 from berry_field.envs import BerryFieldEnv
 from torch import Tensor, float32, nn, device, tensor
 from agent_utils import (berry_worth, random_exploration_v2, 
-    compute_distance_sectorized, Debugging, PatchDiscoveryReward, 
+    computeSectorized, Debugging, PatchDiscoveryReward, 
     skip_steps, make_simple_feedforward, printLocals, plot_time_mem_curves)
-from agent_utils.memories.multi_resolution_time_memory import MultiResolutionTimeMemory
+from agent_utils.memories import MultiResolutionTimeMemory, NearbyBerryMemory
 
 ROOT_2_INV = 0.5**(0.5)
 EPSILON = 1E-8
@@ -20,7 +20,7 @@ class Agent():
                 angle = 45, persistence=0.8, worth_offset=0.05, 
                 noise=0.01, nstep_transition=[1], positive_emphasis=0,
                 skipStep=10, patch_discovery_reward=0.5, 
-                add_exploration = True, spacings=[],
+                add_exploration = True,
                 reward_magnification = 1e4/25,
                 perceptable_reward_range = [0,2],
 
@@ -31,7 +31,9 @@ class Agent():
                 ],
 
                 # params related to berry memory
-                # berry_memory_grid_size = (400,400),
+                berryMemoryMinPopThXY = (1920/2, 1080/2),
+                berryMemoryMaxPopThXY = (2600,2600),
+                berryMemorySize = 50,
 
                 # other params
                 render=False, 
@@ -69,12 +71,6 @@ class Agent():
                 - can be set to None to disable reward patch discovery
         - add_exploration: bool (default True)
                 - adds exploration-subroutine as an action
-        - spacings: list (default empty list)
-                - list of floats between 0 and 1
-                - the observation space is segmented by
-                the floats in this list into rectangular donut
-                shaped segments. The sectorized part of the state
-                is made for each of the segments
         - reward_magnification: float
                 - the actual env step reward is multiplied by this
                 - the reward for patch discovery is seperate from
@@ -99,17 +95,12 @@ class Agent():
                 accessed when the agent is in that cell.
         
         #### params related to berry-memory
-        - berry_memory_grid_size: tuple[int,int]
-                - the berry-field is divided into (L,M) sized grid
-                and we remember the average-size of the berries seen
-                in a particular cell.
-                - The average-size is estimated from the average worth 
-                since the worth function is between 0 and 1.
-                - Any cell with non-zero entry is accessable to the agent 
-                at all times. Basically the agent sees a berry of average 
-                size at the center of the cell.
-                - we will remove a value/cell from memory when its average
-                size falls below 10. Or the agent is too far.
+        - berryMemoryMinPopTh: float
+                - the minimum distance to berry allowed for berry to exist in memory
+        - berryMemoryMaxPopTh: float
+                - the maximum distance to berry allowed for berry to exist in memory
+        - berryMemorySize: int
+                - the capacity of berry memory
 
         - render: bool (default False)
                 - wether to render the agent 
@@ -124,13 +115,14 @@ class Agent():
         self.patch_discovery_reward = patch_discovery_reward
         self.positive_emphasis = positive_emphasis
         self.add_exploration= add_exploration
-        self.spacings = spacings
         self.reward_magnification = reward_magnification
         self.perceptable_reward_range = perceptable_reward_range
         self.time_memory_factor = time_memory_factor
         self.time_memory_exp = time_memory_exp
         self.time_memory_grid_sizes = time_memory_grid_sizes 
-        # self.berry_memory_grid_size = berry_memory_grid_size
+        self.berryMemoryMinPopThXY = berryMemoryMinPopThXY
+        self.berryMemoryMaxPopThXY = berryMemoryMaxPopThXY
+        self.berryMemorySize = berryMemorySize
         self.render = render
         self.skipSteps = skipStep
         self.device = device
@@ -139,6 +131,9 @@ class Agent():
         self._init_memories()
         self.nnet = self.makeNet(TORCH_DEVICE=device)
         self.berryField.step = self.get_wrapped_env_step(self.berryField, render)
+
+        # maximum possible distance to berry, for use in place of halfDiagonal in berry worth
+        self.MaxBerryDist = (self.berryMemoryMaxPopThXY[0]**2 + self.berryMemoryMaxPopThXY[1]**2)**0.5
 
         # setup debug
         self.debugger = Debugging(debugDir=debugDir, 
@@ -165,30 +160,39 @@ class Agent():
         )
 
         # a different kind of berry-memory
-        self.berry_memory = {}
+        self.berry_memory = NearbyBerryMemory(
+            minDistPopThXY=self.berryMemoryMinPopThXY,
+            maxDistPopThXY=self.berryMemoryMaxPopThXY,
+            memorySize=self.berryMemorySize
+        )
 
         return
 
     def _reset_memories(self):
         self.time_memory.reset()
+        self.berry_memory.reset()
         self.state_deque.clear()
         self.state_deque.append([None,None,0]) # reinit deque
         self.prev_sectorized_state = None
 
-    def _update_memories(self, info, avg_worth):
+    def _update_memories(self, listOfBerries, info, worths):
         x,y = info['position']
         if x == self.berryField.FIELD_SIZE[0]: x -= EPSILON
         if y == self.berryField.FIELD_SIZE[1]: y -= EPSILON
 
         # decay time memory and update time_memory
         self.time_memory.update(x,y)
+
+        # update the berry memory
+        self.berry_memory.bulkInsertOrUpdate(listOfBerries, worths, info['position']) 
         return
 
     def _berry_worth_func(self, sizes, dists):
+        # replaced berryField.HALFDIAGOBS with this to have enough wiggle for worths of far-away berries
         return berry_worth(sizes, dists, 
             REWARD_RATE=self.berryField.REWARD_RATE, 
             DRAIN_RATE=self.berryField.DRAIN_RATE, 
-            HALFDIAGOBS=self.berryField.HALFDIAGOBS, 
+            HALFDIAGOBS=self.MaxBerryDist, # self.berryField.HALFDIAGOBS, 
             WORTH_OFFSET=self.worth_offset,
             min_berry_size=10, max_berry_size=40)
 
@@ -196,30 +200,33 @@ class Agent():
         """updates to agent state after an episode ends"""
         self._reset_memories()
 
-    def _computeState(self, raw_observation, info, reward, done) -> np.ndarray:
+    def _computeState(self, listOfBerries, info, reward, done) -> np.ndarray:
         """ makes a state from the observation and info. reward, done are ignored """
         # if this is the first state (a call to BerryFieldEnv.reset) -> marks new episode
         if info is None: # reinit memory and get the info and raw observation from berryField
             self._new_episode_started()
-            raw_observation = self.berryField.raw_observation()
+            listOfBerries = self.berryField.raw_observation()
             info = self.berryField.get_info()
 
-        # # add the berry-memory to raw observation
-        # cx,cy = info['position']
-        # memory = [[x-cx,y-cy,s] for x,y,s in self.berry_memory.values()]
-        # if len(memory) > 0: raw_observation = np.concatenate([raw_observation,memory])
+        # retrive the berries in memory
+        memorizedBerries = self.berry_memory.getMemoryBerries()
+
+        # stack the memorized berries before the new ones so that their
+        # scores in the memory are updated before the new berries are inserted
+        # then the bulkInsertOrUpdate method is called
+        listOfBerries = np.vstack([memorizedBerries, listOfBerries])
 
         # the total-worth is also representative of the percived goodness of observation
-        sectorized_states, avg_worth = compute_distance_sectorized(
-                raw_observation=raw_observation, 
-                info=info, berry_worth_function=self._berry_worth_func, 
-                spacings=self.spacings, 
+        sectorized_states, avg_worth, worths = computeSectorized(
+                listOfBerries= listOfBerries, 
+                info=info, berry_worth_function=self._berry_worth_func,
+                halfDiagonalLen= self.MaxBerryDist, # self.berryField.HALFDIAGOBS, 
                 prev_sectorized_state=self.prev_sectorized_state, 
                 persistence=self.persistence, angle=self.angle)
         self.prev_sectorized_state = sectorized_states
-
+    
         # update memories
-        self._update_memories(info, avg_worth)
+        self._update_memories(listOfBerries, info, worths)
 
         # other extra information
         edge_dist = info['scaled_dist_from_edge']
@@ -346,7 +353,7 @@ class Agent():
         """ create and return the model (a duelling net)
         note: calling this multiple times will re-make the model"""
         outDims = agent_self.berryField.action_space.n
-        n_sectorized = (1+len(agent_self.spacings))*4*(360//agent_self.angle)
+        n_sectorized = 4*(360//agent_self.angle)
         if agent_self.add_exploration: outDims+=1
         
         # define the layers

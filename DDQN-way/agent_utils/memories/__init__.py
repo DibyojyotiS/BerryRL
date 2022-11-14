@@ -1,1 +1,2 @@
 from .multi_resolution_time_memory import MultiResolutionTimeMemory
+from .nearby_berry_memory import NearbyBerryMemory
