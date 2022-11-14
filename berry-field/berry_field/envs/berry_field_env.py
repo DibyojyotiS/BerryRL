@@ -236,7 +236,7 @@ class BerryFieldEnv(gym.Env):
 
         # get the patch the agent is in (also required for info)
         self.current_patch_id, self.current_patch_box = self._get_current_patch()
-        first_observation, first_info = self.raw_observation(), self.get_info()
+        first_observation, first_info = self.get_list_of_visible_berries(), self.get_info()
 
         if self.analysis_enabled: 
             self._init_analysis(self.analytics_folder)
