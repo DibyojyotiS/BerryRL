@@ -6,6 +6,8 @@ from berry_field.envs.berry_field_env import BerryFieldEnv
 from matplotlib.patches import Rectangle, Circle
 import os
 import imageio
+import random
+import string
 
 
 def picture_episode(LOG_DIR:str, episode:int, K=10, figsize=(10,10), title=None, show=True, 
@@ -68,7 +70,8 @@ def picture_episodes(fname:str, LOG_DIR:str, episodes:Iterable, K=10, figsize=(1
                         alpha=1, pathwidth=1, duration=0.5, fps=1, nparallel=0, pretty=False):
     """ save the picture of episodes as .gif or as .mp4 depending on the fname """
     
-    base_tmp_dir = os.path.join(LOG_DIR, ".tmp_pics")
+    unique_dir = "".join(fname.split('.')[:-1] + random.choices(string.ascii_lowercase, k=8))
+    base_tmp_dir = os.path.join(LOG_DIR, f".tmp_pics/{unique_dir}")
     tmp_save_path_template = os.path.join(base_tmp_dir, 'temp_pic_episode_img_{}.png')
     if not os.path.exists(base_tmp_dir): os.makedirs(base_tmp_dir)
 

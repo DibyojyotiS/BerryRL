@@ -1,16 +1,10 @@
-gym==0.19.0
-imageio
+gym>=0.19.0
+numba
+imageio>=2.9.0
+pyglet>=1.5.21
 imageio-ffmpeg
 matplotlib
+multiprocess
 numpy
-pygame
-pyglet
+pygame>=2.0.1 # install with pip
 torch
-
-# gym==0.19.0
-# imageio==2.9.0
-# matplotlib==3.2.1
-# numpy==1.18.1
-# pygame==2.0.1
-# pyglet==1.5.21
-# torch==1.4.0
