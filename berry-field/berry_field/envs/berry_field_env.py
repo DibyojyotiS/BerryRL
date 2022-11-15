@@ -180,7 +180,6 @@ class BerryFieldEnv(gym.Env):
         self.current_patch_id, self.current_patch_box = self._get_current_patch() # (also required for info)
 
         # for saving the pickle properly
-        self.ORIGINAL_FUNCTIONS = {func:getattr(self, func) for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")}
         if enable_analytics: 
             self.analytics_folder = os.path.join(analytics_folder, 'analytics-berry-field')
             self._init_analysis(self.analytics_folder, first_init=True)
@@ -264,6 +263,41 @@ class BerryFieldEnv(gym.Env):
 
         return list_of_visible_berries, reward, done, info
 
+    def get_observation_and_info(self):
+        x,y = self.position
+        w,h = self.OBSERVATION_SPACE_SIZE
+        W,H = self.FIELD_SIZE
+
+        list_of_berries = self.get_list_of_visible_berries()
+        patch_relative = self._compute_patch_relative(x, y)
+
+        info = {
+            'current-patch-id':self.current_patch_id,
+            'patch-relative':patch_relative,
+            'position':self.position,
+            'total_juice': self.total_juice,
+            'relative_coordinates': [x - self.INITIAL_POSITION[0], 
+                                     y - self.INITIAL_POSITION[1]],
+            'scaled_dist_from_edge':[
+                1 - max(0, w//2 - x)/(w//2), # scaled distance from left edge; 1 if not in view
+                1 - max(0, x+w//2 - W)/(w//2), # scaled distance from right edge; 1 if not in view
+                1 - max(0, y+h//2 - H)/(h//2), # scaled distance from the top edge; 1 if not in view
+                1 - max(0, h//2 - y)/(h//2) # scaled distance from the bottom edge; 1 if not in view
+            ],
+            'recently_picked_berries': self.recently_picked_berries
+        }
+
+    def _compute_patch_relative(self, x, y):
+        # scaled distance (x,y) relative to center of the patch the agent is in
+        # if the agent is in no patch, then the all 0.0 is returned (blends from patch to none)
+        if self.current_patch_box is not None:
+            px,py,pw,ph = self.current_patch_box
+            assert x >= px-pw/2, (x,y, px-pw/2, self.current_patch_box)
+            assert y >= py-ph/2, (x,y, py-ph/2, self.current_patch_box)
+            patch_relative = [min(1 - 2*abs(px-x)/pw, 1 - 2*abs(py-y)/ph)]
+        else:
+            patch_relative = [0.0]
+        return patch_relative
 
     def get_info(self):
         """ make sure self.current_patch_id, self.current_patch_box are as intended """
@@ -393,14 +427,6 @@ class BerryFieldEnv(gym.Env):
 
         return self.viewer.render(return_rgb_array=mode=="rgb_array")
 
-
-    def get_human_observation(self):
-        """ returns the agent's (x,y,size) and all visible berries as (x,y,size) """
-        agent_cbox = [*self.position, self.AGENT_SIZE]
-        boxes = self._get_berries_in_view((*self.position, *self.OBSERVATION_SPACE_SIZE))
-        return agent_cbox, boxes[:,:3]
-
-
     def _init_berryfield(self, user_berry_data):
         """ Inits the collision trees and other structures to make the field """
         # load and process the data
@@ -436,20 +462,6 @@ class BerryFieldEnv(gym.Env):
         # create the save-folder to save analytics
         save_Folder = os.path.join(save_folder, f'{self.num_resets}')
         if not os.path.exists(save_Folder): os.makedirs(save_Folder)
-
-        # nothing to save in first-init
-        if not first_init:
-            # save the data neccessary to rebuild the same berry-field
-            self.analysis = None # because i.o wrapper cannot be pickled
-            with open(os.path.join(save_Folder, 'berryenv.obj'), 'wb') as f:
-                # save all the possibly user-modified functions
-                user_modified = {func:getattr(self, func) for func in dir(self) if callable(getattr(self, func)) and not func.startswith("_")}
-                # revert all user-modified functions and default defn
-                for func in user_modified.keys(): self.__setattr__(func, self.ORIGINAL_FUNCTIONS[func])
-                # save the berry-field
-                pickle.dump(self, f,pickle.HIGHEST_PROTOCOL)
-                # load back user-modified functions
-                for func in user_modified.keys(): self.__setattr__(func, user_modified[func])
 
         # init the analysis with the save folder
         self.analysis = BerryFieldAnalytics(self, save_Folder)
