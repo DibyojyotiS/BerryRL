@@ -162,11 +162,11 @@ class BerryFieldEnv(gym.Env):
             "recently_picked_berries": picked_berries[:,2],
             "patch_relative_score": self._get_patch_relative_score(patch_bb),
             "total_juice": self.total_juice,
+            "num_berries_picked": self.num_berry_collected
         }
 
         info = {
             "current_patch_id": patch_Id,
-            "num_berries_picked": self.num_berry_collected
         }
 
         return observation, reward, info
