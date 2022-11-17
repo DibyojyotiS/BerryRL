@@ -7,15 +7,28 @@ from berry_field.envs.analysis.analytics import BerryFieldAnalitics
 from berry_field.envs.field.field import Field
 from berry_field.envs.rendering.renderer import FieldRenderer
 
-INVSQRT2 = 0.5**0.5
-
-# csv files with the location and description of each berry and patch
-DATA_PATHS = ['data/berry_coordinates.csv', 'data/patch_coordinates.csv']
-ABS_PATH = os.path.split(__file__)[0]
-FILE_PATHS = list(map(lambda x: os.path.join(ABS_PATH, x), DATA_PATHS))
-
 
 class BerryFieldEnv(gym.Env):
+
+    INVSQRT2 = 0.5**0.5
+
+    # csv files with the default data
+    DATA_PATHS = ['data/berry_coordinates.csv', 'data/patch_coordinates.csv']
+    FILE_PATHS = list(
+        map(lambda x: os.path.join(os.path.split(__file__)[0], x), DATA_PATHS)
+    )
+
+    ACTION_SWITCHER = {
+        0: (0, 1), # N
+        1: (INVSQRT2, INVSQRT2), # NE
+        2: (1, 0), # E
+        3: (INVSQRT2, -INVSQRT2), # SE
+        4: (0, -1), # S
+        5: (-INVSQRT2, -INVSQRT2), # SW
+        6: (-1, 0), # W
+        7: (-INVSQRT2, INVSQRT2), # NW
+    }
+
     def __init__(self,
         # environment defaults, all sizes are as (width, height)
         initial_position=(10000,10000), 
@@ -79,16 +92,6 @@ class BerryFieldEnv(gym.Env):
         self.END_ON_BOUNDARY_HIT = end_on_boundary_hit
         self.INTITAL_JUICE= initial_juice
         self.PLAY_TILL_MAXTIME= play_till_maxtime
-        self.ACTION_SWITCHER = {
-            0: (0, 1), # N
-            1: (INVSQRT2, INVSQRT2), # NE
-            2: (1, 0), # E
-            3: (INVSQRT2, -INVSQRT2), # SE
-            4: (0, -1), # S
-            5: (-INVSQRT2, -INVSQRT2), # SW
-            6: (-1, 0), # W
-            7: (-INVSQRT2, INVSQRT2), # NW
-        }
         self.action_space = gym.spaces.Discrete(8)
 
         # init field
@@ -221,7 +224,7 @@ class BerryFieldEnv(gym.Env):
 
     def _default_init(self, agent_position, berry_data):
         if berry_data is None:
-            berry_data = self._load_default_data(file_paths=FILE_PATHS)
+            berry_data = self._load_default_data(file_paths=self.FILE_PATHS)
         self.field = Field(agent_size=self.AGENT_SIZE, berry_data=berry_data)
         self.renderer = FieldRenderer(
             field=self.field,
