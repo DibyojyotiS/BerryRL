@@ -6,7 +6,7 @@ from matplotlib.patches import Rectangle, Circle
 
 
 def picture_episode(
-        berry_data:np.ndarray, patch_data:np.ndarray, sampled_path:np.ndarray, 
+        berry_boxes:np.ndarray, patch_boxes:np.ndarray, sampled_path:np.ndarray, 
         nberries_picked:int, total_steps:int, field_size:Tuple[int,int],  
         figsize=(10,10), title=None, show=True, alpha=1, pathwidth=1, 
         savepth=None, close=False, pretty=False
@@ -17,12 +17,12 @@ def picture_episode(
 
     # scatter or put berries
     if pretty:
-        ax.scatter(x=berry_data[:,0],y=berry_data[:,1],s=berry_data[:,2],c='red', alpha=alpha)
+        ax.scatter(x=berry_boxes[:,0],y=berry_boxes[:,1],s=berry_boxes[:,2],c='red', alpha=alpha)
     else:
-        for x,y,s,_ in berry_data:
+        for x,y,s,_ in berry_boxes:
             ax.add_patch(Circle((x,y),radius=s/2,color='r'))
     ax.add_patch(Rectangle((0,0), *field_size, fill=False))
-    for x,y,pw,ph in patch_data: 
+    for x,y,pw,ph in patch_boxes: 
         ax.add_patch(Rectangle((x-pw/2,y-ph/2), pw, ph, fill=False, alpha=alpha))
 
     # visualize areas where the agent got stuck

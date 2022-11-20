@@ -147,18 +147,24 @@ class BerryFieldAnalitics:
             "total_patch_periphery_time":
                 np.sum(self.explorationStats.get_patch_periphery_times()),
             "inter_patch_time": self.explorationStats.get_inter_patch_time(),
-            "path_record": self.path[:self.update_count][::10],
-            "reward_record": self.juice[:self.update_count][::10],
+            "sampled_path": self.path[:self.update_count][::10],
+            "sampled_juice": self.juice[:self.update_count][::10],
+            "berry_boxes": self.init_berry_boxes,
+            "patch_boxes": self.init_berry_boxes,
             "env_steps": self.update_count
         }
 
-        return copy.deepcopy(information)
+        return information
 
     def _init_variables(self):
         # arrays to store stuff, using float16 to save space
         required_len = self.max_steps
         self.juice = np.zeros(required_len, dtype=np.float16)
         self.path = np.zeros((required_len, 2), dtype=np.float32)
+
+        # required for plotting the env-field
+        self.init_berry_boxes = self.field.berry_collision_tree.boxes.copy()
+        self.init_patch_boxes = self.field.patch_tree.boxes.copy()
 
         # stats
         n_patches = self.field.get_num_patches()
