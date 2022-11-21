@@ -150,7 +150,7 @@ class BerryFieldAnalitics:
             "sampled_path": self.path[:self.update_count][::10],
             "sampled_juice": self.juice[:self.update_count][::10],
             "berry_boxes": self.init_berry_boxes,
-            "patch_boxes": self.init_berry_boxes,
+            "patch_boxes": self.init_patch_boxes,
             "env_steps": self.update_count
         }
 
