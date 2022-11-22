@@ -3,6 +3,7 @@ from typing import Iterable, Tuple
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Rectangle, Circle
+from .analytics import BerryFieldAnalitics
 
 
 def picture_episode(
@@ -56,7 +57,8 @@ def juice_plot(
         close=False
 ):
     fig, ax = plt.subplots(figsize=figsize)
-    ax.plot(sampled_juice)
+    decimation = BerryFieldAnalitics.DECIMATION
+    ax.plot(np.arange(len(sampled_juice))*decimation, sampled_juice)
     ax.set_xlim(0, max_steps)
     ax.set_ylim(0,1)
     if title:
