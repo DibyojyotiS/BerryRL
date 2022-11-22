@@ -101,8 +101,9 @@ class ExplorationStats:
 
 
 class BerryFieldAnalitics:
+    DECIMATION = 10 # to subsample record arrays like the agent-path/juice
+
     def __init__(self, field:Field, max_steps: int, ignore_nresets=1) -> None:
-        self.decm = 10
         self.reset_count = - ignore_nresets # ignore the first reset
         self.field = field
         self.max_steps = max_steps
@@ -147,8 +148,8 @@ class BerryFieldAnalitics:
             "total_patch_periphery_time":
                 np.sum(self.explorationStats.get_patch_periphery_times()),
             "inter_patch_time": self.explorationStats.get_inter_patch_time(),
-            "sampled_path": self.path[:self.update_count][::10],
-            "sampled_juice": self.juice[:self.update_count][::10],
+            "sampled_path": self.path[:self.update_count][::self.DECIMATION],
+            "sampled_juice": self.juice[:self.update_count][::self.DECIMATION],
             "berry_boxes": self.init_berry_boxes,
             "patch_boxes": self.init_patch_boxes,
             "env_steps": self.update_count
