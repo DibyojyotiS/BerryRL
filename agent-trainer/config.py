@@ -8,11 +8,12 @@ CONFIG = {
         entity="foraging-rl",
         watch_log_freq = 100,
         notes=(
-            "the berries from memory and current observation are taken" 
-            + "together for the computation of the sectorized state,"
-            + "the maxObsDiag parameter is adjusted to the maximum limit of memory"
-            + "this allows enough wiggle of values in the sectorized state."
-            + "random exploration action is enabled"
+            "the berries from memory and current observation are taken " 
+            + "together for the computation of the sectorized state, "
+            + "the maxObsDiag parameter is adjusted to the maximum limit of memory "
+            + "this allows enough wiggle of values in the sectorized state. "
+            + "random exploration action is enabled. "
+            + "And also allow the agent to play till max-time (5 in game minutes) "
             )
     ),
     "RND_TRAIN_ENV": dict(
@@ -23,7 +24,7 @@ CONFIG = {
         nberries=80, 
         initial_juice=0.5, 
         maxtime=5*60, 
-        play_till_maxtime=False,
+        play_till_maxtime=True,
         patch_with_agent_at_center=True,
         end_on_boundary_hit= False,
         initial_pos_around_berry=True, 
