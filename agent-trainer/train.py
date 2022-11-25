@@ -76,7 +76,7 @@ if __name__ == "__main__":
         wandb=CONFIG["WANDB"]["enabled"],
         tag="eval",
         thread_safe_printer=thread_safe_printer,
-        episodes_per_video=5
+        episodes_per_video=10
     )
 
     optim = Adam(params=agent.nn_model.parameters(), **CONFIG["ADAM"])
