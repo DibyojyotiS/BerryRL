@@ -107,4 +107,5 @@ if __name__ == "__main__":
 
     ddqn_trainer.evaluate(evalEnv=evalEnv, render=True)
     train_collector.close()
+    eval_collector.close()
     stdout_logger.close()

@@ -53,7 +53,8 @@ class DaemonPipe:
             self._execute_pipe(object)
 
     def stop(self):
-        self.queue.put("end")
+        if self.started:
+            self.queue.put("end")
 
     def _execute_pipe(self, info:Dict[str,Any]):
         for stage in self.pipeline:
@@ -67,7 +68,7 @@ class DaemonPipe:
         self.queue.put("end")
 
     def __delete__(self, instance):
-        if instance.started:
+        if instance is not None and instance.started:
             instance.queue.put("end")
 
 
