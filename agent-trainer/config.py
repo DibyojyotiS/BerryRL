@@ -1,10 +1,10 @@
 CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/nearby-berry-memory/0.0.1",
+    "LOG_DIR_ROOT": ".temp/single-experiments/nearby-berry-memory",
     "WANDB": dict(
         enabled = True, # set to true for server env
         project="agent-design-v1",
-        group="nearby-berry-memory/0.0.1",
+        group="single-experiments",
         entity="foraging-rl",
         watch_log_freq = 100,
         notes=(
