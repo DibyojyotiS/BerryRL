@@ -13,7 +13,8 @@ CONFIG = {
             + "the maxObsDiag parameter is adjusted to the maximum limit of memory "
             + "this allows enough wiggle of values in the sectorized state. "
             + "random exploration action is enabled. "
-            + "And also allow the agent to play till max-time (5 in game minutes) "
+            + "And also allow the agent to play till max-time (5 in game minutes). "
+            + "Reward clippings are removed. "
             )
     ),
     "RND_TRAIN_ENV": dict(
@@ -55,7 +56,7 @@ CONFIG = {
             reward_discount_factor=1.0
         ),
         reward_perception_config = dict(
-            max_clip=3, min_clip=-0.04,
+            max_clip=float('inf'), min_clip=-float('inf'),
             scale=3 * 1e4/50
         ),
         nn_model_config = dict(
@@ -92,6 +93,7 @@ CONFIG = {
         gamma=0.99, 
         update_freq=5, 
         MaxTrainEpisodes=500, 
+        MaxStepsPerEpisode=None,
         optimize_every_kth_action=100, #-1, 
         num_gradient_steps=25, #400,
         evalFreq=10, 
