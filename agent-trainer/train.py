@@ -79,6 +79,9 @@ if __name__ == "__main__":
         episodes_per_video=10
     )
 
+    if CONFIG["WANDB"]["enabled"]:
+        wandb.watch(agent.nn_model)
+
     optim = Adam(params=agent.nn_model.parameters(), **CONFIG["ADAM"])
     schdl = MultiStepLR(optimizer=optim, **CONFIG["MULTI_STEP_LR"])
     buffer = PrioritizedExperienceRelpayBuffer(**CONFIG["PER_BUFFER"])
