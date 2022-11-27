@@ -30,7 +30,7 @@ class SimpleDuelingNet(nn.Module):
         )
         for i in range(1,len(layers)):
             ffn.extend([nn.Linear(layers[i-1], layers[i]), 
-                        nn.LeakyReLU(negative_slope=-lreluslope)])
+                        nn.LeakyReLU(negative_slope=lreluslope)])
         return ffn
 
     def forward(self, fetures:Tensor):
