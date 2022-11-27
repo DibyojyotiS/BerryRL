@@ -23,6 +23,7 @@ def njitRemoveBerriesOutOfRange(
     agentPosXY, minDistPopThXY, maxDistPopThXY, memory, minTree, hashMap
 ):
     # remove any berry whose distance from agent is is out of range
+    # returns the number of berries removed
     relativeXY = np.abs(memory[:,:-1] - np.asarray(agentPosXY))
     indices = np.nonzero(
         (relativeXY[:,0] > maxDistPopThXY[0]) 
@@ -30,13 +31,15 @@ def njitRemoveBerriesOutOfRange(
         | ((relativeXY[:,0] < minDistPopThXY[0]) 
         & (relativeXY[:,1] < minDistPopThXY[1]))
     )[0]
+    nRemoved = 0
     for index in indices:
         if memory[index][2] == -1.0: continue
         # TODO getting key error here sometimes
         hashMap.pop((int(memory[index][0]), int(memory[index][1]), int(memory[index][2])), -1)
         memory[index][0] = memory[index][1] = memory[index][2] = -1
         njitUpdateMinTree(index, -1, minTree)
-
+        nRemoved += 1
+    return nRemoved
 
 @njit
 def njitAddBerry(
@@ -44,6 +47,7 @@ def njitAddBerry(
     maxDistPopThXY, memory, minTree, hashMap
 ):
     # add the new berry to the memory if it's score is greater than the minimum score
+    # returns 0/1, 1 if the berry as inserted; 0 if berry was discarded/updated
     # berryRelPosXY is the relative position of the berry from the agent
     absBerryPosX = abs(berryRelPosXY[0])
     absBerryPosY = abs(berryRelPosXY[1])
@@ -62,7 +66,7 @@ def njitAddBerry(
         currentIdx = hashMap.get(posIx, -1)
         if currentIdx != -1:
             njitUpdateMinTree(currentIdx, berryScore, minTree)
-            return
+            return 0 # berry was updated
 
         # insert a new berry only if it's score is larger than the minimum score in memory
         if (berryScore > min_berry_score):
@@ -72,6 +76,9 @@ def njitAddBerry(
             memory[min_index][2] = berrySize
             hashMap[posIx] = min_index
             njitUpdateMinTree(min_index, berryScore, minTree)
+            return 1 # berry was inserted
+
+        return 0 # berry was ignored
 
 
 @njit
@@ -79,15 +86,17 @@ def njitBulkAddBerries(
     listOfBerries, listOfberryScores, agentPosXY, minDistPopThXY, 
     maxDistPopThXY, memory, minTree, hashMap
 ):
-    if len(listOfBerries) == 0: return
+    if len(listOfBerries) == 0: return 0
+    numInserted = 0
     for i in range(len(listOfBerries)):
         berryScore = listOfberryScores[i]
         berryRelPosXY = listOfBerries[i, :2]
         berrySize = listOfBerries[i, 2]
-        njitAddBerry(
+        numInserted += njitAddBerry(
             berryScore, berryRelPosXY, berrySize, agentPosXY, minDistPopThXY, 
             maxDistPopThXY, memory, minTree, hashMap
         )
+    return numInserted
 
 
 @njit
@@ -106,37 +115,58 @@ class NearbyBerriesMemory(MemoryBase):
         self.minDistPopThXY = minDistPopThXY
         self.maxDistPopThXY = maxDistPopThXY
         self.memorySize = memorySize
-        self._initMemory()
+        self.reset()
 
     def insertOrUpdate(self, berryScore, berryRelPosXY, berrySize, agentPosXY):
         """ berryRelPosXY is the relative position of the berry with 
         respect to the agent """
-        self._removeBerriesOutOfRange(agentPosXY)
-        njitAddBerry(
+        nRemoved = self._removeBerriesOutOfRange(agentPosXY)
+        nInserted = njitAddBerry(
             berryScore, berryRelPosXY, berrySize, agentPosXY, 
             self.minDistPopThXY, self.maxDistPopThXY, self.memory, 
             self.minTree, self.hashMap
         )
+        self._updateSize(nInserted, nRemoved)
+        self._updateStats()
 
     def bulkInsertOrUpdate(self, listOfBerries, listOfberryScores, agentPosXY):
         """ listOfBerries is a list of [x,y,berry-size] where x,y are 
         relative postion of the berry with rspect to the agent """
-        self._removeBerriesOutOfRange(agentPosXY)
-        njitBulkAddBerries(
+        nRemoved = self._removeBerriesOutOfRange(agentPosXY)
+        nInserted = njitBulkAddBerries(
             listOfBerries, listOfberryScores, agentPosXY, self.minDistPopThXY, 
             self.maxDistPopThXY, self.memory, self.minTree, self.hashMap
         )
+        self._updateSize(nInserted, nRemoved)
+        self._updateStats()
 
     def getMemoryBerriesAsRelativePos(self, agentPosXY):
         # this call to remove berries is added because it can happen that
         # the agent breakes out of random exploration without updating the 
         # memories. Thus the returned berry memory would be incorrect
         # without this check.
-        self._removeBerriesOutOfRange(agentPosXY)
+        nRemoved = self._removeBerriesOutOfRange(agentPosXY)
+        self._updateSize(0, nRemoved)
+        self._updateStats()
         return njitGetMemorizedBerriesRelativePosition(agentPosXY, self.memory)
 
     def reset(self):
         self._initMemory()
+        self._initStats()
+
+    def size(self):
+        return self.nBerriesInMemory
+
+    def getStats(self):
+        return {
+            "c": self.maxBerriesInMemoryStat
+        }
+
+    def _updateStats(self):
+        self.maxBerriesInMemoryStat = max(self.maxBerriesInMemory, self.size())
+
+    def _initStats(self):
+        self.maxBerriesInMemoryStat = 0
 
     def _initMemory(self):
         self.memory = np.zeros((self.memorySize, 3), dtype=np.float32) # x, y, berry_size
@@ -144,6 +174,7 @@ class NearbyBerriesMemory(MemoryBase):
         self.hashMap = Dict()
         self.memory[:] = -1
         self.hashMap[(-1,-1,-1)] = 1
+        self.nBerriesInMemory = 0 # size
 
         # init min-tree
         for i in range(self.memorySize):
@@ -160,6 +191,10 @@ class NearbyBerriesMemory(MemoryBase):
             self.memory, self.minTree, self.hashMap
         )
         self.last_pruned_pos = agentPosXY
+
+    def _updateSize(self, nInserted, nRemoved):
+        self.nBerriesInMemory += nInserted - nRemoved
+
 
 if __name__ == "__main__":
     from time import time_ns

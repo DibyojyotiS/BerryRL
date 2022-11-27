@@ -93,7 +93,10 @@ class Agent:
         self.state_computer.reset()
 
     def get_stats(self):
-        return self.env_adapter.get_stats()
+        return {
+            "env_adapter":self.env_adapter.get_stats(),
+            "memory_manager": self.memory_manager.get_stats()
+        }
 
     def getPerceivedEnvironment(self, berry_env: BerryFieldEnv):
         # modify the environment step and reset 

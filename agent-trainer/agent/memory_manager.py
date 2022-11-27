@@ -59,6 +59,11 @@ class MemoryManager:
         self.nearbyBerriesMemory.reset()
         self.berry_collected_count = 0
 
+    def get_stats(self):
+        return {
+            "nearbyBerriesMemory":self.nearbyBerriesMemory.getStats()
+        }
+
     # GETTERS >>>>>>>>>>>>>>>>>>
     def get_time_memories(self, agentPosXY):
         return self.multiResTimeMemory.get_time_memories(agentPosXY)
