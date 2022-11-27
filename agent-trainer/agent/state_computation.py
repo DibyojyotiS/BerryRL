@@ -136,6 +136,7 @@ class StateComputation:
 
         state = np.concatenate([
             *sectorizedState,
+            *self.memory_manager.get_locality_memory(),
             self.memory_manager.get_time_memories(observation["position"]),
             observation['scaled_dist_from_edge'],
             [observation['patch_relative_score']],

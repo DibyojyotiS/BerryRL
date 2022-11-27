@@ -8,7 +8,8 @@ CONFIG = {
         entity="foraging-rl",
         watch_log_freq = 100,
         notes=(
-            "the berries from memory and current observation are taken " 
+            "Locality Memory is added."
+            + "The berries from memory and current observation are taken " 
             + "together for the computation of the sectorized state, "
             + "the maxObsDiag parameter is adjusted to the maximum limit of memory "
             + "this allows enough wiggle of values in the sectorized state. "
@@ -18,7 +19,7 @@ CONFIG = {
             collects the larger the reward on the next berry collected (the
             positive part of reward is nBerriesPicked/100 + scale*actual_reward). 
             The rest of the negative rewards are same as the env reward. """
-            + "Optimizing the model at the episode end. "
+            + "Optimizing the model at the episode end."
             + """
             steps to curb increasin loss:
                 decreased priority alpha
@@ -56,6 +57,9 @@ CONFIG = {
                 minDistPopThXY=(1920/2, 1080/2), 
                 maxDistPopThXY=(2600,2600), 
                 memorySize=50
+            ),
+            localityMemoryKwargs = dict(
+                resolution=(5,5)
             )
         ),
         state_computation_config = dict(

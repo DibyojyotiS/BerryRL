@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Tuple
 from .memories import MultiResolutionTimeMemory, NearbyBerriesMemory
-
+from .memories import LocalityMemory
 
 # TODO:
 # 1. Allow disabling of a memory
@@ -22,11 +22,15 @@ class MemoryManager:
             minDistPopThXY=(1920/2, 1080/2), 
             maxDistPopThXY=(2600,2600), 
             memorySize=50
+        ),
+        localityMemoryKwargs = dict(
+            resolution=(3,3)
         )
     ):
         self.berryEnvFIELD_SIZE = berry_env_FIELD_SIZE
         self.multiResTimeMemoryKwargs = multiResTimeMemoryKwargs
         self.nearbyBerriesMemoryKwargs = nearbyBerryMemoryKwargs
+        self.localityMemoryKwargs = localityMemoryKwargs
         self.__initMemories()
 
     def update(
@@ -53,10 +57,12 @@ class MemoryManager:
         )
         self.multiResTimeMemory.update(agentPosXY)
         self.berry_collected_count += recentlyPickedBerries
+        self.localityMemory.update(agentPosXY)
 
     def reset(self):
         self.multiResTimeMemory.reset()
         self.nearbyBerriesMemory.reset()
+        self.localityMemory.reset()
         self.berry_collected_count = 0
 
     def get_stats(self):
@@ -73,6 +79,9 @@ class MemoryManager:
 
     def get_num_berries_picked(self):
         return self.berry_collected_count
+
+    def get_locality_memory(self):
+        return self.localityMemory.get()
     # <<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def __initMemories(self):
@@ -82,5 +91,9 @@ class MemoryManager:
         )
         self.nearbyBerriesMemory = NearbyBerriesMemory(
             **self.nearbyBerriesMemoryKwargs
+        )
+        self.localityMemory = LocalityMemory(
+            **self.localityMemoryKwargs,
+            berryfield_FIELD_SIZE=self.berryEnvFIELD_SIZE
         )
         self.berry_collected_count = 0
