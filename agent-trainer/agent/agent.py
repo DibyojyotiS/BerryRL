@@ -30,6 +30,9 @@ class Agent:
                 minDistPopThXY=(1920/2, 1080/2), 
                 maxDistPopThXY=(2600,2600), 
                 memorySize=50
+            ),
+            localityMemoryKwargs = dict(
+                resolution=(5,5)
             )
         ),
         state_computation_config = dict(

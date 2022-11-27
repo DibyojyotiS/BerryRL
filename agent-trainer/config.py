@@ -78,7 +78,7 @@ CONFIG = {
             scale=3 * 1e4/50
         ),
         nn_model_config = dict(
-            layers=[32,16,16],
+            layers=[64,32,16],
             lrelu_negative_slope=-0.01
         )
     ),
