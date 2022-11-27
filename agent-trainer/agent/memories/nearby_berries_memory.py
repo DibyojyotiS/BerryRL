@@ -78,7 +78,7 @@ def njitAddBerry(
             njitUpdateMinTree(min_index, berryScore, minTree)
             return 1 # berry was inserted
 
-        return 0 # berry was ignored
+    return 0 # berry was ignored
 
 
 @njit
@@ -163,7 +163,7 @@ class NearbyBerriesMemory(MemoryBase):
         }
 
     def _updateStats(self):
-        self.maxBerriesInMemoryStat = max(self.maxBerriesInMemory, self.size())
+        self.maxBerriesInMemoryStat = max(self.maxBerriesInMemoryStat, self.size())
 
     def _initStats(self):
         self.maxBerriesInMemoryStat = 0
@@ -185,12 +185,13 @@ class NearbyBerriesMemory(MemoryBase):
         self.last_pruned_pos = (float('inf'),float('inf'))
 
     def _removeBerriesOutOfRange(self, agentPosXY):
-        if self.last_pruned_pos == agentPosXY: return
-        njitRemoveBerriesOutOfRange(
+        if self.last_pruned_pos == agentPosXY: return 0 # no berries removed
+        self.last_pruned_pos = agentPosXY
+        return njitRemoveBerriesOutOfRange(
             agentPosXY, self.minDistPopThXY, self.maxDistPopThXY, 
             self.memory, self.minTree, self.hashMap
         )
-        self.last_pruned_pos = agentPosXY
+        
 
     def _updateSize(self, nInserted, nRemoved):
         self.nBerriesInMemory += nInserted - nRemoved
