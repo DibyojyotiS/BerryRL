@@ -159,7 +159,7 @@ class NearbyBerriesMemory(MemoryBase):
 
     def getStats(self):
         return {
-            "c": self.maxBerriesInMemoryStat
+            "maxBerriesInMemory": self.maxBerriesInMemoryStat
         }
 
     def _updateStats(self):
