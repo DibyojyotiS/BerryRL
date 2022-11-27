@@ -8,6 +8,7 @@ class SimpleDuelingNet(nn.Module):
         lrelu_negative_slope=-0.01
     ) -> None:
         super(SimpleDuelingNet, self).__init__()
+        assert lrelu_negative_slope <= 0 # must be -ve
         self.n_input_feats = in_features
         self.n_outputs = n_actions
 
@@ -21,12 +22,12 @@ class SimpleDuelingNet(nn.Module):
         self.actadv = nn.Linear(layers[-1], n_actions)
 
     @staticmethod
-    def make_simple_feedforward(infeatures, layers:List[int], lreluslope=1e-2):
+    def make_simple_feedforward(infeatures, layers:List[int], lreluslope=-1e-2):
         """ layer -> relu -> layer -> relu"""
         # build the feed-forward network
         input_layer = nn.Linear(infeatures, layers[0])
         ffn = nn.ModuleList(
-            [input_layer, nn.LeakyReLU(negative_slope=-lreluslope)]
+            [input_layer, nn.LeakyReLU(negative_slope=lreluslope)]
         )
         for i in range(1,len(layers)):
             ffn.extend([nn.Linear(layers[i-1], layers[i]), 
