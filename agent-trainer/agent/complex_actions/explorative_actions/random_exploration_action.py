@@ -15,8 +15,8 @@ class RandomExplorationAction:
 
     def __init__(
         self, torch_model:nn.Module, state_computer: StateComputation,
-        n_skip_steps: int, reward_discount_factor=1.0,
-        torch_device: device= device('cpu')
+        n_skip_steps: int, reward_discount_factor=1.0, 
+        max_steps:float=float('inf'), torch_device: device= device('cpu')
     ) -> None:
         """ A complex action that takes multiple steps in the environment 
         but appears as a single action to the agent.
@@ -46,6 +46,7 @@ class RandomExplorationAction:
         """
         self.model = torch_model
         self.device = torch_device
+        self.max_steps = max_steps
         self.skipSteps = n_skip_steps
         self.rewardDiscount = reward_discount_factor
         self.state_computer = state_computer
@@ -61,14 +62,14 @@ class RandomExplorationAction:
         observation, info, _, done = skipTrajectory[-1]
         listberries = observation["berries"]
 
-        while not done and (len(listberries) == 0):
+        while not done and (len(listberries) == 0) and steps_ < self.max_steps:
             summedReward, skipTrajectory, steps = self.__one_exploration_step(berry_env_step)
             steps_+=steps; reward_ += summedReward*discount_; discount_*=self.rewardDiscount
             observation, info, _, done = skipTrajectory[-1]
             listberries = observation["berries"]
             current_patch = info['current_patch_id']
 
-            while not done and (len(listberries) != 0) and current_patch is None:
+            while not done and (len(listberries) != 0) and current_patch is None and steps_ < self.max_steps:
                 summedReward, skipTrajectory, steps = self.__guided_exploration_step(skipTrajectory, berry_env_step)
                 steps_+=steps; reward_ += summedReward*discount_; discount_*=self.rewardDiscount
                 observation, info, _, done = skipTrajectory[-1]
