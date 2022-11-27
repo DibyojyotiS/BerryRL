@@ -71,7 +71,7 @@ CONFIG = {
         ),
         exploration_subroutine_config = dict(
             reward_discount_factor=1.0,
-            max_steps=float('inf')
+            max_steps=10
         ),
         reward_perception_config = dict(
             max_clip=float('inf'), min_clip=-float('inf'),
