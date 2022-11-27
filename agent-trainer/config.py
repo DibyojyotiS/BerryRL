@@ -1,6 +1,6 @@
 CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/single-experiments/nearby-berry-memory",
+    "LOG_DIR_ROOT": ".temp/single-experiments/reward-shaping",
     "WANDB": dict(
         enabled = True, # set to true for server env
         project="agent-design-v1",
@@ -14,7 +14,17 @@ CONFIG = {
             + "this allows enough wiggle of values in the sectorized state. "
             + "random exploration action is enabled. "
             + "And also allow the agent to play till max-time (5 in game minutes). "
-            + "Reward clippings are removed. "
+            + """The reward perception is that the more berries the agent 
+            collects the larger the reward on the next berry collected (the
+            positive part of reward is nBerriesPicked/100 + scale*actual_reward). 
+            The rest of the negative rewards are same as the env reward. """
+            + "Optimizing the model at the episode end. "
+            + """
+            steps to curb increasin loss:
+                decreased priority alpha
+                increased beta rate
+                narowed gradient clips
+            """
             )
     ),
     "RND_TRAIN_ENV": dict(
@@ -76,9 +86,9 @@ CONFIG = {
 
     "PER_BUFFER": dict(
         bufferSize=int(5E5), 
-        alpha=0.95,
+        alpha=0.9,
         beta=0.1, 
-        beta_rate=0.9/800
+        beta_rate=0.9/500
     ),
 
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
@@ -94,12 +104,12 @@ CONFIG = {
         update_freq=10, 
         MaxTrainEpisodes=500, 
         MaxStepsPerEpisode=None,
-        optimize_every_kth_action=100, #-1, 
-        num_gradient_steps=25, #400,
+        optimize_every_kth_action=-1, #-1, 
+        num_gradient_steps=250, #400,
         evalFreq=10, 
         printFreq=1, 
         polyak_average=True, 
-        polyak_tau=0.1,
-        gradient_clips = (-0.5,0.5),
+        polyak_tau=0.05,
+        gradient_clips = (-0.02,0.02),
     ),
 }
