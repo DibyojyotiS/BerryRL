@@ -1,6 +1,6 @@
 CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/single-experiments/reward-shaping",
+    "LOG_DIR_ROOT": ".temp/single-experiments/reward-shaping/locality-mem-with-rnd-action",
     "WANDB": dict(
         enabled = True, # set to true for server env
         project="agent-design-v1",
