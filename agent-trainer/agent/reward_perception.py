@@ -7,11 +7,13 @@ class RewardPerception:
         scale:float=400
     ) -> None:
         self.memory_manager = memory_manager
-        self.max_clip = max_clip
-        self.min_clip = min_clip
+        # self.max_clip = max_clip
+        # self.min_clip = min_clip
         self.scale = scale
 
     def get_perceived_reward(self, actual_reward):
-        return min(
-            self.max_clip, max(self.min_clip, self.scale*actual_reward)
-        )
+        if actual_reward > 0:
+            picked = self.memory_manager.get_num_berries_picked()
+            return picked/100 + self.scale*actual_reward
+        else:
+            return actual_reward
