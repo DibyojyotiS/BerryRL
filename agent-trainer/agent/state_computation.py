@@ -53,12 +53,14 @@ class StateComputation:
         self.__init_constants()
 
     @staticmethod
-    def get_output_shape():
+    def get_output_shape(comp_conf:dict, mem_conf:dict):
         from berry_field.envs import BerryFieldEnv
         berry_env = BerryFieldEnv()
         state_comp = StateComputation(
             berry_env.HALFDIAGOBS, berry_env.REWARD_RATE, 
-            berry_env.DRAIN_RATE, MemoryManager(berry_env.FIELD_SIZE)
+            berry_env.DRAIN_RATE, 
+            MemoryManager(berry_env.FIELD_SIZE, **mem_conf),
+            **comp_conf
         )
         obs = berry_env.reset()
         return state_comp.compute([[obs, 0, False, {}]], -1).shape

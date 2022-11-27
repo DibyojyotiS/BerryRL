@@ -55,7 +55,9 @@ class Agent:
         # the stuff in here is common for both train and eval
         self.torch_device = torch_device
         self.skip_steps = skip_steps
-        self._initDuellingModel(nn_model_config)
+        self._initDuellingModel(
+            nn_model_config, state_computation_config, memory_config
+        )
         self.memory_manager = MemoryManager(
             berry_env_FIELD_SIZE,
             **memory_config
@@ -107,8 +109,13 @@ class Agent:
     def nnet(self):
         return self.nn_model
 
-    def _initDuellingModel(self, nn_model_config:Dict[str,Any]):
-        state_shape = StateComputation.get_output_shape() # input shape
+    def _initDuellingModel(
+        self, nn_model_config:Dict[str,Any], 
+        comp_conf:Dict[str,Any], mem_conf:Dict[str,Any]
+    ):
+        state_shape = StateComputation.get_output_shape(
+            comp_conf=comp_conf, mem_conf=mem_conf
+        ) # input shape
         self.nn_model = SimpleDuelingNet(
             in_features= state_shape[0],
             n_actions=9,
