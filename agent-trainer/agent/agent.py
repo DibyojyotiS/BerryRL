@@ -48,7 +48,7 @@ class Agent:
         ),
         nn_model_config = dict(
             layers=[32,16,16],
-            lrelu_negative_slope=-0.01
+            lrelu_negative_slope=0.01
         )
     ) -> None:
         # the stuff in here is common for both train and eval
