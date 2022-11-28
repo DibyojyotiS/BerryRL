@@ -96,7 +96,7 @@ class MemoryManager:
             **self.nearbyBerriesMemoryKwargs
         )
         self.localityMemory = LocalityMemory(
-            **self.localityMemory,
+            **self.localityMemoryKwars,
             berryfield_FIELD_SIZE=self.berryEnvFIELD_SIZE
         )
         self.berry_collected_count = 0
