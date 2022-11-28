@@ -71,12 +71,13 @@ def njitAddBerry(
         # insert a new berry only if it's score is larger than the minimum score in memory
         if (berryScore > min_berry_score):
             min_index = int(minTree[1][1])
+            newInsert = 1 if memory[min_index][2]==-1 else 0
             memory[min_index][0] = roundedBerryPosX
             memory[min_index][1] = roundedBerryPosY
             memory[min_index][2] = berrySize
             hashMap[posIx] = min_index
             njitUpdateMinTree(min_index, berryScore, minTree)
-            return 1 # berry was inserted
+            return newInsert # berry was inserted
 
     return 0 # berry was ignored
 
