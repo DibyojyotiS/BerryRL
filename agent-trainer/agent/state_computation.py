@@ -96,7 +96,8 @@ class StateComputation:
             recentlyPickedBerries=num_recentpicked, 
             listOfBerries=concated_berries, 
             listOfBerryScores=berryworths, 
-            agentPosXY=position
+            agentPosXY=position,
+            isPatchSeen=len(listOfBerries) > 0
         )
         self.berrycount += num_recentpicked
 
@@ -129,7 +130,7 @@ class StateComputation:
         sectorizedState, _, berryworths = sectorized_states(
             listOfBerries=concated_berries,
             berry_worth_function=self.__berry_worth,
-            halfDiagonalLen=self.BERRYMEM_MAXDIST,
+            maxPossibleDist=self.BERRYMEM_MAXDIST,
             prev_sectorized_state=self.prev_sectorized_state,
             persistence=self.persistance,
             angle=self.angle
@@ -138,12 +139,16 @@ class StateComputation:
 
         state = np.concatenate([
             *sectorizedState,
+            self.memory_manager.get_locality_memory().flatten(),
             self.memory_manager.get_time_memories(observation["position"]),
             observation['scaled_dist_from_edge'],
-            [observation['patch_relative_score']],
-            [observation['total_juice']],
-            [num_recentpicked > 0], # bool picked feat
-            [min(1, self.berrycount/self.max_berry_count)]
+            [
+                observation['patch_relative_score'],
+                observation['total_juice'],
+                len(observation["berries"])/50,
+                num_recentpicked > 0, # bool picked feat
+                min(1, self.berrycount/self.max_berry_count)
+            ]
         ])
         
         return berryworths,state
