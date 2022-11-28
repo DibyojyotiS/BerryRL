@@ -28,9 +28,8 @@ def njitGetTrueAngles(directions, referenceVector=np.asfarray([0,1])):
 
 
 @njit
-def njitSectorized(angles, worths, dist, a1, a2, a3, a4, angle, halfDiagonalLen):
+def njitSectorized(angles, worths, dist, a1, a2, a3, a4, angle, maxPossibleDist):
     maxworth = -1e6 # -1e6 is used as -infinity
-    maxworthSector = -1
     for x in range(0,360,angle):
         sectorL = (x-angle/2)%360
         sectorR = (x+angle/2)
@@ -45,17 +44,16 @@ def njitSectorized(angles, worths, dist, a1, a2, a3, a4, angle, halfDiagonalLen)
             maxSecWorthIdx = args[np.argmax(sectorWorths)] # max worthy
             a1[idx] = worthyness = worths[maxSecWorthIdx]
             a2[idx] = np.sum(sectorWorths)/len(sectorWorths)
-            a3[idx] = max(0, 1 - dist[maxSecWorthIdx]/halfDiagonalLen)
+            a3[idx] = max(0, 1 - dist[maxSecWorthIdx]/maxPossibleDist)
+            a4[idx] = max(0, 1 - np.min(dist[args])/maxPossibleDist)
             
             if worthyness > maxworth:
-                maxworthSector = idx
                 maxworth = worthyness   
-    if maxworthSector > -1: a4[maxworthSector]=1
     return np.sum(a2)/len(a2)
 
 
 def sectorized_states(listOfBerries:np.ndarray, 
-                        berry_worth_function:Callable, halfDiagonalLen:float,
+                        berry_worth_function:Callable, maxPossibleDist:float,
                         prev_sectorized_state=None, 
                         persistence=0.8,angle=45):
     """ 
@@ -68,8 +66,8 @@ def sectorized_states(listOfBerries:np.ndarray,
             - a function that takes in the sizes (array) 
             and distances (array) and returns a array
             denoting the worth of each berry. 
-    - halfDiagonalLen: float
-            - the length of the half diagonal of the observation window
+    - maxPossibleDist: float
+            - the maximum possible distance to a berry
             - used to normalize the distance of berry from agent
     - prev_sectorized_state: ndarray (default None)
             - previously computed sectorized state
@@ -92,7 +90,7 @@ def sectorized_states(listOfBerries:np.ndarray,
         # a1: max-worth of each sector
         # a2: stores avg-worth of each sector
         # a3: a mesure of distance to max worthy in each sector
-        # a4: indicates the sector with the max worthy berry
+        # a4: a mesure of min-distance to berry in each sector
     
     if len(listOfBerries) == 0:
         return np.array([a1,a2,a3,a4]), 0, np.array([])
@@ -102,7 +100,7 @@ def sectorized_states(listOfBerries:np.ndarray,
     directions = listOfBerries[:,:2]/dist[:,None]
     angles = njitGetTrueAngles(directions)
     worths = berry_worth_function(sizes, dist)
-    avg_worth =  njitSectorized(angles, worths, dist, a1, a2, a3, a4, angle, halfDiagonalLen)
+    avg_worth =  njitSectorized(angles, worths, dist, a1, a2, a3, a4, angle, maxPossibleDist)
 
     return np.array([a1,a2,a3,a4]), avg_worth, worths
 
