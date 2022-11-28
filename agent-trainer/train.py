@@ -23,6 +23,32 @@ TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 TIME_STAMP = '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6])
 LOG_DIR = os.path.join(CONFIG["LOG_DIR_ROOT"], TIME_STAMP)
 
+
+class ModifiedDDQN(DDQN):
+    # DDQN is very very similar to DQN with the only difference in the compuatation of td_error
+    # so only modifying the calculation of td_error so modifying the compute_loss
+    def _compute_loss_n_updateBuffer(self, states, actions, rewards, nextStates, dones, indices, sampleWeights):
+
+        # compute td-error
+        argmax_a_Q = self.online_model(nextStates).detach().max(-1, keepdims=True)[1]
+        max_a_Q = self.target_model(nextStates).detach().gather(-1, argmax_a_Q) # max estimated-Q values from target net
+        current_Q = self.online_model(states).gather(-1, actions)
+        td_target = rewards + self.gamma[actions]*max_a_Q*(1-dones)
+        td_error = (td_target - current_Q).squeeze()
+
+        # scale the error by sampleWeights
+        if sampleWeights is not None:
+            loss = self.lossfn(current_Q, td_target, weights=sampleWeights)
+        else:
+            loss = self.lossfn(current_Q, td_target)
+        
+        # update replay buffer
+        if indices is not None:
+            self.replayBuffer.update(indices, torch.abs(td_error).detach())
+
+        return loss
+
+
 def init_logging(TIME_STAMP, LOG_DIR):
     if not os.path.exists(LOG_DIR): os.makedirs(LOG_DIR)
     stdout_logger = StdoutLogger(os.path.join(LOG_DIR, "log.txt"))
@@ -86,8 +112,15 @@ if __name__ == "__main__":
     schdl = MultiStepLR(optimizer=optim, **CONFIG["MULTI_STEP_LR"])
     buffer = PrioritizedExperienceRelpayBuffer(**CONFIG["PER_BUFFER"])
     tstrat = epsilonGreedyAction(**CONFIG["TRAINING_STRAT_EPSILON_GREEDY"])
-    ddqn_trainer = DDQN(
+    gammas = torch.tensor(
+        CONFIG["DDQN"].pop("gamma"),
+        dtype=torch.float32,
+        device=TORCH_DEVICE,
+        requires_grad=False
+    )
+    ddqn_trainer = ModifiedDDQN(
         **CONFIG["DDQN"],
+        gamma=gammas,
         trainingEnv=trainEnv,
         model = agent.nn_model,
         trainExplorationStrategy=tstrat,

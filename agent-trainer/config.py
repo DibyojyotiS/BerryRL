@@ -1,8 +1,10 @@
+import torch
+
 CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/single-experiments/reward-shaping",
+    "LOG_DIR_ROOT": ".temp/single-experiments/reward-shaping/multiple-gammas",
     "WANDB": dict(
-        enabled = True, # set to true for server env
+        enabled = False, # set to true for server env
         project="agent-design-v1",
         group="single-experiments",
         entity="foraging-rl",
@@ -24,6 +26,7 @@ CONFIG = {
                 decreased priority alpha
                 clipping gradient by norm instead of value
                 increased update freq to 40
+                different gamma for the exploration-action
                 >> WARN: reduced batch-size to 512 to increaes comp. speed
                 >> however this shouldn't affect the convergence behaviour of
                 >> loss appart from creating noise.
@@ -104,7 +107,10 @@ CONFIG = {
 
     "DDQN": dict(
         batchSize=512, 
-        gamma=0.99, 
+        gamma=[
+            0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99, # deterministic actions
+            0.50 # exploration action
+        ], 
         update_freq=40, 
         MaxTrainEpisodes=2000, 
         MaxStepsPerEpisode=None,
