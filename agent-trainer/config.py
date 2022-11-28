@@ -4,7 +4,7 @@ CONFIG = {
     "seed": 4,
     "LOG_DIR_ROOT": ".temp/single-experiments/reward-shaping/multiple-gammas",
     "WANDB": dict(
-        enabled = False, # set to true for server env
+        enabled = True, # set to true for server env
         project="agent-design-v1",
         group="single-experiments",
         entity="foraging-rl",
@@ -25,8 +25,10 @@ CONFIG = {
             steps to curb increasin loss:
                 decreased priority alpha
                 clipping gradient by norm instead of value
-                increased update freq to 40
+                update freq is set back to 20
                 different gamma for the exploration-action
+                very slight polyak averaging
+                keeping epsilon up for longer
                 >> WARN: reduced batch-size to 512 to increaes comp. speed
                 >> however this shouldn't affect the convergence behaviour of
                 >> loss appart from creating noise.
@@ -109,18 +111,18 @@ CONFIG = {
         batchSize=512, 
         gamma=[
             0.99,0.99,0.99,0.99,0.99,0.99,0.99,0.99, # deterministic actions
-            0.50 # exploration action
+            0.70 # exploration action # 0.5
         ], 
-        update_freq=40, 
+        update_freq=20, # 50
         MaxTrainEpisodes=2000, 
         MaxStepsPerEpisode=None,
         optimize_every_kth_action=-1, #-1, 
         num_gradient_steps=250, #400,
         evalFreq=10, 
         printFreq=1, 
-        polyak_average=True, 
-        polyak_tau=0.05,
-        gradient_clip = 1,
+        polyak_average=False, 
+        polyak_tau=0.05, # 0.0
+        gradient_clip = 10,
         gradient_clipping_type = "norm",
     ),
 }
