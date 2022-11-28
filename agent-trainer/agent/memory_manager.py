@@ -1,6 +1,8 @@
 import numpy as np
 from typing import Tuple
-from .memories import MultiResolutionTimeMemory, NearbyBerriesMemory
+from .memories import MultiResolutionTimeMemory
+from .memories import NearbyBerriesMemory
+from .memories import LocalityMemory
 
 
 # TODO:
@@ -22,18 +24,23 @@ class MemoryManager:
             minDistPopThXY=(1920/2, 1080/2), 
             maxDistPopThXY=(2600,2600), 
             memorySize=50
+        ),
+        localityMemoryKwars = dict(
+            resolution = (5,5)
         )
     ):
         self.berryEnvFIELD_SIZE = berry_env_FIELD_SIZE
         self.multiResTimeMemoryKwargs = multiResTimeMemoryKwargs
         self.nearbyBerriesMemoryKwargs = nearbyBerryMemoryKwargs
+        self.localityMemoryKwars = localityMemoryKwars
         self.__initMemories()
 
     def update(
         self, recentlyPickedBerries:int, 
         listOfBerries:np.ndarray, 
         listOfBerryScores:np.ndarray, 
-        agentPosXY:Tuple
+        agentPosXY:Tuple,
+        isPatchSeen: bool
     ):
         """ Update all the memories
 
@@ -52,11 +59,13 @@ class MemoryManager:
             listOfBerries, listOfBerryScores, agentPosXY
         )
         self.multiResTimeMemory.update(agentPosXY)
+        self.localityMemory.update(agentPosXY, isPatchSeen)
         self.berry_collected_count += recentlyPickedBerries
 
     def reset(self):
         self.multiResTimeMemory.reset()
         self.nearbyBerriesMemory.reset()
+        self.localityMemory.reset()
         self.berry_collected_count = 0
 
     def get_stats(self):
@@ -73,6 +82,9 @@ class MemoryManager:
 
     def get_num_berries_picked(self):
         return self.berry_collected_count
+
+    def get_locality_memory(self):
+        return self.localityMemory.get()
     # <<<<<<<<<<<<<<<<<<<<<<<<<<
 
     def __initMemories(self):
@@ -82,5 +94,9 @@ class MemoryManager:
         )
         self.nearbyBerriesMemory = NearbyBerriesMemory(
             **self.nearbyBerriesMemoryKwargs
+        )
+        self.localityMemory = LocalityMemory(
+            **self.localityMemory,
+            berryfield_FIELD_SIZE=self.berryEnvFIELD_SIZE
         )
         self.berry_collected_count = 0
