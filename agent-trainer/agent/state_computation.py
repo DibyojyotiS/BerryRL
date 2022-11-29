@@ -86,7 +86,7 @@ class StateComputation:
         concated_berries = np.vstack([
             self.memory_manager.get_berry_memory(position), 
             listOfBerries
-        ])
+        ]) if self.memory_manager.has_berry_memory() else listOfBerries
 
         berryworths, state = \
             self.__compute(observation, num_recentpicked, concated_berries)
@@ -135,11 +135,9 @@ class StateComputation:
             angle=self.angle
         )
         self.prev_sectorized_state = sectorizedState
-        uniformNoise = np.random.uniform(-self.noise, self.noise, size=10)
-        state = np.concatenate([
-            *sectorizedState,
-            self.memory_manager.get_locality_memory().flatten(),
-            self.memory_manager.get_time_memories(observation["position"]),
+
+        features = [
+            sectorizedState.flatten(),
             observation['scaled_dist_from_edge'],
             [
                 observation['patch_relative_score'],
@@ -148,7 +146,16 @@ class StateComputation:
                 num_recentpicked > 0, # bool picked feat
                 min(1, self.berrycount/self.max_berry_count)
             ],
-            uniformNoise
-        ])
+            np.random.uniform(-self.noise, self.noise, size=10)   
+        ]
+
+        if self.memory_manager.has_locality_memory():
+            features.append(
+                self.memory_manager.get_locality_memory().flatten())
         
-        return berryworths,state
+        if self.memory_manager.has_time_memories():
+            features.append(
+                self.memory_manager.get_time_memories(observation["position"]))
+
+        state = np.concatenate(features)
+        return berryworths, state

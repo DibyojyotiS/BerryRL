@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Tuple
 import numpy as np
 from numba import njit
 
@@ -55,7 +55,8 @@ def njitSectorized(angles, worths, dist, a1, a2, a3, a4, angle, maxPossibleDist)
 def sectorized_states(listOfBerries:np.ndarray, 
                         berry_worth_function:Callable, maxPossibleDist:float,
                         prev_sectorized_state=None, 
-                        persistence=0.8,angle=45):
+                        persistence=0.8,angle=45
+) -> Tuple[np.ndarray, float, np.ndarray]:
     """ 
     ### parameters
     - listOfBerries: ndarray

@@ -22,11 +22,13 @@ class Agent:
         skip_steps = 10,
         memory_config = dict(
             multiResTimeMemoryKwargs = dict(
+                enabled = True,
                 grid_sizes = [(20,20),(50,50),(100,100),(200,200),(400,400)],
                 factor=0.6, 
                 exp=1.0,
             ),
             nearbyBerryMemoryKwargs = dict(
+                enabled = True,
                 minDistPopThXY=(1920/2, 1080/2), 
                 maxDistPopThXY=(2600,2600), 
                 memorySize=50
