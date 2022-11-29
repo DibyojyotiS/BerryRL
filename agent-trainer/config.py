@@ -11,11 +11,11 @@ CONFIG = {
         - The berries from memory and current observation are taken together 
             for the computation of the sectorized state. 
         - Random exploration action is enabled.
-        - Agent is to play till max-time (5 in game minutes).
         - Reward Perception:
              actual_reward > 0: reward = nBerries/100 + scale*actual_reward
              actual_reward < 0: reward = actual_reward
         - Optimizing the model at the episode end.
+        - with small batchsize of 128
         """
     ),
     "RND_TRAIN_ENV": dict(
@@ -26,7 +26,7 @@ CONFIG = {
         nberries=80, 
         initial_juice=0.5, 
         maxtime=5*60, 
-        play_till_maxtime=True,
+        play_till_maxtime=False,
         patch_with_agent_at_center=True,
         end_on_boundary_hit= False,
         initial_pos_around_berry=True, 
@@ -50,7 +50,7 @@ CONFIG = {
             )
         ),
         state_computation_config = dict(
-            persistance=0.0, 
+            persistance=0.2, 
             sector_angle=45,
             berryworth_offset=0.01,
             max_berry_count = 200,
@@ -65,8 +65,8 @@ CONFIG = {
             scale=200
         ),
         nn_model_config = dict(
-            layers=[32,16,16],
-            lrelu_negative_slope=-0.0
+            layers=[64,32,16],
+            lrelu_negative_slope=-0.01
         )
     ),
     
@@ -94,13 +94,13 @@ CONFIG = {
     ),
 
     "DDQN": dict(
-        batchSize=256, 
+        batchSize=128, 
         gamma=0.9, 
-        update_freq=40, 
+        update_freq=5, 
         MaxTrainEpisodes=2000, 
         MaxStepsPerEpisode=None,
         optimize_every_kth_action=-1,
-        num_gradient_steps=400,
+        num_gradient_steps=500,
         evalFreq=10, 
         printFreq=1, 
         polyak_average=True, 

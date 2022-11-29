@@ -101,8 +101,7 @@ class StateComputation:
         )
         self.berrycount += num_recentpicked
 
-        uniformNoise = np.random.uniform(-self.noise, self.noise, size=state.shape)
-        return state + uniformNoise
+        return state
 
     def reset(self):
         self.__init_compute()
@@ -136,7 +135,7 @@ class StateComputation:
             angle=self.angle
         )
         self.prev_sectorized_state = sectorizedState
-
+        uniformNoise = np.random.uniform(-self.noise, self.noise, size=10)
         state = np.concatenate([
             *sectorizedState,
             self.memory_manager.get_locality_memory().flatten(),
@@ -148,7 +147,8 @@ class StateComputation:
                 len(observation["berries"])/50,
                 num_recentpicked > 0, # bool picked feat
                 min(1, self.berrycount/self.max_berry_count)
-            ]
+            ],
+            uniformNoise
         ])
         
         return berryworths,state
