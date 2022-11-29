@@ -94,7 +94,7 @@ def sectorized_states(listOfBerries:np.ndarray,
         # a5: normalized population of berries in each sector
     
     if len(listOfBerries) == 0:
-        return np.array([a1,a2,a3,a4]), 0, np.array([])
+        return np.array([a1,a2,a3,a4,a5]), 0, np.array([])
         
     sizes = listOfBerries[:,2]
     dist = np.linalg.norm(listOfBerries[:,:2], axis=1) + EPSILON
