@@ -1,12 +1,13 @@
 CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v1",
+    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v2",
     "WANDB": dict(
         enabled = True, # set to true for server env
         project="agent-design-v1",
-        group="single-experiments/tackle-loss",
+        group="single-experiments/tackle-loss/v2",
         entity="foraging-rl",
-        watch_log_freq = 100,
+        watch_log = "all", # logging both params and grads
+        watch_log_freq = 1000,
         notes="""
         - The berries from memory and current observation are taken together 
             for the computation of the sectorized state. 
@@ -54,7 +55,7 @@ CONFIG = {
             sector_angle=45,
             berryworth_offset=0.01,
             max_berry_count = 200,
-            noise=0.005
+            noise=1.0
         ),
         exploration_subroutine_config = dict(
             reward_discount_factor=0.99,

@@ -80,7 +80,11 @@ if __name__ == "__main__":
     )
 
     if CONFIG["WANDB"]["enabled"]:
-        wandb.watch(agent.nn_model)
+        wandb.watch(
+            agent.nn_model, 
+            log=CONFIG["WANDB"]["watch_log"],
+            log_freq=CONFIG["WANDB"]["watch_log_freq"]
+        )
 
     optim = Adam(params=agent.nn_model.parameters(), **CONFIG["ADAM"])
     schdl = MultiStepLR(optimizer=optim, **CONFIG["MULTI_STEP_LR"])
