@@ -1,10 +1,11 @@
 CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v2",
+    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v3",
+    "run_name_prefix": "v3",
     "WANDB": dict(
-        enabled = True, # set to true for server env
+        enabled = False, # set to true for server env
         project="agent-design-v1",
-        group="single-experiments/tackle-loss/v2",
+        group="single-experiments/tackle-loss",
         entity="foraging-rl",
         watch_log = "all", # logging both params and grads
         watch_log_freq = 1000,
@@ -17,6 +18,8 @@ CONFIG = {
              actual_reward < 0: reward = actual_reward
         - Optimizing the model at the episode end.
         - with small batchsize of 128
+        - disabled locality memory
+        - added new feature representing the normalized population of berries in each sector
         """
     ),
     "RND_TRAIN_ENV": dict(
@@ -37,16 +40,19 @@ CONFIG = {
         skip_steps = 10,
         memory_config = dict(
             multiResTimeMemoryKwargs = dict(
+                enabled = True,
                 grid_sizes = [(20,20),(50,50),(100,100),(200,200),(400,400)],
                 factor=0.6, 
                 exp=1.0,
             ),
             nearbyBerryMemoryKwargs = dict(
+                enabled = True,
                 minDistPopThXY=(1920/2, 1080/2), 
                 maxDistPopThXY=(2600,2600), 
-                memorySize=50
+                memorySize=60
             ),
-            localityMemoryKwars = dict(
+            localityMemoryKwargs = dict(
+                enabled = False,
                 resolution = (5,5)
             )
         ),
@@ -54,7 +60,7 @@ CONFIG = {
             persistance=0.2, 
             sector_angle=45,
             berryworth_offset=0.01,
-            max_berry_count = 200,
+            normalizing_berry_count = 200,
             noise=1.0
         ),
         exploration_subroutine_config = dict(
@@ -72,17 +78,17 @@ CONFIG = {
     ),
     
     "ADAM": dict(
-        lr=1e-4, weight_decay=0.0
+        lr=1e-5, weight_decay=0.0
     ),
 
     "MULTI_STEP_LR": dict(
-        milestones=[200*i for i in range(1,3)],
+        milestones=[200*i for i in range(1,1)],
         gamma=0.5
     ),
 
     "PER_BUFFER": dict(
         bufferSize=int(5E5), 
-        alpha=0.9,
+        alpha=0.95,
         beta=0.1, 
         beta_rate=0.9/2000
     ),
@@ -101,7 +107,7 @@ CONFIG = {
         MaxTrainEpisodes=2000, 
         MaxStepsPerEpisode=None,
         optimize_every_kth_action=-1,
-        num_gradient_steps=500,
+        num_gradient_steps=1000,
         evalFreq=10, 
         printFreq=1, 
         polyak_average=True, 

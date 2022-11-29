@@ -21,9 +21,12 @@ matplotlib.use('Agg')
 # constants
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 TIME_STAMP = '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6])
-LOG_DIR = os.path.join(CONFIG["LOG_DIR_ROOT"], TIME_STAMP)
+RUN_NAME = f"{CONFIG['run_name_prefix']} {TIME_STAMP}"
+assert not set(RUN_NAME).intersection(["\\","/",":","*","?","\"","<",">"]) # loose validation
+LOG_DIR = os.path.join(CONFIG["LOG_DIR_ROOT"], RUN_NAME)
 
-def init_logging(TIME_STAMP, LOG_DIR):
+
+def init_logging(LOG_DIR):
     if not os.path.exists(LOG_DIR): os.makedirs(LOG_DIR)
     stdout_logger = StdoutLogger(os.path.join(LOG_DIR, "log.txt"))
     abs_file_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -31,7 +34,7 @@ def init_logging(TIME_STAMP, LOG_DIR):
     # init wandb if enabled
     if CONFIG["WANDB"]["enabled"]:
         wandb.init(
-            name=TIME_STAMP,
+            name=RUN_NAME,
             project=CONFIG["WANDB"]["project"],
             group=CONFIG["WANDB"]["group"],
             entity=CONFIG["WANDB"]["entity"],
@@ -42,7 +45,7 @@ def init_logging(TIME_STAMP, LOG_DIR):
     return stdout_logger
 
 if __name__ == "__main__":
-    stdout_logger = init_logging(TIME_STAMP, LOG_DIR)
+    stdout_logger = init_logging(LOG_DIR)
 
     # setup agent and environments as perceived by agents
     trainEnv:BerryFieldEnv = getRandomEnv(**CONFIG["RND_TRAIN_ENV"])
