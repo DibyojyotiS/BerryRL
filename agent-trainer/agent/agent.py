@@ -38,7 +38,7 @@ class Agent:
             persistance=0.8, 
             sector_angle=45,
             berryworth_offset=0.05,
-            max_berry_count = 800,
+            normalizing_berry_count = 800,
             noise=0.05
         ),
         exploration_subroutine_config = dict(

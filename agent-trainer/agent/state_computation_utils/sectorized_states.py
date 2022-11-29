@@ -28,8 +28,7 @@ def njitGetTrueAngles(directions, referenceVector=np.asfarray([0,1])):
 
 
 @njit
-def njitSectorized(angles, worths, dist, a1, a2, a3, a4, angle, maxPossibleDist):
-    maxworth = -1e6 # -1e6 is used as -infinity
+def njitSectorized(angles, worths, dist, a1, a2, a3, a4, a5, angle, maxPossibleDist):
     for x in range(0,360,angle):
         sectorL = (x-angle/2)%360
         sectorR = (x+angle/2)
@@ -46,9 +45,9 @@ def njitSectorized(angles, worths, dist, a1, a2, a3, a4, angle, maxPossibleDist)
             a2[idx] = np.sum(sectorWorths)/len(sectorWorths)
             a3[idx] = max(0, 1 - dist[maxSecWorthIdx]/maxPossibleDist)
             a4[idx] = max(0, 1 - np.min(dist[args])/maxPossibleDist)
-            
-            if worthyness > maxworth:
-                maxworth = worthyness   
+            a5[idx] = len(sectorWorths)
+    a5/=(EPSILON+np.max(a5))
+
     return np.sum(a2)/len(a2)
 
 
@@ -84,14 +83,15 @@ def sectorized_states(listOfBerries:np.ndarray,
 
     # apply persistence if prev_sectorized_state is given
     if prev_sectorized_state is not None:
-        a1,a2,a3,a4 = prev_sectorized_state * persistence
+        a1,a2,a3,a4,a5 = prev_sectorized_state * persistence
     else:
         num_sectors = 360//angle
-        a1,a2,a3,a4 = np.zeros((4,num_sectors))
+        a1,a2,a3,a4,a5 = np.zeros((5,num_sectors))
         # a1: max-worth of each sector
         # a2: stores avg-worth of each sector
         # a3: a mesure of distance to max worthy in each sector
         # a4: a mesure of min-distance to berry in each sector
+        # a5: normalized population of berries in each sector
     
     if len(listOfBerries) == 0:
         return np.array([a1,a2,a3,a4]), 0, np.array([])
@@ -101,9 +101,9 @@ def sectorized_states(listOfBerries:np.ndarray,
     directions = listOfBerries[:,:2]/dist[:,None]
     angles = njitGetTrueAngles(directions)
     worths = berry_worth_function(sizes, dist)
-    avg_worth =  njitSectorized(angles, worths, dist, a1, a2, a3, a4, angle, maxPossibleDist)
+    avg_worth =  njitSectorized(angles, worths, dist, a1, a2, a3, a4, a5, angle, maxPossibleDist)
 
-    return np.array([a1,a2,a3,a4]), avg_worth, worths
+    return np.array([a1,a2,a3,a4,a5]), avg_worth, worths
 
 
 if __name__ == "__main__":

@@ -15,7 +15,7 @@ class StateComputation:
         persistance=0.8, 
         sector_angle=45,
         berryworth_offset=0.05,
-        max_berry_count = 800,
+        normalizing_berry_count = 800,
         noise=0.05
     ) -> None: 
         """
@@ -33,7 +33,7 @@ class StateComputation:
         berryworth_offset : float, optional
             offsets berry-worths by berryworth_offset/(1 + berryworth_offset)
             this amount., by default 0.05
-        max_berry_count : int, optional
+        normalizing_berry_count : int, optional
             normalize the #berries picked before adding 
             to the state, by default 800
         noise : float, optional
@@ -46,7 +46,7 @@ class StateComputation:
         self.persistance = persistance
         self.angle = sector_angle
         self.worth_offset = berryworth_offset
-        self.max_berry_count = max_berry_count
+        self.normalizing_berry_count = normalizing_berry_count
         self.noise = noise
 
         self.__init_compute()
@@ -126,7 +126,7 @@ class StateComputation:
         )
 
     def __compute(self, observation, num_recentpicked, concated_berries):
-        sectorizedState, _, berryworths = sectorized_states(
+        sectorizedState, avg_worth, berryworths = sectorized_states(
             listOfBerries=concated_berries,
             berry_worth_function=self.__berry_worth,
             maxPossibleDist=self.BERRYMEM_MAXDIST,
@@ -144,7 +144,8 @@ class StateComputation:
                 observation['total_juice'],
                 len(observation["berries"])/50,
                 num_recentpicked > 0, # bool picked feat
-                min(1, self.berrycount/self.max_berry_count)
+                min(1, self.berrycount/self.normalizing_berry_count),
+                avg_worth
             ],
             np.random.uniform(-self.noise, self.noise, size=10)   
         ]
