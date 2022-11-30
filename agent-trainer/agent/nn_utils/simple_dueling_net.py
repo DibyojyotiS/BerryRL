@@ -6,13 +6,13 @@ import torch
 class SimpleDuelingNet(nn.Module):
     def __init__(
         self, in_features:int, n_actions:int, layers:List[int]=[32,16,16],
-        lrelu_negative_slope=-0.01, noise_scale=0.01
+        lrelu_negative_slope=-0.01, noise=0.01
     ) -> None:
         super(SimpleDuelingNet, self).__init__()
         assert lrelu_negative_slope <= 0 # must be -ve
         self.n_input_feats = in_features
         self.n_outputs = n_actions
-        self.noise_scale = noise_scale
+        self.noise_scale = 2*noise
 
         self.feedforward = self.make_simple_feedforward(
             infeatures= in_features,
@@ -48,6 +48,6 @@ class SimpleDuelingNet(nn.Module):
 
         return qvalues
 
-    def _add_uniform_noise(self, input:Tensor):
-        random_noise = torch.rand(size=input.shape, device=input.device)
-        return input + self.noise_scale * (random_noise - 0.5)
+    def _add_uniform_noise(self, feat:Tensor):
+        random_noise = torch.rand(size=feat.shape, device=feat.device)
+        return feat + self.noise_scale * (random_noise - 0.5)

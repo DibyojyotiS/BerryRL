@@ -15,8 +15,7 @@ class StateComputation:
         persistance=0.8, 
         sector_angle=45,
         berryworth_offset=0.05,
-        normalizing_berry_count = 800,
-        noise=0.05
+        normalizing_berry_count = 800
     ) -> None: 
         """
         Computes the environment state using memories
@@ -36,8 +35,6 @@ class StateComputation:
         normalizing_berry_count : int, optional
             normalize the #berries picked before adding 
             to the state, by default 800
-        noise : float, optional
-            uniform noise in [-noise, noise] to add to state, by default 0.05
         """
         self.berry_env_HALFDIAGOBS = berry_env_HALFDIAGOBS
         self.berry_env_REWARD_RATE = berry_env_REWARD_RATE
@@ -47,7 +44,6 @@ class StateComputation:
         self.angle = sector_angle
         self.worth_offset = berryworth_offset
         self.normalizing_berry_count = normalizing_berry_count
-        self.noise = noise
 
         self.__init_compute()
         self.__init_constants()

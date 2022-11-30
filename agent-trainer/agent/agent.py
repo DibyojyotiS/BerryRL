@@ -39,7 +39,6 @@ class Agent:
             sector_angle=45,
             berryworth_offset=0.05,
             normalizing_berry_count = 800,
-            noise=0.05
         ),
         exploration_subroutine_config = dict(
             reward_discount_factor=1.0,
@@ -51,7 +50,8 @@ class Agent:
         ),
         nn_model_config = dict(
             layers=[32,16,16],
-            lrelu_negative_slope=-0.01
+            lrelu_negative_slope=-0.01, 
+            noise=0.01
         )
     ) -> None:
         # the stuff in here is common for both train and eval
