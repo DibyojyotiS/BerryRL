@@ -1,16 +1,18 @@
 from typing import List
 from torch import nn, Tensor
+import torch
 
 
 class SimpleDuelingNet(nn.Module):
     def __init__(
         self, in_features:int, n_actions:int, layers:List[int]=[32,16,16],
-        lrelu_negative_slope=-0.01
+        lrelu_negative_slope=-0.01, noise_scale=0.01
     ) -> None:
         super(SimpleDuelingNet, self).__init__()
         assert lrelu_negative_slope <= 0 # must be -ve
         self.n_input_feats = in_features
         self.n_outputs = n_actions
+        self.noise_scale = noise_scale
 
         self.feedforward = self.make_simple_feedforward(
             infeatures= in_features,
@@ -34,13 +36,18 @@ class SimpleDuelingNet(nn.Module):
                         nn.LeakyReLU(negative_slope=lreluslope)])
         return ffn
 
-    def forward(self, fetures:Tensor):
+    def forward(self, features:Tensor):
         # process feedforward_part
+        features = self._add_uniform_noise(features)
         for layer in self.feedforward: 
-            fetures = layer(fetures)         
+            features = layer(features)         
 
-        value = self.valuelayer(fetures)
-        advs = self.actadv(fetures)
+        value = self.valuelayer(features)
+        advs = self.actadv(features)
         qvalues = value + (advs - advs.mean())
 
         return qvalues
+
+    def _add_uniform_noise(self, input:Tensor):
+        random_noise = torch.rand(size=input.shape, device=input.device)
+        return input + self.noise_scale * (random_noise - 0.5)
