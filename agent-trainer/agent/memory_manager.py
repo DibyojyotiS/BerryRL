@@ -89,6 +89,8 @@ class MemoryManager:
         stats = {}
         if self._has_berry_mem:
             stats["nearbyBerriesMemory"] = self.nearbyBerriesMemory.getStats()
+        if self._has_time_mem:
+            stats["multiResTimeMemory"] = self.multiResTimeMemory.get_stats()
         return stats
 
     # GETTERS >>>>>>>>>>>>>>>>>>
