@@ -147,7 +147,6 @@ class StateComputation:
                 min(1, self.berrycount/self.normalizing_berry_count),
                 avg_worth
             ],
-            np.random.uniform(-self.noise, self.noise, size=10)   
         ]
 
         if self.memory_manager.has_locality_memory():
