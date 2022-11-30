@@ -1,7 +1,7 @@
 CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v3",
-    "run_name_prefix": "v3",
+    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v5",
+    "run_name_prefix": "v5",
     "WANDB": dict(
         enabled = False, # set to true for server env
         project="agent-design-v1",
@@ -14,13 +14,17 @@ CONFIG = {
             for the computation of the sectorized state. 
         - Random exploration action is enabled.
         - Reward Perception:
-             actual_reward > 0: reward = nBerries/100 + scale*actual_reward
-             actual_reward < 0: reward = actual_reward
+             scaled_clipped_reward = min(MAX, max(MIN, scale*actual_reward)) 
+             actual_reward > 0: reward = nBerries/100 + scaled_clipped_reward
+             actual_reward < 0: reward = scaled_clipped_reward
         - Optimizing the model at the episode end.
-        - with small batchsize of 128
+        - with larger batchsize of 256
         - disabled locality memory
         - added new feature representing the normalized population of berries in each sector
+        - noise added all over the features INSIDE THE NN MODULE (added for every input parsed)
         """
+        # TODO
+        # Add -ve rewards based on the time-memories
     ),
     "RND_TRAIN_ENV": dict(
         field_size=(20000,20000), 
@@ -60,20 +64,20 @@ CONFIG = {
             persistance=0.2, 
             sector_angle=45,
             berryworth_offset=0.01,
-            normalizing_berry_count = 200,
-            noise=1.0
+            normalizing_berry_count = 200
         ),
         exploration_subroutine_config = dict(
             reward_discount_factor=0.99,
             max_steps=float('inf')
         ),
         reward_perception_config = dict(
-            max_clip=float('inf'), min_clip=-float('inf'),
+            max_clip=2, min_clip=-2,
             scale=200
         ),
         nn_model_config = dict(
             layers=[64,32,16],
-            lrelu_negative_slope=-0.01
+            lrelu_negative_slope=-0.01,
+            noise=0.01
         )
     ),
     
@@ -101,7 +105,7 @@ CONFIG = {
     ),
 
     "DDQN": dict(
-        batchSize=128, 
+        batchSize=256, 
         gamma=0.9, 
         update_freq=5, 
         MaxTrainEpisodes=2000, 
