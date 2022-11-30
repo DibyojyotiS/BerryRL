@@ -129,5 +129,6 @@ class Agent:
             sum(
                 p.numel() 
                 for p in self.nn_model.parameters() if p.requires_grad
-            )
+            ),
+            "\n"
         )
