@@ -1,9 +1,9 @@
 CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v5",
-    "run_name_prefix": "v5",
+    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v7",
+    "run_name_prefix": "v7",
     "WANDB": dict(
-        enabled = False, # set to true for server env
+        enabled = True, # set to true for server env
         project="agent-design-v1",
         group="single-experiments/tackle-loss",
         entity="foraging-rl",
@@ -18,10 +18,20 @@ CONFIG = {
              actual_reward > 0: reward = nBerries/100 + scaled_clipped_reward
              actual_reward < 0: reward = scaled_clipped_reward
         - Optimizing the model at the episode end.
-        - with larger batchsize of 256
+        - with large batchsize of 1024
         - disabled locality memory
         - added new feature representing the normalized population of berries in each sector
         - noise added all over the features INSIDE THE NN MODULE (added for every input parsed)
+        - reintroduced the feature indicating the max-worth sector
+        - changed clipping limits
+
+        - Sectorized States:
+            # a1: max-worth of each sector (persistence applied)
+            # a2: stores avg-worth of each sector (persistence applied)
+            # a3: a mesure of distance to max worthy in each sector (persistence applied)
+            # a4: normalized mesure of distance to max worthy in each sector
+            # a5: normalized population of berries in each sector
+            # a6: normalized average-worth of each sector
         """
         # TODO
         # Add -ve rewards based on the time-memories
@@ -48,6 +58,7 @@ CONFIG = {
                 grid_sizes = [(20,20),(50,50),(100,100),(200,200),(400,400)],
                 factor=0.6, 
                 exp=1.0,
+                persistence=0.8
             ),
             nearbyBerryMemoryKwargs = dict(
                 enabled = True,
@@ -61,7 +72,7 @@ CONFIG = {
             )
         ),
         state_computation_config = dict(
-            persistance=0.2, 
+            persistence=0.8, 
             sector_angle=45,
             berryworth_offset=0.01,
             normalizing_berry_count = 200
@@ -71,7 +82,7 @@ CONFIG = {
             max_steps=float('inf')
         ),
         reward_perception_config = dict(
-            max_clip=2, min_clip=-2,
+            max_clip=2, min_clip=-0.1,
             scale=200
         ),
         nn_model_config = dict(

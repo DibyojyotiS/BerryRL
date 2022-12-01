@@ -26,6 +26,7 @@ class Agent:
                 grid_sizes = [(20,20),(50,50),(100,100),(200,200),(400,400)],
                 factor=0.6, 
                 exp=1.0,
+                persistence = 0.8
             ),
             nearbyBerryMemoryKwargs = dict(
                 enabled = True,
@@ -35,7 +36,7 @@ class Agent:
             )
         ),
         state_computation_config = dict(
-            persistance=0.8, 
+            persistence=0.8, 
             sector_angle=45,
             berryworth_offset=0.05,
             normalizing_berry_count = 800,
