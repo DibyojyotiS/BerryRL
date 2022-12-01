@@ -15,15 +15,14 @@ CONFIG = {
         - Random exploration action is enabled.
         - Reward Perception:
              scaled_clipped_reward = min(MAX, max(MIN, scale*actual_reward)) 
-             actual_reward > 0: reward = nBerries/100 + scaled_clipped_reward
+             actual_reward > 0: reward = 1 + nBerriesPicked/100 + scaled_clipped_reward
              actual_reward < 0: reward = scaled_clipped_reward
         - Optimizing the model at the episode end.
         - with large batchsize of 1024
         - disabled locality memory
         - added new feature representing the normalized population of berries in each sector
         - noise added all over the features INSIDE THE NN MODULE (added for every input parsed)
-        - reintroduced the feature indicating the max-worth sector
-        - changed clipping limits
+        - changed clipping limits, smaller scaling
 
         - Sectorized States:
             # a1: max-worth of each sector (persistence applied)
@@ -58,7 +57,7 @@ CONFIG = {
                 grid_sizes = [(20,20),(50,50),(100,100),(200,200),(400,400)],
                 factor=0.6, 
                 exp=1.0,
-                persistence=0.8
+                persistence=0.2
             ),
             nearbyBerryMemoryKwargs = dict(
                 enabled = True,
@@ -72,7 +71,7 @@ CONFIG = {
             )
         ),
         state_computation_config = dict(
-            persistence=0.8, 
+            persistence=0.2, 
             sector_angle=45,
             berryworth_offset=0.01,
             normalizing_berry_count = 200
@@ -82,8 +81,8 @@ CONFIG = {
             max_steps=float('inf')
         ),
         reward_perception_config = dict(
-            max_clip=2, min_clip=-0.1,
-            scale=200
+            max_clip=float('inf'), min_clip=-float('inf'),
+            scale=20
         ),
         nn_model_config = dict(
             layers=[64,32,16],
