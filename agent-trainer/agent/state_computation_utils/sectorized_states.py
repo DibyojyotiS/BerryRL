@@ -59,7 +59,7 @@ def njitSectorized(
     return average_worth
 
 
-def sectorized_states(listOfBerries:ndarray, 
+def compute_sectorized_states(listOfBerries:ndarray, 
                         berry_worth_function:Callable, maxPossibleDist:float,
                         prev_sectorized_state:List[ndarray]=None, 
                         persistence=0.8,angle=45
@@ -130,4 +130,4 @@ if __name__ == "__main__":
     
     from berry_worth_function import berry_worth
     berryWorthFunc = lambda sizes, distances: berry_worth(sizes, distances, REWARD_RATE=1e-4, DRAIN_RATE=1/(2*120*400), HALFDIAGOBS = 0.5*(1920**2 + 1080**2)**0.5)
-    state, avgWorth, worths = sectorized_states(berries, None, berryWorthFunc, 0.5*(1920**2 + 1080**2)**0.5)
+    state, avgWorth, worths = compute_sectorized_states(berries, None, berryWorthFunc, 0.5*(1920**2 + 1080**2)**0.5)

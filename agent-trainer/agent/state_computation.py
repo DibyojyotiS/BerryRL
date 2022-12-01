@@ -1,7 +1,7 @@
 from typing import List
 import numpy as np
 
-from .state_computation_utils import berry_worth, sectorized_states
+from .state_computation_utils import berry_worth, compute_sectorized_states
 from .memory_manager import MemoryManager
 
 
@@ -104,7 +104,7 @@ class StateComputation:
 
     def __init_compute(self):
         self.berrycount = 0
-        self.prev_sectorized_state = None
+        self.prev_sectorized_states = None
 
     def __init_constants(self):
         self.ENV_HALFDIAG = self.berry_env_HALFDIAGOBS
@@ -122,18 +122,17 @@ class StateComputation:
         )
 
     def __compute(self, observation, num_recentpicked, concated_berries):
-        sectorizedState, avg_worth, berryworths = sectorized_states(
+        sectorized_states, avg_worth, berryworths = compute_sectorized_states(
             listOfBerries=concated_berries,
             berry_worth_function=self.__berry_worth,
             maxPossibleDist=self.BERRYMEM_MAXDIST,
-            prev_sectorized_state=self.prev_sectorized_state,
+            prev_sectorized_state=self.prev_sectorized_states,
             persistence=self.persistence,
             angle=self.angle
         )
-        self.prev_sectorized_state = sectorizedState
+        self.prev_sectorized_states = sectorized_states
 
-        features = [
-            sectorizedState.flatten(),
+        features = sectorized_states + [
             observation['scaled_dist_from_edge'],
             [
                 observation['patch_relative_score'],
