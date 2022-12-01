@@ -30,6 +30,7 @@ class MultiResolutionTimeMemory(MemoryBase):
         grid_sizes: List[Tuple[int, int]],
         factor: float = 0.6,
         exp: float = 1.0,
+        persistence: float = 0.8,
         plot_curves=False
     ):
         """_summary_
@@ -42,21 +43,23 @@ class MultiResolutionTimeMemory(MemoryBase):
             the berry-field is divided into (L,M) sized grid and the agent notes the time spent 
             in each of the cell. The memory of the time spent in a particular cell gets accessed 
             when the agent is in that cell.
-        factor : float, optional
+        factor : float
             increment the time of the current block
             by delta for each step in the block
             as an exponential average with (1-delta)
             where delta = time_memory_factor/resolution, by default 0.6
-        exp : float, optional
+        exp : float
             raise the stored time memory for the current block
             to time_memory_exp and feed to agent's state, by default 1.0
+        persistence : float
+            analogus to persistence of vision, makes the resultant as
+            persistence * prev-memory + (1-persistence) * current-memory
         """
         self.time_memory_grid_sizes = grid_sizes
         self.time_memory_factor = factor
         self.time_memory_exp = exp
+        self.persistence = persistence
         self.berryField_FIELD_SIZE = berryField_FIELD_SIZE
-        self.cell_sizes = self._computeCellSizes()
-        self.deltas = self._computeDecayDeltas(self.cell_sizes)
         self._setup()
 
         # some stuff that i need for feel
@@ -100,7 +103,10 @@ class MultiResolutionTimeMemory(MemoryBase):
         cell_pos = np.array([x,y]/self.cell_sizes, dtype=int)
         for i in range(len(self.time_mem_mats)):
             x_, y_ = cell_pos[i]
-            self.current_time[i] = min(1,self.time_mem_mats[i][x_][y_])
+            self.current_time[i] = (
+                self.persistence*self.current_time[i]
+                + self.rpersistence * min(1,self.time_mem_mats[i][x_][y_])
+            )
         return self.current_time**self.time_memory_exp
 
     def _computeCellSizes(self):
@@ -110,6 +116,7 @@ class MultiResolutionTimeMemory(MemoryBase):
 
     def _computeDecayDeltas(self, cell_sizes):
         deltas = self.time_memory_factor/np.max(cell_sizes,axis=1)
+        assert all(deltas < 1), "factor is too large!"
         return deltas
 
     def _setup(self):
@@ -117,10 +124,14 @@ class MultiResolutionTimeMemory(MemoryBase):
         self.time_mem_mats = [
             np.zeros(shape) for shape in self.time_memory_grid_sizes
         ]
+        self.rpersistence = 1 - self.persistence
+        self.cell_sizes = self._computeCellSizes()
+        self.deltas = self._computeDecayDeltas(self.cell_sizes)
 
         self.time_mem_max_stat = np.zeros_like(self.current_time)
         
     def _reset_mem(self):
+        self.current_time[:] = 0
         for i in range(len(self.time_mem_mats)):
             self.time_mem_mats[i][:] = 0
         
