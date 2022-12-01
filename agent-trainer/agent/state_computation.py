@@ -12,7 +12,7 @@ class StateComputation:
         berry_env_REWARD_RATE: float,
         berry_env_DRAIN_RATE: float,
         memory: MemoryManager, 
-        persistance=0.8, 
+        persistence=0.8, 
         sector_angle=45,
         berryworth_offset=0.05,
         normalizing_berry_count = 800
@@ -23,7 +23,7 @@ class StateComputation:
         Parameters
         ----------
         memory : MemoryManager
-        persistance : float, optional
+        persistence : float, optional
             analogous to the persistence of vision
             used for some portion of the state, by default 0.8
         sector_angle : int, optional
@@ -40,7 +40,7 @@ class StateComputation:
         self.berry_env_REWARD_RATE = berry_env_REWARD_RATE
         self.berry_env_DRAIN_RATE = berry_env_DRAIN_RATE
         self.memory_manager = memory
-        self.persistance = persistance
+        self.persistence = persistence
         self.angle = sector_angle
         self.worth_offset = berryworth_offset
         self.normalizing_berry_count = normalizing_berry_count
@@ -127,7 +127,7 @@ class StateComputation:
             berry_worth_function=self.__berry_worth,
             maxPossibleDist=self.BERRYMEM_MAXDIST,
             prev_sectorized_state=self.prev_sectorized_state,
-            persistence=self.persistance,
+            persistence=self.persistence,
             angle=self.angle
         )
         self.prev_sectorized_state = sectorizedState

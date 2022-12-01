@@ -1,13 +1,14 @@
-from typing import Callable, Tuple
+from typing import Callable, List, Tuple
 import numpy as np
 from numba import njit
+from numpy import ndarray
 
 EPSILON = 1e-8
 ROOT_2_INV = 0.5**0.5
 
 
 @njit
-def njitGetTrueAngles(directions, referenceVector=np.asfarray([0,1])):
+def njitGetTrueAngles(directions:ndarray, referenceVector=np.asfarray([0,1])):
     """ get the angle of the vectors given in the list 
     directions relative to the reference vector in [0,2π]
     - directions: ndarray
@@ -28,10 +29,12 @@ def njitGetTrueAngles(directions, referenceVector=np.asfarray([0,1])):
 
 
 @njit
-def njitSectorized(angles, worths, dist, a1, a2, a3, a4, a5, a6, angle, maxPossibleDist):
-    max_worth = -10000000
-    max_worth_idx = -1
-    # need to have features that compare relative to current minumim instead of maxPossibleDist
+def njitSectorized(
+    angles:ndarray, worths:ndarray, dist:ndarray, 
+    a1:ndarray, a2:ndarray, a3:ndarray, a4:ndarray, a5:ndarray, a6:ndarray, 
+    angle:int, maxPossibleDist:float, persistence:float
+):
+    rpersistence = 1 - persistence
     for x in range(0,360,angle):
         sectorL = (x-angle/2)%360
         sectorR = (x+angle/2)
@@ -42,26 +45,25 @@ def njitSectorized(angles, worths, dist, a1, a2, a3, a4, a5, a6, angle, maxPossi
         
         if args.shape[0] > 0: 
             idx = x//angle # sector
-            sectorWorths = worths[args]
+            sectorWorths:ndarray = worths[args]
             maxSecWorthIdx = args[np.argmax(sectorWorths)] # max worthy
-            a1[idx] = worthyness = worths[maxSecWorthIdx]
-            a2[idx] = np.sum(sectorWorths)/len(sectorWorths)
-            a3[idx] = max(0, 1 - dist[maxSecWorthIdx]/maxPossibleDist) # here also maybe little variance for large maxPossibleDist
-            a4[idx] = max(0, 1 - np.min(dist[args])/maxPossibleDist) # maybe too little variance? for large maxPossibleDist
+            maxWorthDistInd = max(0, 1 - dist[maxSecWorthIdx]/maxPossibleDist)
+            a1[idx] = persistence*a1[idx] + rpersistence*worths[maxSecWorthIdx]
+            a2[idx] = persistence*a2[idx] + rpersistence*sectorWorths.mean()
+            a3[idx] = persistence*a3[idx] + rpersistence*maxWorthDistInd 
             a5[idx] = len(sectorWorths)
-            if worthyness > max_worth:
-                max_worth = worthyness
-                max_worth_idx = idx
-    a5/=(EPSILON+np.max(a5))
-    a6[max_worth_idx] = 1
-    return np.sum(a2)/len(a2)
+    average_worth = a2.mean()
+    a4[:] = (a3 - a3.mean())/(a3.max() - a3.min() + EPSILON)
+    a5[:] = (a5 - a5.mean())/(a5.max() - a5.min() + EPSILON)
+    a6[:] = (a2 - average_worth)/(a2.max() - a2.min() + EPSILON)
+    return average_worth
 
 
-def sectorized_states(listOfBerries:np.ndarray, 
+def sectorized_states(listOfBerries:ndarray, 
                         berry_worth_function:Callable, maxPossibleDist:float,
-                        prev_sectorized_state=None, 
+                        prev_sectorized_state:List[ndarray]=None, 
                         persistence=0.8,angle=45
-) -> Tuple[np.ndarray, float, np.ndarray]:
+) -> Tuple[List[ndarray], float, ndarray]:
     """ 
     ### parameters
     - listOfBerries: ndarray
@@ -82,26 +84,26 @@ def sectorized_states(listOfBerries:np.ndarray,
     - persistence: float (default 0.8)
             - the amount of information from the 
             prev_sectorized_state that is retained 
+            - not applied on all the features
             
     ### returns
     - sectorized_state: ndarray
     - avg_worth: float, the average worth so seen"""
 
     # apply persistence if prev_sectorized_state is given
-    if prev_sectorized_state is not None:
-        a1,a2,a3,a4,a5,a6 = prev_sectorized_state * persistence
-    else:
-        num_sectors = 360//angle
-        a1,a2,a3,a4,a5,a6 = np.zeros((6,num_sectors))
-        # a1: max-worth of each sector
-        # a2: stores avg-worth of each sector
-        # a3: a mesure of distance to max worthy in each sector
-        # a4: a mesure of min-distance to berry in each sector
-        # a5: normalized population of berries in each sector
-        # a6: indicates sector with maximum worth
-    
+    if prev_sectorized_state is None:
+        prev_sectorized_state = np.zeros((6,360//angle))
+
+    a1,a2,a3,a4,a5,a6 = prev_sectorized_state
+    # a1: max-worth of each sector (persistence applied)
+    # a2: stores avg-worth of each sector (persistence applied)
+    # a3: a mesure of distance to max worthy in each sector (persistence applied)
+    # a4: normalized mesure of distance to max worthy in each sector
+    # a5: normalized population of berries in each sector
+    # a6: normalized average-worth of each sector
+
     if len(listOfBerries) == 0:
-        return np.array([a1,a2,a3,a4,a5,a6]), 0, np.array([])
+        return [a1,a2,a3,a4,a5,a6], 0, np.array([])
         
     sizes = listOfBerries[:,2]
     dist = np.linalg.norm(listOfBerries[:,:2], axis=1) + EPSILON
@@ -109,10 +111,11 @@ def sectorized_states(listOfBerries:np.ndarray,
     angles = njitGetTrueAngles(directions)
     worths = berry_worth_function(sizes, dist)
     avg_worth =  njitSectorized(
-        angles, worths, dist, a1, a2, a3, a4, a5, a6, angle, maxPossibleDist
+        angles, worths, dist, a1, a2, a3, a4, a5, a6, angle, maxPossibleDist,
+        persistence
     )
 
-    return np.array([a1,a2,a3,a4,a5,a6]), avg_worth, worths
+    return [a1,a2,a3,a4,a5,a6], avg_worth, worths
 
 
 if __name__ == "__main__":
