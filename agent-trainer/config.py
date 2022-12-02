@@ -1,7 +1,7 @@
 CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v7",
-    "run_name_prefix": "v7",
+    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v8",
+    "run_name_prefix": "v8",
     "WANDB": dict(
         enabled = False, # set to true for server env
         project="agent-design-v1",
@@ -19,6 +19,7 @@ CONFIG = {
              actual_reward < 0: reward = scaled_clipped_reward
         - noise added all over the features INSIDE THE NN MODULE (added for every input parsed)
         - reduced the buffer size
+        - fixed the reward for exploration subroutine to the max-drain
 
         - Sectorized States:
             # a1: max-worth of each sector (persistence applied)
@@ -74,11 +75,12 @@ CONFIG = {
         ),
         exploration_subroutine_config = dict(
             reward_discount_factor=0.99,
-            max_steps=float('inf')
+            max_steps=float('inf'),
+            reward_type="max-drain"
         ),
         reward_perception_config = dict(
             max_clip=float('inf'), min_clip=-float('inf'),
-            scale=20
+            scale=200
         ),
         nn_model_config = dict(
             layers=[64,32,16,8],
@@ -105,7 +107,7 @@ CONFIG = {
 
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
         epsilon=0.55,
-        finalepsilon=0.1,
+        finalepsilon=0.2,
         decaySteps=500,
         decay_type='exp'
     ),
