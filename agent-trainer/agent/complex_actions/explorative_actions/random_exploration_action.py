@@ -7,6 +7,10 @@ from ...state_computation import StateComputation
 
 from ..utils import skip_steps
 
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 class RandomExplorationAction:
 
@@ -14,8 +18,12 @@ class RandomExplorationAction:
     PREVENTIVE_ACTION_ARR = np.array([2,6,4,0])
 
     def __init__(
-        self, torch_model:nn.Module, state_computer: StateComputation,
-        n_skip_steps: int, reward_discount_factor=1.0, 
+        self, torch_model:nn.Module, 
+        state_computer: StateComputation,
+        n_skip_steps: int, 
+        berry_env_DRAIN_RATE: float,
+        reward_discount_factor=0.99, 
+        reward_type:Literal["max-drain", "discount-sum"]="max-drain",
         max_steps:float=float('inf'), torch_device: device= device('cpu')
     ) -> None:
         """ A complex action that takes multiple steps in the environment 
@@ -49,7 +57,10 @@ class RandomExplorationAction:
         self.max_steps = max_steps
         self.skipSteps = n_skip_steps
         self.rewardDiscount = reward_discount_factor
+        self.reward_type = reward_type
+        self.berry_env_DRAIN_RATE = berry_env_DRAIN_RATE
         self.state_computer = state_computer
+        assert reward_discount_factor <= 1
         self.reset()
 
     def reset(self):
@@ -89,12 +100,23 @@ class RandomExplorationAction:
                 observation, info, _, done = skipTrajectory[-1]
                 listberries = observation["berries"]
                 current_patch = info['current_patch_id']
+        
+        if self.max_drain is not None: # self.reward_type is "max-drain"
+            reward_ = -self.max_drain
         return reward_, skipTrajectory, steps_
 
     def __init_subroutine(self):
         self.action = np.random.randint(8) # seed with a random action
         self.probs = np.zeros(8)
         self.probs[self.action] = 1
+
+        self.max_drain = None
+        if self.reward_type == "max-drain":
+            self.max_drain = min(
+                self.max_steps * self.berry_env_DRAIN_RATE,
+                self.berry_env_DRAIN_RATE/(1-self.rewardDiscount+1e-8)
+            )
+            assert self.max_drain < float('inf')
 
     def __update_probs(self, selectedAction):
         self.probs[self.action]=self.probs[(self.action+1)%8]=self.probs[(self.action-1)%8]=0

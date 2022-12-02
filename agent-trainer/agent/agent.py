@@ -43,7 +43,8 @@ class Agent:
         ),
         exploration_subroutine_config = dict(
             reward_discount_factor=1.0,
-            max_steps=float('inf')
+            max_steps=float('inf'),
+            reward_type="max-drain"
         ),
         reward_perception_config = dict(
             max_clip=2, min_clip=-0.04,
@@ -74,6 +75,7 @@ class Agent:
         )
         self.random_exploration_action = RandomExplorationAction(
             torch_model=self.nn_model,
+            berry_env_DRAIN_RATE=berry_env_DRAIN_RATE,
             state_computer=self.state_computer,
             n_skip_steps=self.skip_steps,
             torch_device=torch_device,
