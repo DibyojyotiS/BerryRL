@@ -143,3 +143,14 @@ class MultiResolutionTimeMemory(MemoryBase):
             self.time_mem_max_stat[memory_index],
             self.time_mem_mats[memory_index][x_][y_]
         )
+
+
+if __name__ == "__main__":
+    tm = MultiResolutionTimeMemory(
+        berryField_FIELD_SIZE = (20000,20000),
+        grid_sizes = [(20,20),(50,50),(100,100),(200,200),(400,400)],
+        factor=0.6, 
+        exp=1.0,
+        persistence=0.2,
+        plot_curves=True
+    )

@@ -137,7 +137,7 @@ class StateComputation:
             [
                 observation['patch_relative_score'],
                 observation['total_juice'],
-                len(observation["berries"])/50,
+                min(1, len(observation["berries"])/50),
                 num_recentpicked > 0, # bool picked feat
                 min(1, self.berrycount/self.normalizing_berry_count),
                 avg_worth

@@ -3,7 +3,7 @@ CONFIG = {
     "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v7",
     "run_name_prefix": "v7",
     "WANDB": dict(
-        enabled = True, # set to true for server env
+        enabled = False, # set to true for server env
         project="agent-design-v1",
         group="single-experiments/tackle-loss",
         entity="foraging-rl",
@@ -17,12 +17,8 @@ CONFIG = {
              scaled_clipped_reward = min(MAX, max(MIN, scale*actual_reward)) 
              actual_reward > 0: reward = 1 + nBerriesPicked/100 + scaled_clipped_reward
              actual_reward < 0: reward = scaled_clipped_reward
-        - Optimizing the model at the episode end.
-        - with large batchsize of 1024
-        - disabled locality memory
-        - added new feature representing the normalized population of berries in each sector
         - noise added all over the features INSIDE THE NN MODULE (added for every input parsed)
-        - changed clipping limits, smaller scaling
+        - reduced the buffer size
 
         - Sectorized States:
             # a1: max-worth of each sector (persistence applied)
@@ -85,14 +81,14 @@ CONFIG = {
             scale=20
         ),
         nn_model_config = dict(
-            layers=[64,32,16],
-            lrelu_negative_slope=-0.01,
+            layers=[64,32,16,8],
+            lrelu_negative_slope=-0.001,
             noise=0.01
         )
     ),
     
     "ADAM": dict(
-        lr=1e-5, weight_decay=0.0
+        lr=5e-5, weight_decay=0.0
     ),
 
     "MULTI_STEP_LR": dict(
@@ -101,7 +97,7 @@ CONFIG = {
     ),
 
     "PER_BUFFER": dict(
-        bufferSize=int(5E5), 
+        bufferSize=int(5E4), 
         alpha=0.95,
         beta=0.1, 
         beta_rate=0.9/2000
@@ -115,12 +111,12 @@ CONFIG = {
     ),
 
     "DDQN": dict(
-        batchSize=256, 
+        batchSize=1024, 
         gamma=0.9, 
         update_freq=5, 
         MaxTrainEpisodes=2000, 
         MaxStepsPerEpisode=None,
-        optimize_every_kth_action=-1,
+        optimize_every_kth_action=200,
         num_gradient_steps=1000,
         evalFreq=10, 
         printFreq=1, 

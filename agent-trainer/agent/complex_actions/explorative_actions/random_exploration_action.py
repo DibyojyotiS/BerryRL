@@ -50,7 +50,17 @@ class RandomExplorationAction:
         self.skipSteps = n_skip_steps
         self.rewardDiscount = reward_discount_factor
         self.state_computer = state_computer
+        self.reset()
+
+    def reset(self):
         self.__init_subroutine()
+        self.__init_stats()
+
+    def get_stats(self):
+        return {
+            "num_calls": self.times_called,
+            "num_invokes": self.times_called_and_subroutine_invoked
+        }
 
     def start_for(self, berry_env_step: Callable):
         """ returns discounted_reward, skip_trajectory, total_steps"""
@@ -61,6 +71,10 @@ class RandomExplorationAction:
         steps_+=steps; reward_ += summedReward*discount_; discount_*=self.rewardDiscount
         observation, info, _, done = skipTrajectory[-1]
         listberries = observation["berries"]
+
+        # update stats
+        self.times_called +=1
+        self.times_called_and_subroutine_invoked += (len(listberries) == 0)
 
         while not done and (len(listberries) == 0) and steps_ < self.max_steps:
             summedReward, skipTrajectory, steps = self.__one_exploration_step(berry_env_step)
@@ -110,3 +124,7 @@ class RandomExplorationAction:
         self.__update_probs(selectedAction)
         self.action = selectedAction
         return skip_steps(self.action, self.skipSteps, berry_env_step)
+
+    def __init_stats(self):
+        self.times_called = 0
+        self.times_called_and_subroutine_invoked = 0

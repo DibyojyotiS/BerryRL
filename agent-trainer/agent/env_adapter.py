@@ -39,12 +39,14 @@ class BerryFieldEnvAdapter:
     def resetAdapter(self):
         self.action_stats[:] = 0
 
-    def create_adapter_for_env(self, berry_env: BerryFieldEnv):
+    def embed_adapter_in_env(self, berry_env: BerryFieldEnv):
         berry_env.reset = self._make_env_reset_wrapper(berry_env.reset)
         berry_env.step = self._make_env_step_wrapper(berry_env.step)
 
     def _make_env_step_wrapper(self, berry_env_step: Callable):
         def step(action:int):
+            self.action_stats[action] += 1
+
             if action < self.default_n_actions:
                 sum_reward, skip_trajectory, steps = \
                     skip_steps(action, self.skip_steps, berry_env_step)
@@ -52,8 +54,8 @@ class BerryFieldEnvAdapter:
                 sum_reward, skip_trajectory, steps = \
                     self.random_exploration_action.start_for(berry_env_step)
             _, info, _, done = skip_trajectory[-1] # obs, info, reward, done
+            
             reward = self.reward_perception.get_perceived_reward(sum_reward)
-            self.action_stats[action] += 1
             state = self.state_computation.compute(skip_trajectory, action)
             return state, reward, done, info
             

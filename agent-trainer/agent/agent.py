@@ -93,20 +93,23 @@ class Agent:
         )
 
     def reset_agent(self):
-        # must not reset env_adapter here due to calling of eval-init before
-        # call to get stats
+        # env_adapter will trigger this when env.reset is called
+        self.env_adapter.resetAdapter()
         self.memory_manager.reset()
         self.state_computer.reset()
+        self.random_exploration_action.reset()
+        self.reward_perception.reset()
 
     def get_stats(self):
         return {
             "env_adapter":self.env_adapter.get_stats(),
-            "memory_manager": self.memory_manager.get_stats()
+            "memory_manager": self.memory_manager.get_stats(),
+            "random_exploration_action": self.random_exploration_action.get_stats()
         }
 
     def getPerceivedEnvironment(self, berry_env: BerryFieldEnv):
         # modify the environment step and reset 
-        self.env_adapter.create_adapter_for_env(berry_env)
+        self.env_adapter.embed_adapter_in_env(berry_env)
         return berry_env
 
     def nnet(self):
