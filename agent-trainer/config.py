@@ -81,10 +81,10 @@ CONFIG = {
         ),
         reward_perception_config = dict(
             max_clip=float('inf'), min_clip=-float('inf'),
-            scale=20
+            scale=600
         ),
         nn_model_config = dict(
-            layers=[64,32,16,8],
+            layers=[32,16,16],
             lrelu_negative_slope=-0.001,
             noise=0.01
         )
@@ -119,8 +119,8 @@ CONFIG = {
         update_freq=5, 
         MaxTrainEpisodes=2000, 
         MaxStepsPerEpisode=None,
-        optimize_every_kth_action=200,
-        num_gradient_steps=1000,
+        optimize_every_kth_action=100,
+        num_gradient_steps=25,
         evalFreq=10, 
         printFreq=1, 
         polyak_average=True, 
