@@ -77,7 +77,7 @@ CONFIG = {
         ),
         reward_perception_config = dict(
             max_clip=float('inf'), min_clip=-float('inf'),
-            scale=20
+            scale=3 * 1e4/50
         ),
         nn_model_config = dict(
             layers=[32,16,16],
