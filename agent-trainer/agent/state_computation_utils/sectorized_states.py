@@ -32,34 +32,30 @@ def njitGetTrueAngles(directions:ndarray, referenceVector=np.asfarray([0,1])):
 def njitSectorized(
     angles:ndarray, worths:ndarray, dist:ndarray, 
     array_out:ndarray,
-    angle:int, maxPossibleDist:float, persistence:float
+    angle:int, maxPossibleDist:float
 ):
-    array_out[:] = persistence * array_out
-    
-    if len(angles) > 0:
-        rpersistence = 1 - persistence
-        a1,a2,a3,a4,a5,a6 = array_out
-        for x in range(0,360,angle):
-            sectorL = (x-angle/2)%360
-            sectorR = (x+angle/2)
-            if sectorL < sectorR:
-                args = np.nonzero((angles>=sectorL)&(angles<=sectorR))[0]
-            else:
-                args = np.nonzero((angles>=sectorL)|(angles<=sectorR))[0]
-            
-            if args.shape[0] > 0: 
-                idx = x//angle # sector
-                sectorWorths:ndarray = worths[args]
-                maxSecWorthIdx = args[np.argmax(sectorWorths)] # max worthy
-                maxWorthDistInd = max(0, 1 - dist[maxSecWorthIdx]/maxPossibleDist)
-                a1[idx] += rpersistence*worths[maxSecWorthIdx]
-                a2[idx] += rpersistence*sectorWorths.mean()
-                a3[idx] += rpersistence*maxWorthDistInd 
-                a5[idx] = len(sectorWorths) # no persistence applied to this
-        average_worth = a2.mean()
-        a4[:] += rpersistence*(a3 - a3.mean())/(a3.max() - a3.min() + EPSILON)
-        a5[:] = (a5 - a5.mean())/(a5.max() - a5.min() + EPSILON)
-        a6[:] += rpersistence*(a2 - average_worth)/(a2.max() - a2.min() + EPSILON)
+    a1,a2,a3,a4,a5,a6 = array_out
+    for x in range(0,360,angle):
+        sectorL = (x-angle/2)%360
+        sectorR = (x+angle/2)
+        if sectorL < sectorR:
+            args = np.nonzero((angles>=sectorL)&(angles<=sectorR))[0]
+        else:
+            args = np.nonzero((angles>=sectorL)|(angles<=sectorR))[0]
+        
+        if args.shape[0] > 0: 
+            idx = x//angle # sector
+            sectorWorths:ndarray = worths[args]
+            maxSecWorthIdx = args[np.argmax(sectorWorths)] # max worthy
+            maxWorthDistInd = max(0, 1 - dist[maxSecWorthIdx]/maxPossibleDist)
+            a1[idx] = worths[maxSecWorthIdx]
+            a2[idx] = sectorWorths.mean()
+            a3[idx] = maxWorthDistInd 
+            a5[idx] = len(sectorWorths) # no persistence applied to this
+    average_worth = a2.mean()
+    a4[:] = (a3 - a3.mean())/(a3.max() - a3.min() + EPSILON)
+    a5[:] = (a5 - a5.mean())/(a5.max() - a5.min() + EPSILON)
+    a6[:] = (a2 - average_worth)/(a2.max() - a2.min() + EPSILON)
     return average_worth
 
 
@@ -97,6 +93,8 @@ def compute_sectorized_states(listOfBerries:ndarray,
     # apply persistence if prev_sectorized_state is given
     if prev_sectorized_state is None:
         prev_sectorized_state = np.zeros((6,360//angle))
+    prev_sectorized_state = persistence * prev_sectorized_state
+    
     # a1: max-worth of each sector
     # a2: stores avg-worth of each sector
     # a3: a mesure of distance to max worthy in each sector
@@ -113,8 +111,7 @@ def compute_sectorized_states(listOfBerries:ndarray,
     angles = njitGetTrueAngles(directions)
     worths = berry_worth_function(sizes, dist)
     avg_worth =  njitSectorized(
-        angles, worths, dist, prev_sectorized_state, angle, maxPossibleDist,
-        persistence
+        angles, worths, dist, prev_sectorized_state, angle, maxPossibleDist
     )
 
     return prev_sectorized_state, avg_worth, worths
