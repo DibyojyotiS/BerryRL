@@ -108,9 +108,14 @@ class StateComputation:
         self.prev_sectorized_states = None
 
     def __init_constants(self):
-        self.ENV_HALFDIAG = self.berry_env_HALFDIAGOBS
-        maxDistPopThXY = self.memory_manager.nearbyBerriesMemory.maxDistPopThXY
-        self.BERRYMEM_MAXDIST = 0.5 * np.linalg.norm(maxDistPopThXY)
+        if self.memory_manager.has_berry_memory():
+            self.BERRYMEM_MAXDIST = 0.5 * np.linalg.norm(
+                self.memory_manager.nearbyBerriesMemory.maxDistPopThXY
+            )
+        else:
+            self.BERRYMEM_MAXDIST = 0.5 * np.linalg.norm(
+                self.berry_env_HALFDIAGOBS
+            )          
 
     def __berry_worth(self, berrySizes, berryDistances):
         return berry_worth(
