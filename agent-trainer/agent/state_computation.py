@@ -84,8 +84,9 @@ class StateComputation:
             listOfBerries
         ]) if self.memory_manager.has_berry_memory() else listOfBerries
 
-        berryworths, state = \
-            self.__compute(observation, num_recentpicked, concated_berries)
+        berryworths, features = self.__compute_worths_and_features(
+            observation, num_recentpicked, concated_berries
+        )
 
         # update memories
         self.memory_manager.update(
@@ -97,7 +98,7 @@ class StateComputation:
         )
         self.berrycount += num_recentpicked
 
-        return state
+        return features
 
     def reset(self):
         self.__init_compute()
@@ -121,7 +122,9 @@ class StateComputation:
             WORTH_OFFSET=self.worth_offset
         )
 
-    def __compute(self, observation, num_recentpicked, concated_berries):
+    def __compute_worths_and_features(
+        self, observation, num_recentpicked, concated_berries
+    ):
         sectorized_states, avg_worth, berryworths = compute_sectorized_states(
             listOfBerries=concated_berries,
             berry_worth_function=self.__berry_worth,
@@ -132,7 +135,8 @@ class StateComputation:
         )
         self.prev_sectorized_states = sectorized_states
 
-        features = sectorized_states + [
+        features = [
+            sectorized_states.flatten(),
             observation['scaled_dist_from_edge'],
             [
                 observation['patch_relative_score'],
@@ -144,13 +148,12 @@ class StateComputation:
             ],
         ]
 
-        if self.memory_manager.has_locality_memory():
-            features.append(
-                self.memory_manager.get_locality_memory().flatten())
-        
         if self.memory_manager.has_time_memories():
             features.append(
                 self.memory_manager.get_time_memories(observation["position"]))
 
-        state = np.concatenate(features)
-        return berryworths, state
+        if self.memory_manager.has_locality_memory():
+            features.append(
+                self.memory_manager.get_locality_memory().flatten())
+    
+        return berryworths, np.concatenate(features)

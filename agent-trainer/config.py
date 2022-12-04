@@ -3,7 +3,7 @@ CONFIG = {
     "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v8",
     "run_name_prefix": "v8",
     "WANDB": dict(
-        enabled = False, # set to true for server env
+        enabled = True, # set to true for server env
         project="agent-design-v1",
         group="single-experiments/tackle-loss",
         entity="foraging-rl",
@@ -20,13 +20,14 @@ CONFIG = {
         - noise added all over the features INSIDE THE NN MODULE (added for every input parsed)
         - reduced the buffer size
         - fixed the reward for exploration subroutine to the max-drain
+        - bug fixes in state-comp
 
         - Sectorized States:
-            # a1: max-worth of each sector (persistence applied)
-            # a2: stores avg-worth of each sector (persistence applied)
-            # a3: a mesure of distance to max worthy in each sector (persistence applied)
+            # a1: max-worth of each sector
+            # a2: stores avg-worth of each sector
+            # a3: a mesure of distance to max worthy in each sector
             # a4: normalized mesure of distance to max worthy in each sector
-            # a5: normalized population of berries in each sector
+            # a5: normalized relative population of berries in each sector (no persistence applied)
             # a6: normalized average-worth of each sector
         """
         # TODO
@@ -80,7 +81,7 @@ CONFIG = {
         ),
         reward_perception_config = dict(
             max_clip=float('inf'), min_clip=-float('inf'),
-            scale=200
+            scale=20
         ),
         nn_model_config = dict(
             layers=[64,32,16,8],
