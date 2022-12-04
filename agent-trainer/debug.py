@@ -14,10 +14,10 @@ class Debugger:
         self,
         agent_config=Dict[str,Any],
         state_breakup:Dict[str,Tuple[Tuple[int,int],Tuple[int,int]]] = dict(
-            sectorized_states = ((0, 48), (6,8)),
-            edge_dists = ((48,52),(1,4)),
-            misc_infos = ((52,58),(1,6)),
-            time_memories = ((58,63), (1,5))
+            sectorized_states = ((0, 32), (4,8)),
+            edge_dists = ((32,36),(1,4)),
+            misc_infos = ((36,42),(1,6)),
+            time_memories = ((42,47), (1,5))
         ),
         plot_freq = 10,
         fig_size = (10,10)

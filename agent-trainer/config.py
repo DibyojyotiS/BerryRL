@@ -1,11 +1,11 @@
 CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/single-experiments/tackle-loss/v8",
-    "run_name_prefix": "v8",
+    "LOG_DIR_ROOT": ".temp/retrain/0.01",
+    "run_name_prefix": "retrain-0.01",
     "WANDB": dict(
         enabled = True, # set to true for server env
         project="agent-design-v1",
-        group="single-experiments/tackle-loss",
+        group=".temp/retrain/",
         entity="foraging-rl",
         watch_log = "all", # logging both params and grads
         watch_log_freq = 1000,
@@ -18,17 +18,13 @@ CONFIG = {
              actual_reward > 0: reward = 1 + nBerriesPicked/100 + scaled_clipped_reward
              actual_reward < 0: reward = scaled_clipped_reward
         - noise added all over the features INSIDE THE NN MODULE (added for every input parsed)
-        - reduced the buffer size
         - fixed the reward for exploration subroutine to the max-drain
-        - bug fixes in state-comp
 
         - Sectorized States:
             # a1: max-worth of each sector
             # a2: stores avg-worth of each sector
             # a3: a mesure of distance to max worthy in each sector
-            # a4: normalized mesure of distance to max worthy in each sector
-            # a5: normalized relative population of berries in each sector (no persistence applied)
-            # a6: normalized average-worth of each sector
+            # a4: indicates the sector with the max worthy berry
         """
         # TODO
         # Add -ve rewards based on the time-memories
@@ -84,23 +80,23 @@ CONFIG = {
             scale=20
         ),
         nn_model_config = dict(
-            layers=[64,32,16,8],
+            layers=[32,16,16],
             lrelu_negative_slope=-0.001,
             noise=0.01
         )
     ),
     
     "ADAM": dict(
-        lr=5e-5, weight_decay=0.0
+        lr=5e-4, weight_decay=0.0
     ),
 
     "MULTI_STEP_LR": dict(
-        milestones=[200*i for i in range(1,1)],
+        milestones=[100*i for i in range(1,3)],
         gamma=0.5
     ),
 
     "PER_BUFFER": dict(
-        bufferSize=int(5E4), 
+        bufferSize=int(5E5), 
         alpha=0.95,
         beta=0.1, 
         beta_rate=0.9/2000
@@ -109,7 +105,7 @@ CONFIG = {
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
         epsilon=0.55,
         finalepsilon=0.2,
-        decaySteps=500,
+        decaySteps=200,
         decay_type='exp'
     ),
 
@@ -119,8 +115,8 @@ CONFIG = {
         update_freq=5, 
         MaxTrainEpisodes=2000, 
         MaxStepsPerEpisode=None,
-        optimize_every_kth_action=200,
-        num_gradient_steps=1000,
+        optimize_every_kth_action=100,
+        num_gradient_steps=25,
         evalFreq=10, 
         printFreq=1, 
         polyak_average=True, 
