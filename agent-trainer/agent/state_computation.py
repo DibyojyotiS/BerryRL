@@ -147,6 +147,7 @@ class StateComputation:
                 observation['patch_relative_score'],
                 observation['total_juice'],
                 min(1, len(observation["berries"])/50),
+                len(observation["berries"]) == 0, # this is noise robust
                 num_recentpicked > 0, # bool picked feat
                 min(1, self.berrycount/self.normalizing_berry_count),
                 avg_worth
