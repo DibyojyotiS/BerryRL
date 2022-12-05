@@ -16,8 +16,8 @@ class Debugger:
         state_breakup:Dict[str,Tuple[Tuple[int,int],Tuple[int,int]]] = dict(
             sectorized_states = ((0, 32), (4,8)),
             edge_dists = ((32,36),(1,4)),
-            misc_infos = ((36,42),(1,6)),
-            time_memories = ((42,47), (1,5))
+            misc_infos = ((36,43),(1,7)),
+            time_memories = ((43,48), (1,5))
         ),
         plot_freq = 10,
         fig_size = (10,10)
