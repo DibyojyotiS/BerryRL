@@ -51,7 +51,7 @@ CONFIG = {
                 grid_sizes = [(20,20),(50,50),(100,100),(200,200),(400,400)],
                 factor=0.6, 
                 exp=1.0,
-                persistence=0.2
+                persistence=0.8
             ),
             nearbyBerryMemoryKwargs = dict(
                 enabled = True,
@@ -65,7 +65,7 @@ CONFIG = {
             )
         ),
         state_computation_config = dict(
-            persistence=0.2, 
+            persistence=0.8, 
             sector_angle=45,
             berryworth_offset=0.01,
             normalizing_berry_count = 200
