@@ -73,11 +73,11 @@ CONFIG = {
         exploration_subroutine_config = dict(
             reward_discount_factor=0.99,
             max_steps=float('inf'),
-            reward_type="max-drain"
+            reward_type="discount-sum"
         ),
         reward_perception_config = dict(
             max_clip=float('inf'), min_clip=-float('inf'),
-            scale=3 * 1e4/50
+            scale=400
         ),
         nn_model_config = dict(
             layers=[32,16,16],
@@ -87,7 +87,7 @@ CONFIG = {
     ),
     
     "ADAM": dict(
-        lr=5e-4, weight_decay=0.0
+        lr=1e-4, weight_decay=0.0
     ),
 
     "MULTI_STEP_LR": dict(
