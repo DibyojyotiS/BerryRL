@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from agent import Agent
 from berry_field import BerryFieldEnv
-from DRLagents.agents.DDQN import greedyAction
+from DRLagents.agents.DDQN import greedyAction, softMaxAction
 from debugging_utils.key_capture import KBHit
 from config import CONFIG
 
@@ -20,7 +20,8 @@ class Debugger:
             time_memories = ((43,48), (1,5))
         ),
         plot_freq = 10,
-        fig_size = (10,10)
+        fig_size = (10,10),
+        model_load_path = None
     ) -> None:
         self.state_breakup = state_breakup
         self.plot_freq = plot_freq
@@ -39,9 +40,14 @@ class Debugger:
         self.env = self.agent.getPerceivedEnvironment(env)
         self.figure, self.axes = self._layout(state_breakup, fig_size)
 
+        if model_load_path is not None:
+            self.agent.nn_model.load_state_dict(
+                torch.load(model_load_path)
+            )
+
     def start(self):
         done = False
-        action_selector = greedyAction()
+        action_selector = softMaxAction() #greedyAction()
         state = self.env.reset()
         num_steps = 0
         while not done:
@@ -90,6 +96,7 @@ class Debugger:
 
 if __name__ == "__main__":
     debugger = Debugger(
-        agent_config=CONFIG["AGENT"]
+        agent_config=CONFIG["AGENT"],
+        model_load_path=".temp\\retrain\\0.01\\retrain-0.01 2022-12-6 3-35-36\\trainLogs\models\episode-594\onlinemodel_statedict.pt"
     )
     debugger.start()

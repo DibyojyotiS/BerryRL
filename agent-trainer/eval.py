@@ -1,5 +1,5 @@
 from DRLagents import *
-from DRLagents.agents.DDQN import greedyAction
+from DRLagents.agents.DDQN import greedyAction, softMaxAction
 from config import CONFIG
 from berry_field import BerryFieldEnv
 from berry_field.envs.analysis.visualization import picture_episode
@@ -27,23 +27,23 @@ if __name__ == "__main__":
 
     nnet = agent.nnet()
     nnet.load_state_dict(torch.load(
-        ".temp\\nearby-berry-memory\\0.0.0\\2022-11-21 19-42-48\\trainLogs\models\episode-174\onlinemodel_statedict.pt"
+        ".temp\\retrain\\0.01\\retrain-0.01 2022-12-6 3-35-36\\trainLogs\models\episode-594\onlinemodel_statedict.pt"
     ))
     nnet = nnet.eval()
 
     buffer = None; optim = None; tstrat = None
-    estrat = greedyAction()
+    estrat = softMaxAction() #greedyAction()
 
     ddqn_trainer = DDQN(evalEnv, nnet, tstrat, optim, buffer,
                         log_dir=LOG_DIR, device=TORCH_DEVICE)
 
-    try:ddqn_trainer.evaluate(estrat, render=False)
+    try:ddqn_trainer.evaluate(estrat, render=True)
     except KeyboardInterrupt as ex: pass
 
     agent_stats = agent.get_stats()
     env_stats = evalEnv.get_analysis()
     print(
-        f"actions: {agent_stats['action_stats']}\n",
+        f"actions: {agent_stats['env_adapter']['action_stats']}\n",
         f"nberries: {env_stats['berries_picked']}\n",
         f"env_steps: {env_stats['env_steps']}"
     )
