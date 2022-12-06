@@ -55,7 +55,7 @@ class BerryFieldEnvAdapter:
                     self.random_exploration_action.start_for(berry_env_step)
             _, info, _, done = skip_trajectory[-1] # obs, info, reward, done
             
-            reward = self.reward_perception.get_perceived_reward(sum_reward)
+            reward = self.reward_perception.get_perceived_reward(sum_reward, info)
             state = self.state_computation.compute(skip_trajectory, action)
             return state, reward, done, info
             

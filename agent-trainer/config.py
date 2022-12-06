@@ -77,12 +77,16 @@ CONFIG = {
         ),
         reward_perception_config = dict(
             max_clip=float('inf'), min_clip=-float('inf'),
-            scale=400
+            scale=200,
+            patch_dicovery_reward_config = dict(
+                enabled = True,
+                reward_value=2.0
+            )
         ),
         nn_model_config = dict(
             layers=[32,16,16],
             lrelu_negative_slope=-0.001,
-            noise=0.01
+            noise=0.05
         )
     ),
     
@@ -105,7 +109,7 @@ CONFIG = {
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
         epsilon=0.55,
         finalepsilon=0.2,
-        decaySteps=200,
+        decaySteps=500,
         decay_type='exp'
     ),
 
