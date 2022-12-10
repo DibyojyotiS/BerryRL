@@ -22,26 +22,29 @@ class Agent:
         skip_steps = 10,
         memory_config = dict(
             multiResTimeMemoryKwargs = dict(
+                enabled = True,
                 grid_sizes = [(20,20),(50,50),(100,100),(200,200),(400,400)],
                 factor=0.6, 
                 exp=1.0,
+                persistence = 0.8
             ),
             nearbyBerryMemoryKwargs = dict(
+                enabled = True,
                 minDistPopThXY=(1920/2, 1080/2), 
                 maxDistPopThXY=(2600,2600), 
                 memorySize=50
             )
         ),
         state_computation_config = dict(
-            persistance=0.8, 
+            persistence=0.8, 
             sector_angle=45,
             berryworth_offset=0.05,
-            max_berry_count = 800,
-            noise=0.05
+            normalizing_berry_count = 800,
         ),
         exploration_subroutine_config = dict(
             reward_discount_factor=1.0,
-            max_steps=float('inf')
+            max_steps=float('inf'),
+            reward_type="max-drain"
         ),
         reward_perception_config = dict(
             max_clip=2, min_clip=-0.04,
@@ -49,7 +52,8 @@ class Agent:
         ),
         nn_model_config = dict(
             layers=[32,16,16],
-            lrelu_negative_slope=-0.01
+            lrelu_negative_slope=-0.01, 
+            noise=0.01
         )
     ) -> None:
         # the stuff in here is common for both train and eval
@@ -71,6 +75,7 @@ class Agent:
         )
         self.random_exploration_action = RandomExplorationAction(
             torch_model=self.nn_model,
+            berry_env_DRAIN_RATE=berry_env_DRAIN_RATE,
             state_computer=self.state_computer,
             n_skip_steps=self.skip_steps,
             torch_device=torch_device,
@@ -90,20 +95,23 @@ class Agent:
         )
 
     def reset_agent(self):
-        # must not reset env_adapter here due to calling of eval-init before
-        # call to get stats
+        # env_adapter will trigger this when env.reset is called
+        self.env_adapter.resetAdapter()
         self.memory_manager.reset()
         self.state_computer.reset()
+        self.random_exploration_action.reset()
+        self.reward_perception.reset()
 
     def get_stats(self):
         return {
             "env_adapter":self.env_adapter.get_stats(),
-            "memory_manager": self.memory_manager.get_stats()
+            "memory_manager": self.memory_manager.get_stats(),
+            "random_exploration_action": self.random_exploration_action.get_stats()
         }
 
     def getPerceivedEnvironment(self, berry_env: BerryFieldEnv):
         # modify the environment step and reset 
-        self.env_adapter.create_adapter_for_env(berry_env)
+        self.env_adapter.embed_adapter_in_env(berry_env)
         return berry_env
 
     def nnet(self):
@@ -127,5 +135,6 @@ class Agent:
             sum(
                 p.numel() 
                 for p in self.nn_model.parameters() if p.requires_grad
-            )
+            ),
+            "\n"
         )

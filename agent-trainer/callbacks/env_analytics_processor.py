@@ -94,9 +94,9 @@ class BerryFieldAnalyticsProcessor:
 
         info["env"] = self._extract_infos(info)
         if juice_video is not None:
-            info["env"]["juice_plot"] = field_video
+            info["env"]["juice_plot"] = juice_video
         if field_video is not None:
-            info["env"]["field_plot"] = juice_video
+            info["env"]["field_plot"] = field_video
             
         self.episode += 1
         return info

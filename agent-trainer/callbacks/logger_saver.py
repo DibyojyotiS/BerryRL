@@ -11,6 +11,9 @@ class LoggerSaver:
         self, save_dir:str, tag:str, wandb:bool, 
         thread_safe_printer:ThreadSafePrinter
     ) -> None:
+        """
+        the `tag` is used to prefix the printing and the logging-dict 
+        """
         self.save_dir = join(save_dir, "json-data")
         self.tag = tag
         self.wandb_enabled = wandb
@@ -29,12 +32,11 @@ class LoggerSaver:
 
     def print_stuff(self, info):
         self.thread_safe_printer(
-            f"{self.tag}"
-            + f" episode: {self.episode},"
-            + f" nberies: {info['env']['berries_picked']},"
-            + f" npatch: {info['env']['num_visited_patches']},"
-            + f" steps: {info['env']['env_steps']},"
-            + f" action: {info['agent']['action_stats']}"
+            f"{self.tag} episode: {self.episode}\n"
+            + f"\t nberies: {info['env']['berries_picked']},\n"
+            + f"\t npatch: {info['env']['num_visited_patches']},\n"
+            + f"\t steps: {info['env']['env_steps']},\n"
+            + f"\t action: {info['agent']['action_stats']}\n"
         )
 
     def json_dump(self, info:dict, filename:str):

@@ -15,19 +15,20 @@ class LocalityMemory(MemoryBase):
     def _initialize_localities(self):
         self.size_x = self.field_size[0]//self.resolution[0]
         self.size_y = self.field_size[1]//self.resolution[1]
-        self.visited_localities = np.zeros(self.resolution)
+        self.localities_n_patches:np.ndarray = np.zeros((2,*self.resolution))
 
     def reset(self, *args, **kwargs):
-        self.visited_localities[:] = 0
+        self.localities_n_patches[:] = 0
 
-    def update(self, agent_pos_xy:Tuple[int, int]):
+    def update(self, agent_pos_xy:Tuple[int, int], is_patch_seen:bool):
         x,y = agent_pos_xy
         if x == self.field_size[0]: x -= 1e-6
         if y == self.field_size[1]: y -= 1e-6
         
         locality_x = int(x/self.size_x)
         locality_y = int(y/self.size_y)
-        self.visited_localities[locality_x][locality_y] = 1
+        self.localities_n_patches[0][locality_x][locality_y] = 1
+        self.localities_n_patches[1][locality_x][locality_y] = is_patch_seen
 
     def get(self):
-        return self.visited_localities
+        return self.localities_n_patches

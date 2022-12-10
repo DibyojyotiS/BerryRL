@@ -7,6 +7,7 @@ from DRLagents import *
 
 from agent import Agent
 from callbacks import StatsCollectorAndLoggerCallback, ThreadSafePrinter
+from callbacks import AdditionalTrainingInformation
 from config import CONFIG
 from train_utils import copy_files, getRandomEnv
 from DRLagents.agents.DQN import epsilonGreedyAction
@@ -21,9 +22,12 @@ matplotlib.use('Agg')
 # constants
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 TIME_STAMP = '{}-{}-{} {}-{}-{}'.format(*time.gmtime()[0:6])
-LOG_DIR = os.path.join(CONFIG["LOG_DIR_ROOT"], TIME_STAMP)
+RUN_NAME = f"{CONFIG['run_name_prefix']} {TIME_STAMP}"
+assert not set(RUN_NAME).intersection(["\\","/",":","*","?","\"","<",">"]) # loose validation
+LOG_DIR = os.path.join(CONFIG["LOG_DIR_ROOT"], RUN_NAME)
 
-def init_logging(TIME_STAMP, LOG_DIR):
+
+def init_logging(LOG_DIR):
     if not os.path.exists(LOG_DIR): os.makedirs(LOG_DIR)
     stdout_logger = StdoutLogger(os.path.join(LOG_DIR, "log.txt"))
     abs_file_dir = os.path.split(os.path.abspath(__file__))[0]
@@ -31,7 +35,7 @@ def init_logging(TIME_STAMP, LOG_DIR):
     # init wandb if enabled
     if CONFIG["WANDB"]["enabled"]:
         wandb.init(
-            name=TIME_STAMP,
+            name=RUN_NAME,
             project=CONFIG["WANDB"]["project"],
             group=CONFIG["WANDB"]["group"],
             entity=CONFIG["WANDB"]["entity"],
@@ -42,7 +46,7 @@ def init_logging(TIME_STAMP, LOG_DIR):
     return stdout_logger
 
 if __name__ == "__main__":
-    stdout_logger = init_logging(TIME_STAMP, LOG_DIR)
+    stdout_logger = init_logging(LOG_DIR)
 
     # setup agent and environments as perceived by agents
     trainEnv:BerryFieldEnv = getRandomEnv(**CONFIG["RND_TRAIN_ENV"])
@@ -57,30 +61,6 @@ if __name__ == "__main__":
     )
     trainEnv = agent.getPerceivedEnvironment(trainEnv)
     evalEnv = agent.getPerceivedEnvironment(evalEnv)
-
-    thread_safe_printer = ThreadSafePrinter()
-    train_collector = StatsCollectorAndLoggerCallback(
-        agent=agent,
-        berry_env=trainEnv,
-        save_dir=os.path.join(LOG_DIR, "train"),
-        wandb=CONFIG["WANDB"]["enabled"],
-        tag="train",
-        thread_safe_printer=thread_safe_printer,
-        episodes_per_video=50
-    )
-
-    eval_collector = StatsCollectorAndLoggerCallback(
-        agent=agent,
-        berry_env=evalEnv,
-        save_dir=os.path.join(LOG_DIR, "eval"),
-        wandb=CONFIG["WANDB"]["enabled"],
-        tag="eval",
-        thread_safe_printer=thread_safe_printer,
-        episodes_per_video=10
-    )
-
-    if CONFIG["WANDB"]["enabled"]:
-        wandb.watch(agent.nn_model)
 
     optim = Adam(params=agent.nn_model.parameters(), **CONFIG["ADAM"])
     schdl = MultiStepLR(optimizer=optim, **CONFIG["MULTI_STEP_LR"])
@@ -98,14 +78,52 @@ if __name__ == "__main__":
         device=TORCH_DEVICE
     )
 
+    # init logging dependencies
+    thread_safe_printer = ThreadSafePrinter()
+    train_collector = StatsCollectorAndLoggerCallback(
+        agent=agent,
+        berry_env=trainEnv,
+        save_dir=os.path.join(LOG_DIR, "train"),
+        wandb=CONFIG["WANDB"]["enabled"],
+        tag="train",
+        thread_safe_printer=thread_safe_printer,
+        episodes_per_video=50
+    )
+    train_additional_info = AdditionalTrainingInformation(
+        buffer=buffer,
+        lr_scheduler=schdl,
+        batch_size=CONFIG["DDQN"]["batchSize"],
+        wandb_enabled=CONFIG["WANDB"]["enabled"],
+        thread_safe_printer=thread_safe_printer
+    )
+    training_callback = lambda info_dict: \
+        train_collector(train_additional_info(info_dict))
+
+    eval_callback = StatsCollectorAndLoggerCallback(
+        agent=agent,
+        berry_env=evalEnv,
+        save_dir=os.path.join(LOG_DIR, "eval"),
+        wandb=CONFIG["WANDB"]["enabled"],
+        tag="eval",
+        thread_safe_printer=thread_safe_printer,
+        episodes_per_video=10
+    )
+
+    if CONFIG["WANDB"]["enabled"]:
+        wandb.watch(
+            agent.nn_model, 
+            log=CONFIG["WANDB"]["watch_log"],
+            log_freq=CONFIG["WANDB"]["watch_log_freq"]
+        )
+
     try:
         trianHist = ddqn_trainer.trainAgent(evalEnv=evalEnv,
-                                            training_callback=train_collector,
-                                            eval_callback=eval_collector)
+                                            training_callback=training_callback,
+                                            eval_callback=eval_callback)
     except KeyboardInterrupt as kb:
         pass
 
     ddqn_trainer.evaluate(evalEnv=evalEnv, render=True)
     train_collector.close()
-    eval_collector.close()
+    eval_callback.close()
     stdout_logger.close()

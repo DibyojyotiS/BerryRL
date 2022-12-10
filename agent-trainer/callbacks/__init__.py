@@ -1,2 +1,3 @@
 from .stats_collector import StatsCollectorAndLoggerCallback
 from .pipeline import ThreadSafePrinter
+from .additional_training_information import AdditionalTrainingInformation

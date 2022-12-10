@@ -30,6 +30,7 @@ class MultiResolutionTimeMemory(MemoryBase):
         grid_sizes: List[Tuple[int, int]],
         factor: float = 0.6,
         exp: float = 1.0,
+        persistence: float = 0.8,
         plot_curves=False
     ):
         """_summary_
@@ -42,21 +43,23 @@ class MultiResolutionTimeMemory(MemoryBase):
             the berry-field is divided into (L,M) sized grid and the agent notes the time spent 
             in each of the cell. The memory of the time spent in a particular cell gets accessed 
             when the agent is in that cell.
-        factor : float, optional
+        factor : float
             increment the time of the current block
             by delta for each step in the block
             as an exponential average with (1-delta)
             where delta = time_memory_factor/resolution, by default 0.6
-        exp : float, optional
+        exp : float
             raise the stored time memory for the current block
             to time_memory_exp and feed to agent's state, by default 1.0
+        persistence : float
+            analogus to persistence of vision, makes the resultant as
+            persistence * prev-memory + (1-persistence) * current-memory
         """
         self.time_memory_grid_sizes = grid_sizes
         self.time_memory_factor = factor
         self.time_memory_exp = exp
+        self.persistence = persistence
         self.berryField_FIELD_SIZE = berryField_FIELD_SIZE
-        self.cell_sizes = self._computeCellSizes()
-        self.deltas = self._computeDecayDeltas(self.cell_sizes)
         self._setup()
 
         # some stuff that i need for feel
@@ -66,8 +69,17 @@ class MultiResolutionTimeMemory(MemoryBase):
                 self.berryField_FIELD_SIZE[0])
     
     def reset(self):
-        for i in range(len(self.time_mem_mats)):
-            self.time_mem_mats[i][:] = 0
+        self._reset_mem()
+        self._reset_stats()
+
+    def get_stats(self):
+        return {
+            "time_mem_max_stat": {
+                f"grid-{size}": stat 
+                for size,stat 
+                in zip(self.time_memory_grid_sizes, self.time_mem_max_stat)
+            }
+        }
 
     def update(self, agentpos_XY):
         x = agentpos_XY[0]
@@ -81,6 +93,7 @@ class MultiResolutionTimeMemory(MemoryBase):
             x_, y_ = cell_pos[i]
             self.time_mem_mats[i] *= 1-self.deltas[i]
             self.time_mem_mats[i][x_][y_] += self.deltas[i]
+            self._update_stats(i,x_,y_)
 
     def get_time_memories(self, agentpos_XY):
         x = agentpos_XY[0]
@@ -90,7 +103,10 @@ class MultiResolutionTimeMemory(MemoryBase):
         cell_pos = np.array([x,y]/self.cell_sizes, dtype=int)
         for i in range(len(self.time_mem_mats)):
             x_, y_ = cell_pos[i]
-            self.current_time[i] = min(1,self.time_mem_mats[i][x_][y_])
+            self.current_time[i] = (
+                self.persistence*self.current_time[i]
+                + self.rpersistence * min(1,self.time_mem_mats[i][x_][y_])
+            )
         return self.current_time**self.time_memory_exp
 
     def _computeCellSizes(self):
@@ -100,6 +116,7 @@ class MultiResolutionTimeMemory(MemoryBase):
 
     def _computeDecayDeltas(self, cell_sizes):
         deltas = self.time_memory_factor/np.max(cell_sizes,axis=1)
+        assert all(deltas < 1), "factor is too large!"
         return deltas
 
     def _setup(self):
@@ -107,4 +124,33 @@ class MultiResolutionTimeMemory(MemoryBase):
         self.time_mem_mats = [
             np.zeros(shape) for shape in self.time_memory_grid_sizes
         ]
+        self.rpersistence = 1 - self.persistence
+        self.cell_sizes = self._computeCellSizes()
+        self.deltas = self._computeDecayDeltas(self.cell_sizes)
+
+        self.time_mem_max_stat = np.zeros_like(self.current_time)
         
+    def _reset_mem(self):
+        self.current_time[:] = 0
+        for i in range(len(self.time_mem_mats)):
+            self.time_mem_mats[i][:] = 0
+        
+    def _reset_stats(self):
+        self.time_mem_max_stat[:] = 0
+
+    def _update_stats(self, memory_index, x_, y_):
+        self.time_mem_max_stat[memory_index] = max(
+            self.time_mem_max_stat[memory_index],
+            self.time_mem_mats[memory_index][x_][y_]
+        )
+
+
+if __name__ == "__main__":
+    tm = MultiResolutionTimeMemory(
+        berryField_FIELD_SIZE = (20000,20000),
+        grid_sizes = [(20,20),(50,50),(100,100),(200,200),(400,400)],
+        factor=0.6, 
+        exp=1.0,
+        persistence=0.2,
+        plot_curves=True
+    )

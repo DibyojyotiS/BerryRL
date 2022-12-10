@@ -1,7 +1,7 @@
 from typing import List
 import numpy as np
 
-from .state_computation_utils import berry_worth, sectorized_states
+from .state_computation_utils import berry_worth, compute_sectorized_states
 from .memory_manager import MemoryManager
 
 
@@ -12,11 +12,10 @@ class StateComputation:
         berry_env_REWARD_RATE: float,
         berry_env_DRAIN_RATE: float,
         memory: MemoryManager, 
-        persistance=0.8, 
+        persistence=0.8, 
         sector_angle=45,
         berryworth_offset=0.05,
-        max_berry_count = 800,
-        noise=0.05
+        normalizing_berry_count = 800
     ) -> None: 
         """
         Computes the environment state using memories
@@ -24,7 +23,7 @@ class StateComputation:
         Parameters
         ----------
         memory : MemoryManager
-        persistance : float, optional
+        persistence : float, optional
             analogous to the persistence of vision
             used for some portion of the state, by default 0.8
         sector_angle : int, optional
@@ -33,21 +32,18 @@ class StateComputation:
         berryworth_offset : float, optional
             offsets berry-worths by berryworth_offset/(1 + berryworth_offset)
             this amount., by default 0.05
-        max_berry_count : int, optional
+        normalizing_berry_count : int, optional
             normalize the #berries picked before adding 
             to the state, by default 800
-        noise : float, optional
-            uniform noise in [-noise, noise] to add to state, by default 0.05
         """
         self.berry_env_HALFDIAGOBS = berry_env_HALFDIAGOBS
         self.berry_env_REWARD_RATE = berry_env_REWARD_RATE
         self.berry_env_DRAIN_RATE = berry_env_DRAIN_RATE
         self.memory_manager = memory
-        self.persistance = persistance
+        self.persistence = persistence
         self.angle = sector_angle
         self.worth_offset = berryworth_offset
-        self.max_berry_count = max_berry_count
-        self.noise = noise
+        self.normalizing_berry_count = normalizing_berry_count
 
         self.__init_compute()
         self.__init_constants()
@@ -86,34 +82,40 @@ class StateComputation:
         concated_berries = np.vstack([
             self.memory_manager.get_berry_memory(position), 
             listOfBerries
-        ])
+        ]) if self.memory_manager.has_berry_memory() else listOfBerries
 
-        berryworths, state = \
-            self.__compute(observation, num_recentpicked, concated_berries)
+        berryworths, features = self.__compute_worths_and_features(
+            observation, num_recentpicked, concated_berries
+        )
 
         # update memories
         self.memory_manager.update(
             recentlyPickedBerries=num_recentpicked, 
             listOfBerries=concated_berries, 
             listOfBerryScores=berryworths, 
-            agentPosXY=position
+            agentPosXY=position,
+            isPatchSeen=len(listOfBerries) > 0
         )
         self.berrycount += num_recentpicked
 
-        uniformNoise = np.random.uniform(-self.noise, self.noise, size=state.shape)
-        return state + uniformNoise
+        return features
 
     def reset(self):
         self.__init_compute()
 
     def __init_compute(self):
         self.berrycount = 0
-        self.prev_sectorized_state = None
+        self.prev_sectorized_states = None
 
     def __init_constants(self):
-        self.ENV_HALFDIAG = self.berry_env_HALFDIAGOBS
-        maxDistPopThXY = self.memory_manager.nearbyBerriesMemory.maxDistPopThXY
-        self.BERRYMEM_MAXDIST = 0.5 * np.linalg.norm(maxDistPopThXY)
+        if self.memory_manager.has_berry_memory():
+            self.BERRYMEM_MAXDIST = 0.5 * np.linalg.norm(
+                self.memory_manager.nearbyBerriesMemory.maxDistPopThXY
+            )
+        else:
+            self.BERRYMEM_MAXDIST = 0.5 * np.linalg.norm(
+                self.berry_env_HALFDIAGOBS
+            )          
 
     def __berry_worth(self, berrySizes, berryDistances):
         return berry_worth(
@@ -125,25 +127,39 @@ class StateComputation:
             WORTH_OFFSET=self.worth_offset
         )
 
-    def __compute(self, observation, num_recentpicked, concated_berries):
-        sectorizedState, _, berryworths = sectorized_states(
+    def __compute_worths_and_features(
+        self, observation, num_recentpicked, concated_berries
+    ):
+        sectorized_states, avg_worth, berryworths = compute_sectorized_states(
             listOfBerries=concated_berries,
             berry_worth_function=self.__berry_worth,
-            halfDiagonalLen=self.BERRYMEM_MAXDIST,
-            prev_sectorized_state=self.prev_sectorized_state,
-            persistence=self.persistance,
+            maxPossibleDist=self.BERRYMEM_MAXDIST,
+            prev_sectorized_state=self.prev_sectorized_states,
+            persistence=self.persistence,
             angle=self.angle
         )
-        self.prev_sectorized_state = sectorizedState
+        self.prev_sectorized_states = sectorized_states
 
-        state = np.concatenate([
-            *sectorizedState,
-            self.memory_manager.get_time_memories(observation["position"]),
+        features = [
+            sectorized_states.flatten(),
             observation['scaled_dist_from_edge'],
-            [observation['patch_relative_score']],
-            [observation['total_juice']],
-            [num_recentpicked > 0], # bool picked feat
-            [min(1, self.berrycount/self.max_berry_count)]
-        ])
-        
-        return berryworths,state
+            [
+                observation['patch_relative_score'],
+                observation['total_juice'],
+                min(1, len(observation["berries"])/50),
+                len(observation["berries"]) == 0, # this is noise robust
+                num_recentpicked > 0, # bool picked feat
+                min(1, self.berrycount/self.normalizing_berry_count),
+                avg_worth
+            ],
+        ]
+
+        if self.memory_manager.has_time_memories():
+            features.append(
+                self.memory_manager.get_time_memories(observation["position"]))
+
+        if self.memory_manager.has_locality_memory():
+            features.append(
+                self.memory_manager.get_locality_memory().flatten())
+    
+        return berryworths, np.concatenate(features)
