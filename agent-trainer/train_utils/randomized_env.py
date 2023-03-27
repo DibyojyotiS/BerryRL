@@ -81,6 +81,7 @@ def _incremental_sample(patch_size, max_berry_size, field_size,
         if patch_with_agent_at_center and not patch_centers_x:
             patch_centers_x.append(field_size[0]/2)
             patch_centers_y.append(field_size[1]/2)
+            if num_patches == 1: continue
         for i in range(num_tries):
             patch_centers_x.append(np.random.uniform(low_x, high_x))
             patch_centers_y.append(np.random.uniform(low_y, high_y))
