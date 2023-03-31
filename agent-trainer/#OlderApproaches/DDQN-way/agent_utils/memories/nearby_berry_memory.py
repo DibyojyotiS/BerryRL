@@ -1,5 +1,5 @@
 import numpy as np
-from numba import njit, prange
+from numba import njit, prange, typed
 from numba.typed import Dict
 # from agent_utils.memories.base_class import MemoryBase
 
@@ -76,8 +76,8 @@ def njitBulkAddBerries(listOfBerries, listOfberryScores, agentPosXY, minDistPopT
 
 class NearbyBerryMemory():
     def __init__(self, minDistPopThXY, maxDistPopThXY, memorySize) -> None:
-        self.minDistPopThXY = minDistPopThXY
-        self.maxDistPopThXY = maxDistPopThXY
+        self.minDistPopThXY:np.ndarray = np.array(minDistPopThXY)
+        self.maxDistPopThXY:np.ndarray = np.array(maxDistPopThXY)
         self.memorySize = memorySize
         self.__initMemory()
 
