@@ -1,11 +1,20 @@
-CONFIG = {
+from copy import deepcopy
+
+MAX_PARALLEL = 8
+GRID_SEARCH_CONFIG = {
+    "seed":[0,2,4],
+    "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.8, 0.4, 0.2],
+    "TRAINING_STRAT_EPSILON_GREEDY.finalepsilon":[0.2, 0.1, 0.05]
+}
+
+BASE_CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/retrain/0.01",
-    "run_name_prefix": "retrain-0.01",
+    "LOG_DIR_ROOT": ".temp/search/0.1",
+    "run_name_prefix": "epsilons",
     "WANDB": dict(
-        enabled = True, # set to true for server env
+        enabled = False, # set to true for server env
         project="agent-design-v1",
-        group=".temp/retrain/",
+        group=".temp/grid-search-epsilons/",
         entity="foraging-rl",
         watch_log = "all", # logging both params and grads
         watch_log_freq = 1000,
@@ -57,7 +66,7 @@ CONFIG = {
                 enabled = True,
                 minDistPopThXY=(1920/2, 1080/2), 
                 maxDistPopThXY=(2600,2600), 
-                memorySize=60
+                memorySize=40
             ),
             localityMemoryKwargs = dict(
                 enabled = False,
