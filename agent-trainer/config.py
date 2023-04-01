@@ -11,8 +11,8 @@ BASE_CONFIG = {
     "LOG_DIR_ROOT": ".temp/search/0.1",
     "run_name_prefix": "epsilons",
     "WANDB": dict(
-        enabled = False, # set to true for server env
-        project="agent-design-v1",
+        enabled = True, # set to true for server env
+        project="agent-grid-search",
         group=".temp/grid-search-epsilons/",
         entity="foraging-rl",
         watch_log = "all", # logging both params and grads
