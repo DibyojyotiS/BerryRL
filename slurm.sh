@@ -10,7 +10,7 @@
 #SBATCH --partition=gpu
 #SBATCH --mail-user=dibyo@iitk.ac.in
 
-module --ignore-cache load conda-python/3.7
+module --ignore-cache load python/conda-python/3.7
 source activate ML
 wandb login --relogin 7a8fcfa2b3e2be8f3d8de9e502781d345cd7f836
 python ./agent-trainer/trainRunner.py
