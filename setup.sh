@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if conda info --envs | grep -q ML; then echo "base already exists"; else conda create -n ML python=3.7.6; fi
-conda init
+conda init bash
 
 conda activate ML
 conda env list
