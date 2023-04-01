@@ -1,4 +1,3 @@
-from copy import deepcopy
 
 MAX_PARALLEL = 2
 GRID_SEARCH_CONFIG = {
