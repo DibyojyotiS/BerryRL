@@ -11,12 +11,7 @@
 #SBATCH --mail-user=dibyo@iitk.ac.in
 
 module --ignore-cache load conda-python/3.7
-
-source activate RL
-conda env list
-
-echo "here1"
-
+source activate ML
 python ./agent-trainer/trainRunner.py
 ## TODO Install requirements
 ## install DRLagents and berry-env
