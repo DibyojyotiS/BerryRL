@@ -6,7 +6,7 @@ echo "doing conda init bash"
 conda init bash
 
 echo "trying to activate ML"
-conda activate ML
+source activate ML
 conda env list
 conda env list | grep "ML * [\*]"
 if conda env list | grep "ML * [\*]"; then echo "Created env ML"; else echo "failed somewhere"; exit; fi
