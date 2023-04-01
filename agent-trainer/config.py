@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-MAX_PARALLEL = 8
+MAX_PARALLEL = 2
 GRID_SEARCH_CONFIG = {
     "seed":[0,2,4],
     "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.8, 0.4, 0.2],
@@ -12,7 +12,7 @@ BASE_CONFIG = {
     "LOG_DIR_ROOT": ".temp/search/0.1",
     "run_name_prefix": "epsilons",
     "WANDB": dict(
-        enabled = True, # set to true for server env
+        enabled = False, # set to true for server env
         project="agent-design-v1",
         group=".temp/grid-search-epsilons/",
         entity="foraging-rl",
