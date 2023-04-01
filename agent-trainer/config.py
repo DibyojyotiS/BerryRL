@@ -1,6 +1,5 @@
-from copy import deepcopy
 
-MAX_PARALLEL = 8
+MAX_PARALLEL = 4
 GRID_SEARCH_CONFIG = {
     "seed":[0,2,4],
     "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.8, 0.4, 0.2],

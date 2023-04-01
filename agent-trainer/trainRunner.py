@@ -2,7 +2,7 @@ import os
 import json
 import multiprocessing as mp
 from itertools import product
-from subprocess import run, CREATE_NEW_CONSOLE
+from subprocess import run
 from config import GRID_SEARCH_CONFIG, BASE_CONFIG, MAX_PARALLEL
 from copy import deepcopy
 
@@ -33,10 +33,15 @@ def jsonSerializeForCLI(run_config):
 
 def worker(cmd):
     try:
+        from subprocess import CREATE_NEW_CONSOLE
         run(cmd, creationflags=CREATE_NEW_CONSOLE)
     except Exception as e:
         print("Can't create a new console, retrying without CREATE_NEW_CONSOLE")
-        run(cmd)
+        try:
+            run(cmd)
+        except Exception as e2:
+            print("trying with shell=True")
+            run(cmd, shell=True)
 
 if __name__ == "__main__":
     relaive_pth = os.path.split(__file__)[0]
