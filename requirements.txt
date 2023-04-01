@@ -8,3 +8,4 @@ multiprocess
 numpy==1.18.1
 pygame==2.0.1 # install with pip
 torch==1.4.0
+wandb==0.13.5

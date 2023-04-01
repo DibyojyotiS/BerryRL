@@ -12,8 +12,5 @@
 
 module --ignore-cache load conda-python/3.7
 source activate ML
+wandb login --relogin 7a8fcfa2b3e2be8f3d8de9e502781d345cd7f836
 python ./agent-trainer/trainRunner.py
-## TODO Install requirements
-## install DRLagents and berry-env
-## conda install -c conda-forge ffmpeg
-## python trainRunner.py 279417
