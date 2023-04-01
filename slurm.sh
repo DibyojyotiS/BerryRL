@@ -17,8 +17,8 @@ conda env list
 
 echo "here1"
 
-python train.py
+python ./agent-trainer/trainRunner.py
 ## TODO Install requirements
 ## install DRLagents and berry-env
 ## conda install -c conda-forge ffmpeg
-## python trainRunner.py
+## python trainRunner.py 279417

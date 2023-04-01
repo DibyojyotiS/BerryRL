@@ -12,7 +12,7 @@ BASE_CONFIG = {
     "LOG_DIR_ROOT": ".temp/search/0.1",
     "run_name_prefix": "epsilons",
     "WANDB": dict(
-        enabled = False, # set to true for server env
+        enabled = True, # set to true for server env
         project="agent-design-v1",
         group=".temp/grid-search-epsilons/",
         entity="foraging-rl",
