@@ -4,7 +4,7 @@ if conda info --envs | grep -q ML; then echo "base already exists"; else conda c
 conda init
 
 conda activate ML
-cond env list
+conda env list
 if conda info --envs | grep -q ML; then echo "Created env ML"; else echo "failed somewhere"; exit; fi
 
 pip install -r requirements.txt
