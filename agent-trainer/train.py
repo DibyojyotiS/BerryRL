@@ -8,13 +8,14 @@ from berry_field import BerryFieldEnv
 from DRLagents import *
 
 from agent import Agent
-from callbacks import StatsCollectorAndLoggerCallback, ThreadSafePrinter
-from callbacks import AdditionalTrainingInformation
+from callbacks import DaemonStatsCollectorAndLoggerCallback, ThreadSafePrinter
+from callbacks import AdditionalTrainingStatsExtractor
 from train_utils import copy_files, getRandomEnv
 from DRLagents.agents.DQN import epsilonGreedyAction
 from torch.optim.adam import Adam
 from torch.optim.lr_scheduler import MultiStepLR
 from torch.optim.rmsprop import RMSprop
+from config import prepareConfig
 
 # import builtins
 # _print = builtins.print
@@ -49,10 +50,10 @@ def get_run_config():
         arg_name, data = arg.split("=", maxsplit=1)
         if arg_name.strip() == "--run-config":
             data = data.replace("<space>", ' ').replace("<dblQuotes>", '"')
-            return json.loads(data.strip())
-    print("Defaulting to base-config")
-    from config import BASE_CONFIG
-    return BASE_CONFIG
+            return prepareConfig(json.loads(data.strip()))
+    print("Defaulting to parsed-base-config")
+    from config import PARSED_BASE_CONFIG
+    return PARSED_BASE_CONFIG
 
 
 if __name__ == "__main__":
@@ -89,7 +90,7 @@ if __name__ == "__main__":
 
     optim = Adam(params=agent.nn_model.parameters(), **run_config["ADAM"])
     schdl = MultiStepLR(optimizer=optim, **run_config["MULTI_STEP_LR"])
-    buffer = PrioritizedExperienceRelpayBuffer(**run_config["PER_BUFFER"])
+    per_buffer = PrioritizedExperienceRelpayBuffer(**run_config["PER_BUFFER"])
     tstrat = epsilonGreedyAction(**run_config["TRAINING_STRAT_EPSILON_GREEDY"])
     ddqn_trainer = DDQN(
         **run_config["DDQN"],
@@ -98,14 +99,14 @@ if __name__ == "__main__":
         trainExplorationStrategy=tstrat,
         optimizer=optim,
         lr_scheduler=schdl,
-        replayBuffer=buffer,
+        replayBuffer=per_buffer,
         log_dir=log_dir,
         device=torch_device
     )
 
     # init logging dependencies
     thread_safe_printer = ThreadSafePrinter()
-    train_collector = StatsCollectorAndLoggerCallback(
+    daemon_train_callback = DaemonStatsCollectorAndLoggerCallback(
         agent=agent,
         berry_env=trainEnv,
         save_dir=os.path.join(log_dir, "train"),
@@ -114,17 +115,18 @@ if __name__ == "__main__":
         thread_safe_printer=thread_safe_printer,
         episodes_per_video=50
     )
-    train_additional_info = AdditionalTrainingInformation(
-        buffer=buffer,
+    train_additional_info = AdditionalTrainingStatsExtractor(
+        per_buffer=per_buffer,
+        epsilon_greedy_act=tstrat,
         lr_scheduler=schdl,
         batch_size=run_config["DDQN"]["batchSize"],
         wandb_enabled=run_config["WANDB"]["enabled"],
         thread_safe_printer=thread_safe_printer
     )
-    training_callback = lambda info_dict: \
-        train_collector(train_additional_info(info_dict))
+    partial_daemon_training_callback = lambda info_dict: \
+        daemon_train_callback(train_additional_info(info_dict))
 
-    eval_callback = StatsCollectorAndLoggerCallback(
+    daemon_eval_callback = DaemonStatsCollectorAndLoggerCallback(
         agent=agent,
         berry_env=evalEnv,
         save_dir=os.path.join(log_dir, "eval"),
@@ -143,12 +145,12 @@ if __name__ == "__main__":
 
     try:
         trianHist = ddqn_trainer.trainAgent(evalEnv=evalEnv,
-                                            training_callback=training_callback,
-                                            eval_callback=eval_callback)
+                                            training_callback=partial_daemon_training_callback,
+                                            eval_callback=daemon_eval_callback)
     except KeyboardInterrupt as kb:
         pass
 
     ddqn_trainer.evaluate(evalEnv=evalEnv, render=True)
-    train_collector.close()
-    eval_callback.close()
+    daemon_train_callback.close()
+    daemon_eval_callback.close()
     stdout_logger.close()

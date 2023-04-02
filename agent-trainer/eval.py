@@ -1,13 +1,13 @@
 from DRLagents import *
 from DRLagents.agents.DDQN import greedyAction, softMaxAction
-from config import BASE_CONFIG
+from config import PARSED_BASE_CONFIG
 from berry_field import BerryFieldEnv
 from berry_field.envs.analysis.visualization import picture_episode
 from berry_field.envs.analysis.visualization import juice_plot
 from agent import Agent
 
 # set all seeds
-set_seed(BASE_CONFIG["seed"])
+set_seed(PARSED_BASE_CONFIG["seed"])
 
 LOG_DIR = None
 TORCH_DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -21,7 +21,7 @@ if __name__ == "__main__":
         berry_env_REWARD_RATE=evalEnv.REWARD_RATE,
         berry_env_DRAIN_RATE=evalEnv.DRAIN_RATE,
         torch_device=TORCH_DEVICE,
-        **BASE_CONFIG["AGENT"]
+        **PARSED_BASE_CONFIG["AGENT"]
     )
     evalEnv = agent.getPerceivedEnvironment(evalEnv)
 

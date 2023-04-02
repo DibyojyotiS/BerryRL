@@ -6,7 +6,6 @@ from agent import Agent
 from berry_field import BerryFieldEnv
 from DRLagents.agents.DDQN import greedyAction, softMaxAction
 from debugging_utils.key_capture import KBHit
-from config import BASE_CONFIG
 
 
 class Debugger:
@@ -95,8 +94,9 @@ class Debugger:
         return fig, axes
 
 if __name__ == "__main__":
+    from config import PARSED_BASE_CONFIG
     debugger = Debugger(
-        agent_config=BASE_CONFIG["AGENT"],
+        agent_config=PARSED_BASE_CONFIG["AGENT"],
         model_load_path=".temp\\retrain\\0.01\\retrain-0.01 2022-12-6 3-35-36\\trainLogs\models\episode-594\onlinemodel_statedict.pt"
     )
     debugger.start()

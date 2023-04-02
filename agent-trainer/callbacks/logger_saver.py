@@ -30,7 +30,7 @@ class LoggerSaver:
         self.json_dump(info, f"episode-{self.episode}.json")
         self.episode += 1
 
-    def print_stuff(self, info):
+    def print_stuff(self, info:dict):
         self.thread_safe_printer(
             f"{self.tag} episode: {self.episode}\n"
             + f"\t nberies: {info['env']['berries_picked']},\n"

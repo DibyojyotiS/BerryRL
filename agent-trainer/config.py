@@ -1,19 +1,24 @@
+from copy import deepcopy
 
-MAX_PARALLEL = 4
+MAX_PARALLEL = 5
+MAX_TRAIN_EPISODES = 500
 GRID_SEARCH_CONFIG = {
-    "seed":[0,2,4],
-    "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.8, 0.4, 0.2],
-    "TRAINING_STRAT_EPSILON_GREEDY.finalepsilon":[0.2, 0.1, 0.05]
+    # add as <path.to.param>:[list of values]
+    "seed":[2,4],
+    "PER_BUFFER.alpha":[0.95, 0.7],
+    "PER_BUFFER.beta":[0.5, 0.1],
+    "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.4, 0.2],
+    "TRAINING_STRAT_EPSILON_GREEDY.finalepsilon":[0.1, 0.05],
 }
 
 BASE_CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/search/0.1",
-    "run_name_prefix": "epsilons",
+    "LOG_DIR_ROOT": ".temp/agent-grid-search/PER_buffer(alpha,beta)-epsilons",
+    "run_name_prefix": "alpha,beta,epsilon",
     "WANDB": dict(
         enabled = True, # set to true for server env
         project="agent-grid-search",
-        group=".temp/grid-search-epsilons/",
+        group="PER_buffer(alpha,beta)-epsilons",
         entity="foraging-rl",
         watch_log = "all", # logging both params and grads
         watch_log_freq = 1000,
@@ -111,13 +116,13 @@ BASE_CONFIG = {
         bufferSize=int(5E5), 
         alpha=0.95,
         beta=0.1, 
-        beta_rate=0.9/2000
+        beta_rate="$! (1 - valueOf('PER_BUFFER.beta'))/MAX_TRAIN_EPISODES}"
     ),
 
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
         epsilon=0.55,
         finalepsilon=0.2,
-        decaySteps=500,
+        decaySteps=MAX_TRAIN_EPISODES,
         decay_type='exp'
     ),
 
@@ -125,7 +130,7 @@ BASE_CONFIG = {
         batchSize=1024, 
         gamma=0.9, 
         update_freq=5, 
-        MaxTrainEpisodes=1000, 
+        MaxTrainEpisodes=MAX_TRAIN_EPISODES, 
         MaxStepsPerEpisode=None,
         optimize_every_kth_action=100,
         num_gradient_steps=25,
@@ -137,3 +142,29 @@ BASE_CONFIG = {
         gradient_clipping_type = "norm",
     ),
 }
+
+
+def prepareConfig(base_config):
+
+    def valueOf(path:str):
+        nonlocal base_config
+        root = base_config
+        for k in path.split("."): 
+            root = root[k]
+        return root
+    
+    def dfsConfig(config:dict):
+        nonlocal valueOf
+        for key in config:
+            val = config[key]
+            if type(val) is dict:
+                dfsConfig(config[key])
+            elif type(val) is str and val.startswith("$!"):
+                val = val[2:-1] # removes $!
+                config[key] = eval(val)
+    
+    base_config_deepcopy = deepcopy(base_config)
+    dfsConfig(base_config_deepcopy)
+    return base_config_deepcopy
+
+PARSED_BASE_CONFIG = prepareConfig(BASE_CONFIG)
