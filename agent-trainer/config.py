@@ -13,12 +13,12 @@ GRID_SEARCH_CONFIG = {
 
 BASE_CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/search/0.1",
-    "run_name_prefix": "epsilons",
+    "LOG_DIR_ROOT": ".temp/agent-grid-search/PER_buffer(alpha,beta)-epsilons",
+    "run_name_prefix": "alpha,beta,epsilon",
     "WANDB": dict(
         enabled = True, # set to true for server env
         project="agent-grid-search",
-        group="grid-search-PER(alpha,beta)-epsilons",
+        group="PER_buffer(alpha,beta)-epsilons",
         entity="foraging-rl",
         watch_log = "all", # logging both params and grads
         watch_log_freq = 1000,
