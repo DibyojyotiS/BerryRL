@@ -1,3 +1,4 @@
+from copy import deepcopy
 
 MAX_PARALLEL = 5
 MAX_TRAIN_EPISODES = 500
@@ -142,6 +143,7 @@ BASE_CONFIG = {
     ),
 }
 
+
 def prepareConfig(base_config):
 
     def valueOf(path:str):
@@ -161,5 +163,8 @@ def prepareConfig(base_config):
                 val = val[2:-1] # removes $!
                 config[key] = eval(val)
     
-    dfsConfig(base_config)
-    return base_config
+    base_config_deepcopy = deepcopy(base_config)
+    dfsConfig(base_config_deepcopy)
+    return base_config_deepcopy
+
+PARSED_BASE_CONFIG = prepareConfig(BASE_CONFIG)

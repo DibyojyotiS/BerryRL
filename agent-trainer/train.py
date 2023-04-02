@@ -51,9 +51,9 @@ def get_run_config():
         if arg_name.strip() == "--run-config":
             data = data.replace("<space>", ' ').replace("<dblQuotes>", '"')
             return prepareConfig(json.loads(data.strip()))
-    print("Defaulting to base-config")
-    from config import BASE_CONFIG
-    return prepareConfig(BASE_CONFIG)
+    print("Defaulting to parsed-base-config")
+    from config import PARSED_BASE_CONFIG
+    return PARSED_BASE_CONFIG
 
 
 if __name__ == "__main__":
