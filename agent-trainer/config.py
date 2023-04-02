@@ -3,7 +3,7 @@ MAX_PARALLEL = 5
 MAX_TRAIN_EPISODES = 500
 GRID_SEARCH_CONFIG = {
     # add as <path.to.param>:[list of values]
-    "seed":[0,2,4],
+    "seed":[2,4],
     "PER_BUFFER.alpha":[0.95, 0.7],
     "PER_BUFFER.beta":[0.5, 0.1],
     "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.4, 0.2],
