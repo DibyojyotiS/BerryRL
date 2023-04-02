@@ -1,5 +1,6 @@
 
 MAX_PARALLEL = 5
+MAX_TRAIN_EPISODES = 500
 GRID_SEARCH_CONFIG = {
     # add as <path.to.param>:[list of values]
     "seed":[0,2,4],
@@ -112,13 +113,13 @@ BASE_CONFIG = {
         bufferSize=int(5E5), 
         alpha=0.95,
         beta=0.1, 
-        beta_rate=0.9/2000
+        beta_rate=0.9/MAX_TRAIN_EPISODES
     ),
 
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
         epsilon=0.55,
         finalepsilon=0.2,
-        decaySteps=500,
+        decaySteps=MAX_TRAIN_EPISODES,
         decay_type='exp'
     ),
 
@@ -126,7 +127,7 @@ BASE_CONFIG = {
         batchSize=1024, 
         gamma=0.9, 
         update_freq=5, 
-        MaxTrainEpisodes=500, 
+        MaxTrainEpisodes=MAX_TRAIN_EPISODES, 
         MaxStepsPerEpisode=None,
         optimize_every_kth_action=100,
         num_gradient_steps=25,
