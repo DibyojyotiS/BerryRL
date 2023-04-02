@@ -1,6 +1,7 @@
 
 MAX_PARALLEL = 5
 GRID_SEARCH_CONFIG = {
+    # add as <path.to.param>:[list of values]
     "seed":[0,2,4],
     "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.8, 0.4, 0.2],
     "TRAINING_STRAT_EPSILON_GREEDY.finalepsilon":[0.2, 0.1, 0.05]
@@ -125,7 +126,7 @@ BASE_CONFIG = {
         batchSize=1024, 
         gamma=0.9, 
         update_freq=5, 
-        MaxTrainEpisodes=1000, 
+        MaxTrainEpisodes=500, 
         MaxStepsPerEpisode=None,
         optimize_every_kth_action=100,
         num_gradient_steps=25,
