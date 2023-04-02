@@ -1,5 +1,6 @@
 from typing import Dict, Any
 from DRLagents.replaybuffers import PrioritizedExperienceRelpayBuffer
+from DRLagents.agents.DQN import epsilonGreedyAction
 from torch.optim.lr_scheduler import _LRScheduler
 from .pipeline import ThreadSafePrinter
 import torch
@@ -8,11 +9,13 @@ import wandb
 
 class AdditionalTrainingStatsExtractor:
     def __init__(
-        self, buffer:PrioritizedExperienceRelpayBuffer, 
+        self, per_buffer:PrioritizedExperienceRelpayBuffer, 
+        epsilon_greedy_act:epsilonGreedyAction,
         lr_scheduler: _LRScheduler, batch_size:int, 
         wandb_enabled: bool, thread_safe_printer:ThreadSafePrinter
     ) -> None:
-        self.memory_buffer = buffer
+        self.per_memory_buffer = per_buffer
+        self.epsilon_greedy_act = epsilon_greedy_act
         self.lr_scheduler = lr_scheduler
         self.batch_size = batch_size
         self.wandb_enabled = wandb_enabled
@@ -24,6 +27,7 @@ class AdditionalTrainingStatsExtractor:
     def __call__(self, info_dict:Dict[str,Any]) -> Dict[str,Any]:
         info_dict["PER_buffer"] = self._get_buffer_infos()
         info_dict["lr"] = self._get_lr()
+        info_dict["epsilon"] = self._get_epsilon()
         self._print_train_stuff(info_dict)
         self.episode += 1
         return info_dict
@@ -33,6 +37,7 @@ class AdditionalTrainingStatsExtractor:
         self.thread_safe_printer(
             f"train episode: {self.episode}\n"
             + f"\t lr: {info_dict['lr']},\n"
+            + f"\t epsilon: {info_dict['epsilon']},\n"
             + f"\t buffer: amount_filled: {info['amount_filled']},\n"
             + f"\t buffer: num_positive_rewards: {info['num_positive_rewards']},\n"
             + f"\t buffer: batch_ratio_positive_rewards: {info['batch_ratio_positive_rewards']},\n"
@@ -41,13 +46,16 @@ class AdditionalTrainingStatsExtractor:
 
     def _get_lr(self):
         return self.lr_scheduler.get_lr()
+    
+    def _get_epsilon(self):
+        return self.epsilon_greedy_act.epsilon
 
     def _get_buffer_infos(self):
-        rewards=self.memory_buffer.buffer["reward"][:len(self.memory_buffer)].squeeze()
-        amount_filled=100*len(self.memory_buffer)/self.memory_buffer.bufferSize
+        rewards=self.per_memory_buffer.buffer["reward"][:len(self.per_memory_buffer)].squeeze()
+        amount_filled=100*len(self.per_memory_buffer)/self.per_memory_buffer.bufferSize
         num_positive_rewards = torch.sum(rewards>=self.epsilon).item()
         
-        batch = self.memory_buffer.sample(self.batch_size)[0]
+        batch = self.per_memory_buffer.sample(self.batch_size)[0]
         batch_num_positive_rewards = torch.sum(
             (batch["reward"]>=self.epsilon).squeeze()
         ).item()

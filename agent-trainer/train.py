@@ -89,7 +89,7 @@ if __name__ == "__main__":
 
     optim = Adam(params=agent.nn_model.parameters(), **run_config["ADAM"])
     schdl = MultiStepLR(optimizer=optim, **run_config["MULTI_STEP_LR"])
-    buffer = PrioritizedExperienceRelpayBuffer(**run_config["PER_BUFFER"])
+    per_buffer = PrioritizedExperienceRelpayBuffer(**run_config["PER_BUFFER"])
     tstrat = epsilonGreedyAction(**run_config["TRAINING_STRAT_EPSILON_GREEDY"])
     ddqn_trainer = DDQN(
         **run_config["DDQN"],
@@ -98,7 +98,7 @@ if __name__ == "__main__":
         trainExplorationStrategy=tstrat,
         optimizer=optim,
         lr_scheduler=schdl,
-        replayBuffer=buffer,
+        replayBuffer=per_buffer,
         log_dir=log_dir,
         device=torch_device
     )
@@ -115,7 +115,8 @@ if __name__ == "__main__":
         episodes_per_video=50
     )
     train_additional_info = AdditionalTrainingStatsExtractor(
-        buffer=buffer,
+        per_buffer=per_buffer,
+        epsilon_greedy_act=tstrat,
         lr_scheduler=schdl,
         batch_size=run_config["DDQN"]["batchSize"],
         wandb_enabled=run_config["WANDB"]["enabled"],

@@ -1,3 +1,3 @@
 from .stats_collector import DaemonStatsCollectorAndLoggerCallback
 from .pipeline import ThreadSafePrinter
-from .additional_training_information import AdditionalTrainingStatsExtractor
+from .additional_training_stats_extractor import AdditionalTrainingStatsExtractor
