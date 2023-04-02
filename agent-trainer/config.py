@@ -17,7 +17,7 @@ BASE_CONFIG = {
     "WANDB": dict(
         enabled = True, # set to true for server env
         project="agent-grid-search",
-        group="grid-search-epsilons",
+        group="grid-search-PER(alpha,beta)-epsilons",
         entity="foraging-rl",
         watch_log = "all", # logging both params and grads
         watch_log_freq = 1000,
