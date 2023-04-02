@@ -8,8 +8,8 @@ from berry_field import BerryFieldEnv
 from DRLagents import *
 
 from agent import Agent
-from callbacks import StatsCollectorAndLoggerCallback, ThreadSafePrinter
-from callbacks import AdditionalTrainingInformation
+from callbacks import DaemonStatsCollectorAndLoggerCallback, ThreadSafePrinter
+from callbacks import AdditionalTrainingStatsExtractor
 from train_utils import copy_files, getRandomEnv
 from DRLagents.agents.DQN import epsilonGreedyAction
 from torch.optim.adam import Adam
@@ -105,7 +105,7 @@ if __name__ == "__main__":
 
     # init logging dependencies
     thread_safe_printer = ThreadSafePrinter()
-    train_collector = StatsCollectorAndLoggerCallback(
+    daemon_train_callback = DaemonStatsCollectorAndLoggerCallback(
         agent=agent,
         berry_env=trainEnv,
         save_dir=os.path.join(log_dir, "train"),
@@ -114,17 +114,17 @@ if __name__ == "__main__":
         thread_safe_printer=thread_safe_printer,
         episodes_per_video=50
     )
-    train_additional_info = AdditionalTrainingInformation(
+    train_additional_info = AdditionalTrainingStatsExtractor(
         buffer=buffer,
         lr_scheduler=schdl,
         batch_size=run_config["DDQN"]["batchSize"],
         wandb_enabled=run_config["WANDB"]["enabled"],
         thread_safe_printer=thread_safe_printer
     )
-    training_callback = lambda info_dict: \
-        train_collector(train_additional_info(info_dict))
+    partial_daemon_training_callback = lambda info_dict: \
+        daemon_train_callback(train_additional_info(info_dict))
 
-    eval_callback = StatsCollectorAndLoggerCallback(
+    daemon_eval_callback = DaemonStatsCollectorAndLoggerCallback(
         agent=agent,
         berry_env=evalEnv,
         save_dir=os.path.join(log_dir, "eval"),
@@ -143,12 +143,12 @@ if __name__ == "__main__":
 
     try:
         trianHist = ddqn_trainer.trainAgent(evalEnv=evalEnv,
-                                            training_callback=training_callback,
-                                            eval_callback=eval_callback)
+                                            training_callback=partial_daemon_training_callback,
+                                            eval_callback=daemon_eval_callback)
     except KeyboardInterrupt as kb:
         pass
 
     ddqn_trainer.evaluate(evalEnv=evalEnv, render=True)
-    train_collector.close()
-    eval_callback.close()
+    daemon_train_callback.close()
+    daemon_eval_callback.close()
     stdout_logger.close()

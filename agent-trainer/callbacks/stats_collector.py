@@ -12,7 +12,7 @@ from .logger_saver import LoggerSaver
 from .agent_analytics_processor import AgentAnalyticsProcessor
 
 
-class StatsCollectorAndLoggerCallback:
+class DaemonStatsCollectorAndLoggerCallback:
     """ collects stats from the agent and from the environments """
     def __init__(
         self, 

@@ -1,5 +1,5 @@
 
-MAX_PARALLEL = 4
+MAX_PARALLEL = 5
 GRID_SEARCH_CONFIG = {
     "seed":[0,2,4],
     "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.8, 0.4, 0.2],
@@ -13,7 +13,7 @@ BASE_CONFIG = {
     "WANDB": dict(
         enabled = True, # set to true for server env
         project="agent-grid-search",
-        group=".temp/grid-search-epsilons/",
+        group="grid-search-epsilons",
         entity="foraging-rl",
         watch_log = "all", # logging both params and grads
         watch_log_freq = 1000,
