@@ -33,15 +33,17 @@ class AdditionalTrainingStatsExtractor:
         return info_dict
 
     def _print_train_stuff(self, info_dict:Dict[str,Any]):
-        info = info_dict["PER_buffer"]
+        binfo = info_dict["PER_buffer"]
         self.thread_safe_printer(
             f"train episode: {self.episode}\n"
             + f"\t lr: {info_dict['lr']},\n"
             + f"\t epsilon: {info_dict['epsilon']},\n"
-            + f"\t buffer: amount_filled: {info['amount_filled']},\n"
-            + f"\t buffer: num_positive_rewards: {info['num_positive_rewards']},\n"
-            + f"\t buffer: batch_ratio_positive_rewards: {info['batch_ratio_positive_rewards']},\n"
-            + f"\t buffer: batch_action_freqs: {info['batch_action_freqs']}"
+            + f"\t buffer: amount_filled: {binfo['amount_filled']},\n"
+            + f"\t buffer: alpha: {binfo['alpha']},\n"
+            + f"\t buffer: beta: {binfo['beta']},\n"
+            + f"\t buffer: num_positive_rewards: {binfo['num_positive_rewards']},\n"
+            + f"\t buffer: batch_ratio_positive_rewards: {binfo['batch_ratio_positive_rewards']},\n"
+            + f"\t buffer: batch_action_freqs: {binfo['batch_action_freqs']}"
         )
 
     def _get_lr(self):
@@ -73,7 +75,9 @@ class AdditionalTrainingStatsExtractor:
                     self._tensor_to_list(batch_actions), 
                     self._tensor_to_list(batch_action_counts)
                 )
-            }
+            },
+            "alpha": self.per_memory_buffer.alpha,
+            "beta": self.per_memory_buffer.beta
         }
 
         if self.wandb_enabled:

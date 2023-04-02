@@ -4,8 +4,10 @@ MAX_TRAIN_EPISODES = 500
 GRID_SEARCH_CONFIG = {
     # add as <path.to.param>:[list of values]
     "seed":[0,2,4],
-    "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.8, 0.4, 0.2],
-    "TRAINING_STRAT_EPSILON_GREEDY.finalepsilon":[0.2, 0.1, 0.05]
+    "PER_BUFFER.alpha":[0.95, 0.7],
+    "PER_BUFFER.beta":[0.5, 0.1],
+    "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.4, 0.2],
+    "TRAINING_STRAT_EPSILON_GREEDY.finalepsilon":[0.1, 0.05],
 }
 
 BASE_CONFIG = {
@@ -113,7 +115,7 @@ BASE_CONFIG = {
         bufferSize=int(5E5), 
         alpha=0.95,
         beta=0.1, 
-        beta_rate=0.9/MAX_TRAIN_EPISODES
+        beta_rate="$! (1 - valueOf('PER_BUFFER.beta'))/MAX_TRAIN_EPISODES}"
     ),
 
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
@@ -139,3 +141,25 @@ BASE_CONFIG = {
         gradient_clipping_type = "norm",
     ),
 }
+
+def prepareConfig(base_config):
+
+    def valueOf(path:str):
+        nonlocal base_config
+        root = base_config
+        for k in path.split("."): 
+            root = root[k]
+        return root
+    
+    def dfsConfig(config:dict):
+        nonlocal valueOf
+        for key in config:
+            val = config[key]
+            if type(val) is dict:
+                dfsConfig(config[key])
+            elif type(val) is str and val.startswith("$!"):
+                val = val[2:-1] # removes $!
+                config[key] = eval(val)
+    
+    dfsConfig(base_config)
+    return base_config

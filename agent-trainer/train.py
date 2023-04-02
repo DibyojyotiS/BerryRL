@@ -15,6 +15,7 @@ from DRLagents.agents.DQN import epsilonGreedyAction
 from torch.optim.adam import Adam
 from torch.optim.lr_scheduler import MultiStepLR
 from torch.optim.rmsprop import RMSprop
+from config import prepareConfig
 
 # import builtins
 # _print = builtins.print
@@ -49,10 +50,10 @@ def get_run_config():
         arg_name, data = arg.split("=", maxsplit=1)
         if arg_name.strip() == "--run-config":
             data = data.replace("<space>", ' ').replace("<dblQuotes>", '"')
-            return json.loads(data.strip())
+            return prepareConfig(json.loads(data.strip()))
     print("Defaulting to base-config")
     from config import BASE_CONFIG
-    return BASE_CONFIG
+    return prepareConfig(BASE_CONFIG)
 
 
 if __name__ == "__main__":
