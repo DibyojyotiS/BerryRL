@@ -116,7 +116,7 @@ BASE_CONFIG = {
         bufferSize=int(5E5), 
         alpha=0.95,
         beta=0.1, 
-        beta_rate="$! (1 - valueOf('PER_BUFFER.beta'))/MAX_TRAIN_EPISODES}"
+        beta_rate="$! (1 - valueOf('PER_BUFFER.beta'))/MAX_TRAIN_EPISODES"
     ),
 
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
@@ -160,7 +160,7 @@ def prepareConfig(base_config):
             if type(val) is dict:
                 dfsConfig(config[key])
             elif type(val) is str and val.startswith("$!"):
-                val = val[2:-1] # removes $!
+                val = val[2:] # removes $!
                 config[key] = eval(val)
     
     base_config_deepcopy = deepcopy(base_config)
