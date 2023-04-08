@@ -47,7 +47,10 @@ class AdditionalTrainingStatsExtractor:
         )
 
     def _get_lr(self):
-        return self.lr_scheduler.get_lr()
+        lrAsFloatOrList = self.lr_scheduler.get_lr()
+        if type(lrAsFloatOrList) == list and len(lrAsFloatOrList) > 0:
+            return lrAsFloatOrList[0]
+        return lrAsFloatOrList # type is float
     
     def _get_epsilon(self):
         return self.epsilon_greedy_act.epsilon

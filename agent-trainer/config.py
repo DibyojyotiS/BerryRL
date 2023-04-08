@@ -4,21 +4,19 @@ MAX_PARALLEL = 5
 MAX_TRAIN_EPISODES = 500
 GRID_SEARCH_CONFIG = {
     # add as <path.to.param>:[list of values]
-    "seed":[2,4],
-    "PER_BUFFER.alpha":[0.95, 0.7],
-    "PER_BUFFER.beta":[0.5, 0.1],
-    "TRAINING_STRAT_EPSILON_GREEDY.epsilon":[0.4, 0.2],
-    "TRAINING_STRAT_EPSILON_GREEDY.finalepsilon":[0.1, 0.05],
+    "seed":[5,6,7],
+    "PER_BUFFER.alpha":[0.6],
+    "PER_BUFFER.beta":[0.1],
 }
 
 BASE_CONFIG = {
     "seed": 4,
-    "LOG_DIR_ROOT": ".temp/agent-grid-search/PER_buffer(alpha,beta)-epsilons",
-    "run_name_prefix": "alpha,beta,epsilon",
+    "LOG_DIR_ROOT": ".temp/agent-grid-search/PER_buffer(alpha,beta)",
+    "run_name_prefix": "alpha,beta",
     "WANDB": dict(
         enabled = True, # set to true for server env
         project="agent-grid-search",
-        group="PER_buffer(alpha,beta)-epsilons",
+        group="PER_buffer(alpha,beta)",
         entity="foraging-rl",
         watch_log = "all", # logging both params and grads
         watch_log_freq = 1000,
@@ -114,14 +112,14 @@ BASE_CONFIG = {
 
     "PER_BUFFER": dict(
         bufferSize=int(5E5), 
-        alpha=0.95,
+        alpha=0.6,
         beta=0.1, 
         beta_rate="$! (1 - valueOf('PER_BUFFER.beta'))/MAX_TRAIN_EPISODES"
     ),
 
     "TRAINING_STRAT_EPSILON_GREEDY": dict(
-        epsilon=0.55,
-        finalepsilon=0.2,
+        epsilon=0.4,
+        finalepsilon=0.05,
         decaySteps=MAX_TRAIN_EPISODES,
         decay_type='exp'
     ),
