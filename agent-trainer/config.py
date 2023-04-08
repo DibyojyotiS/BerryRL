@@ -133,7 +133,6 @@ BASE_CONFIG = {
         optimize_every_kth_action=100,
         num_gradient_steps=25,
         evalFreq=10, 
-        n_eval=5,
         printFreq=1, 
         polyak_average=True, 
         polyak_tau=0.1,
